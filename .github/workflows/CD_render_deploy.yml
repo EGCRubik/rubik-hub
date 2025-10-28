@@ -10,7 +10,7 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     # Solo ejecuta si el tag proviene de la rama main
-    if: github.ref_protected == true || github.event.base_ref == 'refs/heads/main'
+    #if: github.ref_name == 'main'
 
     services:
       mysql:
@@ -51,7 +51,7 @@ jobs:
     name: Deploy to Render
     needs: testing
     runs-on: ubuntu-latest
-    if: github.ref_protected == true || github.event.base_ref == 'refs/heads/main'
+    #if: github.ref_name == 'main'
     outputs:
       deploy_status: ${{ job.status }}
     steps:
