@@ -5,6 +5,8 @@ on:
     workflows: ["Deploy to Render"]
     types:
       - completed
+    tags:
+      - 'v*'
 
 jobs:
   notify:
