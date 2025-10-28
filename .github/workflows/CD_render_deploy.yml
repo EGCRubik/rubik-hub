@@ -58,13 +58,11 @@ jobs:
           deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           curl "$deploy_url"
-
   notify:
     name: Notify Discord
     needs: deploy
-    uses: ./.github/workflows/CD_discord_notification.yml
-    with:
-      deploy_status: ${{ needs.deploy.result }}
-      tag_name: ${{ github.ref_name }}
+    uses: ./.github/workflows/notify-discord.yml
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+
