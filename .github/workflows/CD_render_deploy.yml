@@ -61,7 +61,7 @@ jobs:
   notify:
     name: Notify Discord
     needs: deploy
-    uses: ./.github/workflows/notify-discord.yml
+    uses: ./.github/workflows/CD_discord_notification.yml
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
