@@ -10,7 +10,7 @@ jobs:
   notify:
     name: Notify Discord
     runs-on: ubuntu-latest
-    if: github.ref_protected == true || github.event.base_ref == 'refs/heads/main'
+    #if: github.ref_protected == true || github.event.base_ref == 'refs/heads/main'
     steps:
       - name: Send notification to Discord
         env:
