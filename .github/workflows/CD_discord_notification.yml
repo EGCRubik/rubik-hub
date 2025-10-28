@@ -2,20 +2,22 @@ name: Notify Discord after Deploy
 
 on:
   workflow_call:
+    inputs:
+      deploy_status:
+        required: true
+        type: string
     secrets:
       DISCORD_WEBHOOK_URL:
         required: true
 
 jobs:
   notify:
-    name: Notify Discord
     runs-on: ubuntu-latest
-
     steps:
       - name: Send notification to Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          DEPLOY_STATUS: ${{ github.workflow_run.conclusion || github.job.status || 'unknown' }}
+          DEPLOY_STATUS: ${{ inputs.deploy_status }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
           if [ "$DEPLOY_STATUS" == "success" ]; then EMOJI="✅"; else EMOJI="❌"; fi
