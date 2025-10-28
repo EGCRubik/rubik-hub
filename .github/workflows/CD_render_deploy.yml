@@ -3,15 +3,12 @@ name: Deploy to Render
 on:
   push:
     tags:
-      - 'v*'   # Solo cuando se hace push de un tag de versión (ej: v1.0.0)
+      - 'v*'
 
 jobs:
   testing:
     name: Run Tests
     runs-on: ubuntu-latest
-    # Solo ejecuta si el tag proviene de la rama main
-    #if: github.ref_name == 'main'
-
     services:
       mysql:
         image: mysql:5.7
@@ -51,7 +48,6 @@ jobs:
     name: Deploy to Render
     needs: testing
     runs-on: ubuntu-latest
-    #if: github.ref_name == 'main'
     outputs:
       deploy_status: ${{ job.status }}
     steps:
@@ -62,3 +58,13 @@ jobs:
           deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           curl "$deploy_url"
+
+  notify:
+    name: Notify Discord
+    needs: deploy
+    uses: ./.github/workflows/CD_discord_notification.yml
+    with:
+      deploy_status: ${{ needs.deploy.result }}
+      tag_name: ${{ github.ref_name }}
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

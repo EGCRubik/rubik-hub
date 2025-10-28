@@ -1,26 +1,25 @@
 name: Notify Discord after Deploy
 
 on:
-  workflow_run:
-    workflows: ["Deploy to Render"]
-    types:
-      - completed
-    tags:
-      - 'v*'
+  workflow_call:
+    secrets:
+      DISCORD_WEBHOOK_URL:
+        required: true
 
 jobs:
   notify:
     name: Notify Discord
     runs-on: ubuntu-latest
-    #if: github.ref_protected == true || github.event.base_ref == 'refs/heads/main'
+
     steps:
       - name: Send notification to Discord
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          DEPLOY_STATUS: ${{ github.event.workflow_run.conclusion }}
+          DEPLOY_STATUS: ${{ github.workflow_run.conclusion || github.job.status || 'unknown' }}
+          TAG_NAME: ${{ github.ref_name }}
         run: |
           if [ "$DEPLOY_STATUS" == "success" ]; then EMOJI="✅"; else EMOJI="❌"; fi
           curl -H "Content-Type: application/json" \
                -X POST \
-               -d "{\"content\": \"$EMOJI Deploy a Render terminado con estado: $DEPLOY_STATUS\nRepositorio: ${{ github.repository }}\nTag/Rama: ${{ github.ref_name }}\nVer logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+               -d "{\"content\": \"$EMOJI Deploy a Render terminado con estado: $DEPLOY_STATUS\nRepositorio: ${{ github.repository }}\nTag: $TAG_NAME\nVer logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
                $DISCORD_WEBHOOK
