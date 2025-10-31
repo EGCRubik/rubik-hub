@@ -37,3 +37,9 @@ def index():
         total_dataset_views=total_dataset_views,
         total_feature_model_views=total_feature_model_views,
     )
+
+
+@public_bp.route("/authors-and-communities")
+def authors_and_communities():
+    logger.info("Access authors and communities view")
+    return render_template("public/authors_and_communities.html")
