@@ -13,7 +13,7 @@ class ExploreRepository(BaseRepository):
         super().__init__(DataSet)
 
     def filter(self, query="", sorting="newest", publication_type="any", tags=[], **kwargs):
-        # Normalize and remove unwanted characters
+        # Normalize and remove unwanted character
         normalized_query = unidecode.unidecode(query).lower()
         cleaned_query = re.sub(r'[,.":\'()\[\]^;!¡¿?]', "", normalized_query)
 
