@@ -49,8 +49,12 @@ jobs:
           done
 
       - name: Confirmar y subir cambios si hay modificaciones
+        env:
+          GIT_AUTHOR: ${{ github.actor }}
         run: |
           if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "${GIT_AUTHOR}"
+            git config user.email "${GIT_AUTHOR}@alum.us.es"
             git add .
             git commit -m "Añadir cabecera LGPL v3 automáticamente"
             git push
