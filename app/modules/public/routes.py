@@ -1,6 +1,6 @@
 import logging
 
-from flask import render_template
+from flask import redirect, render_template, url_for
 
 from app.modules.dataset.services import DataSetService
 from app.modules.featuremodel.services import FeatureModelService
@@ -42,4 +42,6 @@ def index():
 @public_bp.route("/authors-and-communities")
 def authors_and_communities():
     logger.info("Access authors and communities view")
-    return render_template("public/authors_and_communities.html")
+    # The authors view has been moved into the authorsCommunities module.
+    # Redirect to the new location to keep existing URLs working.
+    return redirect(url_for("authorsCommunities.index"))
