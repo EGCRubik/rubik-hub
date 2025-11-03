@@ -33,7 +33,6 @@ def get_all_depositions():
     return jsonify({"depositions": fake_depositions}), 200
 
 
-# Simulación de subida de archivo (POST /fakenodo/api/deposit/depositions/<deposition_id>/files)
 @fakenodo_bp.route('/deposit/depositions/<int:deposition_id>/files', methods=['POST'])
 def upload_file(deposition_id):
     return jsonify({
@@ -70,13 +69,3 @@ def get_deposition(deposition_id):
 @fakenodo_bp.route('/deposit/depositions/<int:deposition_id>/nonexistent', methods=['GET'])
 def deposition_not_found(deposition_id):
     return jsonify({"message": "Deposition not found"}), 404
-
-
-@fakenodo_bp.route('/test', methods=['GET'])
-def test_endpoint():
-    """Endpoint para pruebas desde JS en /fakenodo/test
-
-    Devuelve JSON con `success` y `messages`.
-    """
-    response = {"success": True, "messages": ["FakeNODO reachable"]}
-    return jsonify(response), 200
