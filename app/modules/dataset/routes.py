@@ -5,18 +5,10 @@ import shutil
 import tempfile
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 from zipfile import ZipFile
 
-from flask import (
-    abort,
-    jsonify,
-    make_response,
-    redirect,
-    render_template,
-    request,
-    send_from_directory,
-    url_for,
-)
+from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
 from app.modules.dataset import dataset_bp
@@ -30,7 +22,7 @@ from app.modules.dataset.services import (
     DSMetaDataService,
     DSViewRecordService,
 )
-from app.modules.zenodo.services import ZenodoService
+from app.modules.fakenodo.services import FakenodoService
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +30,57 @@ logger = logging.getLogger(__name__)
 dataset_service = DataSetService()
 author_service = AuthorService()
 dsmetadata_service = DSMetaDataService()
-zenodo_service = ZenodoService()
+
+
+class FakenodoAdapter:
+    """Adapter that exposes create_new_deposition, upload_file, publish_deposition
+    and get_doi so the rest of the code doesn't need to change.
+    """
+
+    def __init__(self, working_dir: str | None = None):
+        self.service = FakenodoService(working_dir=working_dir)
+
+    def create_new_deposition(self, dataset) -> dict:
+        metadata = {
+            "title": getattr(dataset, "title", f"dataset-{getattr(dataset, 'id', '')}"),
+        }
+        rec = self.service.create_deposition(metadata=metadata)
+        return {"id": rec["id"], "conceptrecid": True, "metadata": rec.get("metadata", {})}
+
+    def upload_file(self, dataset, deposition_id, feature_model) -> Optional[dict]:
+        
+        name = getattr(feature_model, "filename", None) or getattr(feature_model, "name", None)
+        path = getattr(feature_model, "file_path", None) or getattr(feature_model, "path", None)
+        content = None
+        try:
+            if path and os.path.exists(path):
+                with open(path, "rb") as fh:
+                    content = fh.read()
+        except Exception:
+            content = None
+
+        if not name:
+            name = f"feature_model_{getattr(feature_model, 'id', uuid.uuid4())}.bin"
+
+        return self.service.upload_file(deposition_id, name, content)
+
+    def publish_deposition(self, deposition_id):
+        return self.service.publish_deposition(deposition_id)
+
+    def get_doi(self, deposition_id):
+        rec = self.service.get_deposition(deposition_id)
+        if not rec:
+            return None
+        doi = rec.get("doi")
+        if doi:
+            return doi
+        versions = rec.get("versions") or []
+        if versions:
+            return versions[-1].get("doi")
+        return None
+
+
+zenodo_service = FakenodoAdapter()
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
 
@@ -63,7 +105,6 @@ def create_dataset():
             logger.exception(f"Exception while create dataset data in local {exc}")
             return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
 
-        # send dataset as deposition to Zenodo
         data = {}
         try:
             zenodo_response_json = zenodo_service.create_new_deposition(dataset)
@@ -77,25 +118,19 @@ def create_dataset():
         if data.get("conceptrecid"):
             deposition_id = data.get("id")
 
-            # update dataset with deposition id in Zenodo
             dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
 
             try:
-                # iterate for each feature model (one feature model = one request to Zenodo)
                 for feature_model in dataset.feature_models:
                     zenodo_service.upload_file(dataset, deposition_id, feature_model)
 
-                # publish deposition
                 zenodo_service.publish_deposition(deposition_id)
-
-                # update DOI
                 deposition_doi = zenodo_service.get_doi(deposition_id)
                 dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
             except Exception as e:
                 msg = f"it has not been possible upload feature models in Zenodo and update the DOI: {e}"
                 return jsonify({"message": msg}), 200
 
-        # Delete temp folder
         file_path = current_user.temp_folder()
         if os.path.exists(file_path) and os.path.isdir(file_path):
             shutil.rmtree(file_path)
@@ -125,14 +160,12 @@ def upload():
     if not file or not file.filename.endswith(".uvl"):
         return jsonify({"message": "No valid file"}), 400
 
-    # create temp folder
     if not os.path.exists(temp_folder):
         os.makedirs(temp_folder)
 
     file_path = os.path.join(temp_folder, file.filename)
 
     if os.path.exists(file_path):
-        # Generate unique filename (by recursion)
         base_name, extension = os.path.splitext(file.filename)
         i = 1
         while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){extension}")):
@@ -195,8 +228,7 @@ def download_dataset(dataset_id):
 
     user_cookie = request.cookies.get("download_cookie")
     if not user_cookie:
-        user_cookie = str(uuid.uuid4())  # Generate a new unique identifier if it does not exist
-        # Save the cookie to the user's browser
+        user_cookie = str(uuid.uuid4())  
         resp = make_response(
             send_from_directory(
                 temp_dir,
@@ -214,7 +246,6 @@ def download_dataset(dataset_id):
             mimetype="application/zip",
         )
 
-    # Check if the download record already exists for this cookie
     existing_record = DSDownloadRecord.query.filter_by(
         user_id=current_user.id if current_user.is_authenticated else None,
         dataset_id=dataset_id,
@@ -222,7 +253,6 @@ def download_dataset(dataset_id):
     ).first()
 
     if not existing_record:
-        # Record the download in your database
         DSDownloadRecordService().create(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset_id,
@@ -236,22 +266,17 @@ def download_dataset(dataset_id):
 @dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
 def subdomain_index(doi):
 
-    # Check if the DOI is an old DOI
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
-        # Redirect to the same path with the new DOI
         return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
 
-    # Try to search the dataset by the provided DOI (which should already be the new one)
     ds_meta_data = dsmetadata_service.filter_by_doi(doi)
 
     if not ds_meta_data:
         abort(404)
 
-    # Get dataset
     dataset = ds_meta_data.data_set
 
-    # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
     resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
     resp.set_cookie("view_cookie", user_cookie)
@@ -263,7 +288,6 @@ def subdomain_index(doi):
 @login_required
 def get_unsynchronized_dataset(dataset_id):
 
-    # Get dataset
     dataset = dataset_service.get_unsynchronized_dataset(current_user.id, dataset_id)
 
     if not dataset:
