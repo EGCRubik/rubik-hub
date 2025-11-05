@@ -229,29 +229,33 @@
 
         </div>
         <div class="card">
-
             <div class="card-body">
+                <h3>Comments</h3>
 
-                <h3> Comments </h3>
+                <!-- Formulario para añadir un nuevo comentario -->
+                <form method="POST" action="{{ url_for('comments.create_comment', dataset_id=dataset.id) }}">
+                    <div class="mb-3">
+                        <textarea class="form-control" name="content" rows="3" placeholder="Write your comment..."
+                            required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Add Comment</button>
+                </form>
 
-                {% if dataset.comments %}
-                <ul class="list-group mt-3">
-                    {% for comment in dataset.comments %}
-                    <li class="list-group-item">
-                        <strong>{{ comment.author.name }}</strong>
-                        <small class="text-muted">
-                            ({{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }})
-                        </small>
-                        <p class="mt-2 mb-0">{{ comment.content }}</p>
-                    </li>
-                    {% endfor %}
-                </ul>
+                <hr>
+
+                <!-- Listado de comentarios del dataset -->
+                {% for comment in dataset.comments %}
+                <div class="mb-2">
+                    <strong>{{ comment.author.name }}</strong>
+                    <small class="text-muted">({{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }})</small>
+                    <p>{{ comment.content }}</p>
+                </div>
                 {% else %}
-                <p class="mt-2">No hay comentarios para este dataset.</p>
-                {% endif %}
-
+                <p>No comments yet.</p>
+                {% endfor %}
             </div>
         </div>
+
 
 
     </div>
