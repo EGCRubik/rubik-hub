@@ -1,0 +1,39 @@
+{% extends "base_template.html" %}
+
+{% block title %}View comments{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Comments</h1>
+
+    {% if comments %}
+        <ul class="list-group">
+            {% for c in comments %}
+                <li class="list-group-item">
+                    <strong>{{ c.author.name }}</strong>
+                    <small class="text-muted">
+                        ({{ c.date_posted.strftime('%Y-%m-%d %H:%M') }})
+                    </small>
+
+                    <br>
+
+                    <small class="text-info">
+                        Dataset:
+                        {% if c.dataset and c.dataset.ds_meta_data %}
+                            {{ c.dataset.ds_meta_data.title }}
+                        {% else %}
+                            <em>Sin dataset asociado</em>
+                        {% endif %}
+                    </small>
+
+                    <p class="mt-2 mb-0">{{ c.content }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No hay comentarios aún.</p>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('comments.scripts') }}"></script>
+{% endblock %}
