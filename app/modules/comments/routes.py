@@ -32,3 +32,18 @@ def create_comment(dataset_id):
     flash("Comment added successfully!", "success")
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
+
+@comments_bp.route('/delete/<int:comment_id>', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    comment = Comments.query.get_or_404(comment_id)
+    dataset = comment.dataset
+
+    if current_user.profile.id != comment.author_id and current_user.id != dataset.user_id:
+        flash("You don't have permission to delete this comment.", "danger")
+        return redirect(url_for("dataset.dataset", id=dataset.id))
+
+    db.session.delete(comment)
+    db.session.commit()
+    flash("Comment deleted successfully!", "success")
+    return render_template("dataset/view_dataset.html", dataset=dataset)

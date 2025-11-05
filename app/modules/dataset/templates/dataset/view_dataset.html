@@ -243,16 +243,26 @@
 
                 <hr>
 
-                <!-- Listado de comentarios del dataset -->
-                {% for comment in dataset.comments %}
+                <!-- Listado de comentarios del dataset -->{% for comment in dataset.comments %}
                 <div class="mb-2">
                     <strong>{{ comment.author.name }}</strong>
                     <small class="text-muted">({{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }})</small>
                     <p>{{ comment.content }}</p>
+
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.profile.id == comment.author_id or current_user.id == dataset.user_id %}
+                        <form method="POST" action="{{ url_for('comments.delete_comment', comment_id=comment.id) }}"
+                            style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+
                 </div>
                 {% else %}
                 <p>No comments yet.</p>
                 {% endfor %}
+
             </div>
         </div>
 
