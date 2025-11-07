@@ -1,43 +1,48 @@
-2025-11-03 12:56:26,920 - app - ERROR - Exception on /authors/communities/create [GET]
+2025-11-07 16:08:43,085 - app - ERROR - Exception on / [GET]
 Traceback (most recent call last):
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask/app.py", line 1511, in wsgi_app
     response = self.full_dispatch_request()
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask_restful/__init__.py", line 298, in error_router
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask_restful/__init__.py", line 298, in error_router
     return original_handler(e)
            ^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask/app.py", line 917, in full_dispatch_request
     rv = self.dispatch_request()
          ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask/app.py", line 902, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
-    return current_app.ensure_sync(func)(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/app/modules/authors/routes.py", line 27, in create
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask/templating.py", line 149, in render_template
-    template = app.jinja_env.get_or_select_template(template_name_or_list)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/jinja2/environment.py", line 1087, in get_or_select_template
-    return self.get_template(template_name_or_list, parent, globals)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/jinja2/environment.py", line 1016, in get_template
-    return self._load_template(name, globals)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/jinja2/environment.py", line 975, in _load_template
-    template = self.loader.load(self, name, self.make_globals(globals))
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/jinja2/loaders.py", line 126, in load
-    source, filename, uptodate = self.get_source(environment, name)
-                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask/templating.py", line 65, in get_source
-    return self._get_source_fast(environment, template)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan/Descargas/rubik-hub/venv/lib/python3.12/site-packages/flask/templating.py", line 99, in _get_source_fast
-    raise TemplateNotFound(template)
-jinja2.exceptions.TemplateNotFound: authors/community/create.html
-2025-11-03 12:56:26,922 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/rubik-hub/app/modules/public/routes.py", line 19, in index
+    datasets_counter = dataset_service.count_synchronized_datasets()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/rubik-hub/app/modules/dataset/services.py", line 78, in count_synchronized_datasets
+    return self.repository.count_synchronized_datasets()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/rubik-hub/app/modules/dataset/repositories.py", line 88, in count_synchronized_datasets
+    return self.model.query.join(DSMetaData).filter(DSMetaData.dataset_doi.isnot(None)).count()
+           ^^^^^^^^^^^^^^^^
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask_sqlalchemy/model.py", line 22, in __get__
+    return cls.query_class(
+           ^^^^^^^^^^^^^^^^
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 276, in __init__
+    self._set_entities(entities)
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/orm/query.py", line 289, in _set_entities
+    coercions.expect(
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/sql/coercions.py", line 388, in expect
+    insp._post_inspect
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 1338, in __get__
+    obj.__dict__[self.__name__] = result = self.fget(obj)
+                                           ^^^^^^^^^^^^^^
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/orm/mapper.py", line 2724, in _post_inspect
+    self._check_configure()
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/orm/mapper.py", line 2401, in _check_configure
+    _configure_registries({self.registry}, cascade=True)
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/orm/mapper.py", line 4218, in _configure_registries
+    _do_configure_registries(registries, cascade)
+  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/orm/mapper.py", line 4255, in _do_configure_registries
+    raise e
+sqlalchemy.exc.InvalidRequestError: One or more mappers failed to initialize - can't proceed with initialization of other mappers. Triggering mapper: 'Mapper[User(user)]'. Original exception was: When initializing mapper Mapper[User(user)], expression 'BaseDataSet' failed to locate a name ('BaseDataSet'). If this is a class name, consider adding this relationship() to the <class 'app.modules.auth.models.User'> class after both dependent classes have been defined.
+2025-11-07 16:08:43,088 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.

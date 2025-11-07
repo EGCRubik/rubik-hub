@@ -1,4 +1,4 @@
-2025-11-07 21:28:21,492 - app - ERROR - Exception on / [GET]
+2025-11-07 16:08:38,745 - app - ERROR - Exception on / [GET]
 Traceback (most recent call last):
   File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/orm/clsregistry.py", line 516, in _resolve_name
     rval = d[token]
@@ -20,9 +20,6 @@ Traceback (most recent call last):
   File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask/app.py", line 919, in full_dispatch_request
     rv = self.handle_user_exception(e)
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask_restful/__init__.py", line 298, in error_router
-    return original_handler(e)
-           ^^^^^^^^^^^^^^^^^^^
   File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/flask_restful/__init__.py", line 298, in error_router
     return original_handler(e)
            ^^^^^^^^^^^^^^^^^^^
@@ -75,4 +72,4 @@ Traceback (most recent call last):
   File "/home/juan-antonio-ruiz-lopez/Escritorio/EGC_PROYECTO/kawayypro/lib/python3.12/site-packages/sqlalchemy/orm/clsregistry.py", line 501, in _raise_for_name
     raise exc.InvalidRequestError(
 sqlalchemy.exc.InvalidRequestError: When initializing mapper Mapper[User(user)], expression 'BaseDataSet' failed to locate a name ('BaseDataSet'). If this is a class name, consider adding this relationship() to the <class 'app.modules.auth.models.User'> class after both dependent classes have been defined.
-2025-11-07 21:28:21,503 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-11-07 16:08:38,762 - app - ERROR - Internal Server Error: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
