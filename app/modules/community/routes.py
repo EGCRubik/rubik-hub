@@ -1,5 +1,5 @@
 from flask import abort, jsonify, render_template, request
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required  # type: ignore
 
 from app.modules.dataset.models import DataSet
 

@@ -21,7 +21,7 @@
         <div class="d-flex align-items-center justify-content-between">
           <h1><b>{{ community.name }}</b></h1>
           {% if community.banner_color %}
-            <span class="badge" style=>&nbsp;&nbsp;</span>
+          <span class="badge" style=>&nbsp;&nbsp;</span>
           {% endif %}
         </div>
 
@@ -38,9 +38,9 @@
           <div class="col-md-3 col-12 text-secondary">Curators</div>
           <div class="col-md-9 col-12">
             {% for u in community.curators.all() %}
-              <span class="badge bg-secondary" style="margin-bottom:4px">
-                {% if u.profile %}{{ u.profile.surname }}, {{ u.profile.name }}{% else %}User #{{ u.id }}{% endif %}
-              </span>
+            <span class="badge bg-secondary" style="margin-bottom:4px">
+              {% if u.profile %}{{ u.profile.surname }}, {{ u.profile.name }}{% else %}User #{{ u.id }}{% endif %}
+            </span>
             {% endfor %}
           </div>
         </div>
@@ -50,18 +50,18 @@
           <div class="col-md-9 col-12">
             {% set approved = community.approved_datasets() %}
             {% if approved %}
-              <ul class="mb-0">
-                {% for ds in approved %}
-                  <li>
-                    {{ ds.ds_meta_data.title if ds.ds_meta_data else ('Dataset #' ~ ds.id) }}
-                    <a href="/dataset/download/{{ ds.id }}" class="btn btn-link btn-sm" style="border-radius:5px">
-                      <i data-feather="download"></i> Download all
-                    </a>
-                  </li>
-                {% endfor %}
-              </ul>
+            <ul class="mb-0">
+              {% for ds in approved %}
+              <li>
+                {{ ds.ds_meta_data.title if ds.ds_meta_data else ('Dataset #' ~ ds.id) }}
+                <a href="/dataset/download/{{ ds.id }}" class="btn btn-link btn-sm" style="border-radius:5px">
+                  <i data-feather="download"></i> Download all
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
             {% else %}
-              <span class="text-muted">No approved datasets yet.</span>
+            <span class="text-muted">No approved datasets yet.</span>
             {% endif %}
           </div>
         </div>
@@ -104,29 +104,32 @@
         <div id="pendingList">
           {% set pending = community.datasets_links.filter_by(status='pending').all() %}
           {% if pending %}
-            <ul class="list-group">
-              {% for link in pending %}
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                  Dataset #{{ link.dataset_id }}
-                  {% if link.dataset and link.dataset.ds_meta_data %}
-                    — {{ link.dataset.ds_meta_data.title }}
-                  {% endif %}
-                  <small class="text-muted"> (by user #{{ link.proposed_by_id }})</small>
-                </span>
-                <span>
-                  <button data-link="{{ link.id }}" class="btn btn-success btn-sm approve-btn" style="border-radius:5px;margin-right:6px">
-                    <i data-feather="check"></i> Approve
-                  </button>
-                  <button data-link="{{ link.id }}" class="btn btn-outline-danger btn-sm reject-btn" style="border-radius:5px">
-                    <i data-feather="x"></i> Reject
-                  </button>
-                </span>
-              </li>
-              {% endfor %}
-            </ul>
+          <ul class="list-group">
+            {% for link in pending %}
+            {% if link.dataset and link.dataset.ds_meta_data %}
+            <a href="/doi/{{ link.dataset.ds_meta_data.dataset_doi }}"
+              class="list-group-item d-flex justify-content-between align-items-center">
+              <span>
+                Dataset #{{ link.dataset_id }}
+                — {{ link.dataset.ds_meta_data.title }}
+                <small class="text-muted"> (by user #{{ link.proposed_by_id }})</small>
+              </span>
+              <span>
+                <button data-link="{{ link.id }}" class="btn btn-success btn-sm approve-btn"
+                  style="border-radius:5px;margin-right:6px">
+                  <i data-feather="check"></i> Approve
+                </button>
+                <button data-link="{{ link.id }}" class="btn btn-outline-danger btn-sm reject-btn"
+                  style="border-radius:5px">
+                  <i data-feather="x"></i> Reject
+                </button>
+              </span>
+            </a>
+            {% endif %}
+            {% endfor %}
+          </ul>
           {% else %}
-            <span class="text-muted">No pending proposals.</span>
+          <span class="text-muted">No pending proposals.</span>
           {% endif %}
         </div>
       </div>
@@ -170,8 +173,6 @@
           msg.textContent = 'Proposal sent!';
           msg.style.display = 'block';
           form.reset();
-          // Refresh the page after a short delay to show the success message
-          setTimeout(() => window.location.reload(), 1000);
         } catch (e) {
           loading.style.display = 'none';
           msg.textContent = 'Unexpected error: ' + e.message;

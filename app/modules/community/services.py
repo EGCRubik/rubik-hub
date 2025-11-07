@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 
 from flask import current_app
-from flask_login import current_user
 from werkzeug.utils import secure_filename
 
 from app import db
@@ -53,7 +52,7 @@ class CommunityDatasetService:
         db.session.commit()
         return link
     
-    def set_status(self, link_id, status):
+    def set_status(self, link_id, status, current_user=None):
         link = CommunityDataset.query.get_or_404(link_id)
         if link:
             link.status = status
