@@ -4,6 +4,7 @@ from flask import render_template
 
 from app.modules.authorsCommunities import authorsCommunities_bp
 from app.modules.authorsCommunities.services import AuthorscommunitiesService
+from app.modules.community.services import CommunityService
 
 # Services used to collect authors and communities data
 from app.modules.dataset.services import AuthorService
@@ -26,11 +27,13 @@ def index():
     authors_q = author_model.query.all()
     authors = [a.to_dict() for a in authors_q]
 
-    # Load communities. The table might not exist yet in some dev setups
-    # (no migration applied). In that case return an empty list instead of
-    # raising an exception that breaks the whole page.
-    comm_service = AuthorscommunitiesService()
-    comm_model = comm_service.repository.model
+    # Load communities.
+    community_service = CommunityService()
+    communities = community_service.list_all()
+
+    return render_template('authorsCommunities/index.html', authors=authors, communities=communities)
+
+    comm_model = community_service.repository.model
     try:
         comm_q = comm_model.query.all()
     except Exception as exc:  # pragma: no cover - defensive for dev envs
