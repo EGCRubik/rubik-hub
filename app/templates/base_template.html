@@ -117,6 +117,17 @@ chico sundermann">
                     </li>
 
                     <li class="sidebar-header">
+                        Communities
+                    </li>
+
+                    <li class="sidebar-item {{ 'active' if request.endpoint == 'community.list_communities' else '' }}">
+                        <a class="sidebar-link" href="{{ url_for('community.list_communities') }}">
+                            <i class="align-middle" data-feather="list"></i> <span
+                                class="align-middle">My communities</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-header">
                         Options
                     </li>
 

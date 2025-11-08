@@ -29,8 +29,7 @@ def create_community():
 @community_bp.route("/community/list", methods=["GET"])
 @login_required
 def list_communities():
-    communities = community_service.list_all()
-    return render_template("community/list.html", communities=communities)
+    return render_template("community/list.html", communities=community_service.get_synchronized(current_user.id))
 
 @community_bp.route("/community/<slug>", methods=["GET"])
 def community_detail(slug):

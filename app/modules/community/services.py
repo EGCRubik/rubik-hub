@@ -11,7 +11,11 @@ from core.services.BaseService import BaseService
 from .models import Community, CommunityCurator, CommunityDataset, CommunityDatasetStatus
 
 
-class CommunityService:
+class CommunityService(BaseService):
+
+    def __init__(self):
+        super().__init__(CommunityRepository())
+        
     def create(self, form, creator):
         community = Community(
             name=form.name.data,
@@ -39,6 +43,12 @@ class CommunityService:
     
     def get_by_slug(self, slug):
         return Community.query.filter_by(slug=slug).first_or_404()
+    
+    def get_synchronized(self, current_user_id: int) -> Community:
+        return self.repository.get_synchronized(current_user_id)
+
+    def get_unsynchronized(self, current_user_id: int) -> Community:
+        return self.repository.get_unsynchronized(current_user_id)
     
 class CommunityDatasetService:
     def propose(self, community, dataset, proposer):
