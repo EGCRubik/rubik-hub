@@ -1,0 +1,155 @@
+{% extends "base_template.html" %}
+
+{% block title %}Create community{% endblock %}
+
+{% block content %}
+
+<h1 class="h2 mb-3"><b>Create</b> community</h1>
+
+<div class="row">
+  <div class="col-xl-8 col-lg-12 col-md-12 col-sm-12">
+
+    <div class="card">
+      <div class="card-body">
+
+        <form id="communityForm" action="{{ url_for('community.create_community') }}" method="post"enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+
+          <div class="row" style="padding-left: 2rem">
+
+            <div class="col-lg-6 col-12">
+              <div class="mb-3">
+                {{ form.name.label(class="form-label") }} *
+                {{ form.name(class="form-control", placeholder="e.g. Speedcubing Research") }}
+                {% for error in form.name.errors %}
+                  <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-lg-6 col-12">
+              <div class="mb-3">
+                {{ form.slug.label(class="form-label") }} *
+                {{ form.slug(class="form-control", placeholder="e.g. speedcubing-research") }}
+                <small class="text-muted">Lowercase, numbers and hyphens</small>
+                {% for error in form.slug.errors %}
+                  <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="mb-3">
+                {{ form.description.label(class="form-label") }} *
+                {{ form.description(class="form-control", rows=4, placeholder="Short description...") }}
+                {% for error in form.description.errors %}
+                  <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-lg-6 col-12">
+              <div class="mb-3">
+                {{ form.banner_color.label(class="form-label") }}
+                {{ form.banner_color(class="form-control", placeholder="#0057b8", id="bannerColor") }}
+                <small class="text-muted">Hex color like <code>#0057b8</code></small>
+                <div id="colorPreview" class="mt-2" style="height:28px;border-radius:5px;border:1px solid #ccc;"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <div id="formErrors" class="text-danger mb-2" style="display:none"></div>
+
+          <button type="submit" class="btn btn-primary" style="border-radius:5px">
+            <i data-feather="plus-circle" class="center-button-icon"></i>
+            Create community
+          </button>
+
+          <a href="{{ url_for('community.list_communities') }}" class="btn btn-light ms-2" style="border-radius:5px">
+            <i data-feather="arrow-left"></i> Back to list
+          </a>
+
+          <div id="loading" class="mt-2" style="display:none">
+            <img width="32" src="{{ url_for('static', filename='gifs/loading.svg') }}" />
+            Creating community, please wait...
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  feather.replace();
+
+  const form    = document.getElementById('communityForm');
+  const errors  = document.getElementById('formErrors');
+  const loading = document.getElementById('loading');
+  const color   = document.getElementById('bannerColor');
+  const preview = document.getElementById('colorPreview');
+
+  function updateColorPreview() {
+    const v = (color && color.value) || '';
+    preview.style.backgroundColor = /^#[0-9a-fA-F]{6}$/.test(v) ? v : 'transparent';
+  }
+  color && color.addEventListener('input', updateColorPreview);
+  updateColorPreview();
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    errors.style.display = 'none';
+    loading.style.display = 'inline-block';
+
+    const fd = new FormData(form);
+    const csrf = form.querySelector('input[name="csrf_token"]')?.value || '';
+
+    try {
+      const res = await fetch('{{ url_for("community.create_community") }}', {
+        method: 'POST',
+        body: fd,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+          'X-CSRFToken': csrf            // por si usas CSRFProtect a nivel app
+        },
+        redirect: 'follow'
+      });
+
+      // Lee como texto primero y luego intenta parsear JSON
+      const raw = await res.text();
+      let data = null;
+      try { data = JSON.parse(raw); } catch (_e) { /* no es JSON */ }
+
+      loading.style.display = 'none';
+
+      if (!res.ok) {
+        const msg = data?.message || (raw.includes('<') ? 'Server returned HTML (likely login or CSRF error).' : raw) || 'Invalid data';
+        errors.textContent = msg;
+        errors.style.display = 'block';
+        return;
+      }
+
+      if (!data?.slug) {
+        errors.textContent = 'Unexpected response from server.';
+        errors.style.display = 'block';
+        return;
+      }
+
+      window.location.href = `/community/${data.slug}`;
+    } catch (e) {
+      loading.style.display = 'none';
+      errors.textContent = 'Unexpected error: ' + e.message;
+      errors.style.display = 'block';
+    }
+  });
+});
+</script>
+
+{% endblock %}
