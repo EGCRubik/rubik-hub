@@ -5,45 +5,29 @@ from flask_login import current_user, login_required
 from app import db
 from app.modules.dataset.models import DataSet
 from app.modules.comments.models import Comments
-
-@comments_bp.route('/comments', methods=['GET'])
-def index():
-    comments = Comments.query.all()   
-    return render_template('comments/index.html', comments=comments) 
+from app.modules.comments.services import CommentsService
+comments_service = CommentsService()
 
 @comments_bp.route('/create/<int:dataset_id>', methods=['POST'])
 @login_required
 def create_comment(dataset_id):
-    dataset = DataSet.query.get_or_404(dataset_id)
     content = request.form.get('content')
+    author_id = current_user.profile.id
 
-    if not content:
-        flash("Comment cannot be empty.", "danger")
+    comment, dataset = comments_service.create_comment(dataset_id, author_id, content)
+
+    if comment is None:
         return redirect(url_for("dataset.view_dataset", dataset_id=dataset.id))
 
-    comment = Comments(
-        author_id=current_user.profile.id,  # O como tengas vinculado al Author
-        dataset_id=dataset.id,
-        content=content
-    )
-
-    db.session.add(comment)
-    db.session.commit()
-    flash("Comment added successfully!", "success")
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
 
 @comments_bp.route('/delete/<int:comment_id>', methods=['POST'])
 @login_required
 def delete_comment(comment_id):
-    comment = Comments.query.get_or_404(comment_id)
-    dataset = comment.dataset
+    result, dataset = comments_service.delete_comment(comment_id, current_user)
 
-    if current_user.profile.id != comment.author_id and current_user.id != dataset.user_id:
-        flash("You don't have permission to delete this comment.", "danger")
+    if result is None:
         return redirect(url_for("dataset.dataset", id=dataset.id))
 
-    db.session.delete(comment)
-    db.session.commit()
-    flash("Comment deleted successfully!", "success")
     return render_template("dataset/view_dataset.html", dataset=dataset)
