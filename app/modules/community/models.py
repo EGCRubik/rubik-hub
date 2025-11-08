@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 
 from app import db
+from app.modules.dataset.models import DataSet
 
 
 class Community(db.Model):
@@ -56,4 +57,4 @@ class CommunityDataset(db.Model):
     proposed_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     community = db.relationship('Community', back_populates='datasets_links')
-    dataset = db.relationship('DataSet', backref=db.backref('community_links', cascade='all, delete-orphan'))
+    dataset = db.relationship( DataSet, backref=db.backref('community_links', cascade='all, delete-orphan'))
