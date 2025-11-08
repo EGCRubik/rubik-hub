@@ -29,6 +29,8 @@ deployments.log
 htmlcov/
 .pytest_cache/
 coverage.xml
+/migrations/log/*
+!/migrations/log/DUMMY.txt
 
 # ==========================
 # Config & environment
