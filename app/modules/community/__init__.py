@@ -6,4 +6,4 @@ from core.blueprints.base_blueprint import BaseBlueprint
 community_bp = BaseBlueprint('community', __name__, template_folder='templates')
 
 api = Api(community_bp)
-init_blueprint_api(api)
+init_blueprint_api(community_bp)
