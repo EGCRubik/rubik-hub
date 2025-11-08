@@ -28,4 +28,7 @@ jobs:
           context: .
           file: docker/images/Dockerfile.dev  
           push: true
+          tags: |
+            ${{ secrets.DOCKER_USER }}/rubik-hub:latest
+            ${{ secrets.DOCKER_USER }}/rubik-hub:${{ github.sha }}
           
