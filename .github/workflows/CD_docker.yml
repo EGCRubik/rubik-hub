@@ -1,5 +1,6 @@
 name: Build and Push Docker Image
 
+#Only when a push is made to the main branch
 on:
   push:
     branches:
