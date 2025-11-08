@@ -1,6 +1,7 @@
 from app import db
 from datetime import datetime
 from app.modules.dataset.models import Author
+from app.modules.dataset.models import DataSet
 
 class Comments(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -11,7 +12,7 @@ class Comments(db.Model):
 
     # Nueva relación con DataSet
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False)
-    dataset = db.relationship("DataSet", backref="comments")
+    dataset = db.relationship(DataSet, backref="comments")
 
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     content = db.Column(db.Text, nullable=False)
