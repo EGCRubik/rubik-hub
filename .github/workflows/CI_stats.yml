@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Compute lines contributed per author
         run: |
@@ -41,8 +43,3 @@ jobs:
         with:
           name: contributor_stats
           path: contributor_stats.txt
-
-      - name: Print stats to log
-        run: |
-          echo "---- contributor_stats.txt ----"
-          cat contributor_stats.txt
