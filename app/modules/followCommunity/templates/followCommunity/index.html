@@ -1,0 +1,42 @@
+{% extends "base_template.html" %}
+
+{% block title %}Seguidores de comunidades{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4">Seguimientos de comunidades</h1>
+
+    {% if follows %}
+        <ul class="list-group">
+
+            {% for f in follows %}
+                <li class="list-group-item">
+
+                    <strong>{{ f.follower.email }}</strong>
+                    <small class="text-muted">
+                        está siguiendo:
+                    </small>
+
+                    <br>
+
+                    {% if f.community %}
+                        <span class="text-primary">{{ f.community.name }}</span>
+                        <small class="text-muted">
+                            ({{ f.community.slug }})
+                        </small>
+                    {% else %}
+                        <em>Sin comunidad asociada</em>
+                    {% endif %}
+
+                </li>
+            {% endfor %}
+
+        </ul>
+
+    {% else %}
+        <p>No hay seguimientos registrados.</p>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('followCommunity.scripts') }}"></script>
+{% endblock %}
