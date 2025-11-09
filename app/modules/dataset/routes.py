@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from zipfile import ZipFile
 
+import requests
 from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
@@ -22,7 +23,6 @@ from app.modules.dataset.services import (
     DSMetaDataService,
     DSViewRecordService,
 )
-from app.modules.fakenodo.services import FakenodoService
 
 logger = logging.getLogger(__name__)
 
@@ -33,22 +33,42 @@ dsmetadata_service = DSMetaDataService()
 
 
 class FakenodoAdapter:
-    """Adapter that exposes create_new_deposition, upload_file, publish_deposition
-    and get_doi so the rest of the code doesn't need to change.
+    """Adapter that routes dataset operations either to a remote FakeNODO HTTP API
+    (when FAKENODO_URL env var is set to an http URL) or to the local DB-backed
+    FakenodoService (lazy-imported to avoid touching the DB at module import).
     """
 
     def __init__(self, working_dir: str | None = None):
-        self.service = FakenodoService(working_dir=working_dir)
+        self.base_url = os.getenv("FAKENODO_URL")
+        self.working_dir = working_dir
+        self._service = None
+        self.is_remote = bool(self.base_url and str(self.base_url).startswith("http"))
+
+    def _get_service(self):
+        if not self._service:
+            # lazy import to avoid DB access at import-time
+            from app.modules.fakenodo.services import FakenodoService
+
+            self._service = FakenodoService()
+        return self._service
 
     def create_new_deposition(self, dataset) -> dict:
         metadata = {
             "title": getattr(dataset, "title", f"dataset-{getattr(dataset, 'id', '')}"),
         }
-        rec = self.service.create_deposition(metadata=metadata)
-        return {"id": rec["id"], "conceptrecid": True, "metadata": rec.get("metadata", {})}
+        if self.is_remote:
+            url = f"{self.base_url.rstrip('/')}/deposit/depositions"
+            try:
+                resp = requests.post(url, json={"metadata": metadata}, timeout=10)
+                resp.raise_for_status()
+                return resp.json()
+            except Exception as e:
+                raise
+        else:
+            svc = self._get_service()
+            return svc.create_new_deposition(metadata=metadata)
 
     def upload_file(self, dataset, deposition_id, feature_model) -> Optional[dict]:
-        
         name = getattr(feature_model, "filename", None) or getattr(feature_model, "name", None)
         path = getattr(feature_model, "file_path", None) or getattr(feature_model, "path", None)
         content = None
@@ -62,25 +82,50 @@ class FakenodoAdapter:
         if not name:
             name = f"feature_model_{getattr(feature_model, 'id', uuid.uuid4())}.bin"
 
-        return self.service.upload_file(deposition_id, name, content)
+        if self.is_remote:
+            url = f"{self.base_url.rstrip('/')}/deposit/depositions/{deposition_id}/files"
+            files = {"file": (name, content)}
+            data = {"name": name}
+            try:
+                resp = requests.post(url, files=files, data=data, timeout=30)
+                resp.raise_for_status()
+                return resp.json()
+            except Exception:
+                raise
+        else:
+            svc = self._get_service()
+            return svc.upload_file(deposition_id, name, content)
 
     def publish_deposition(self, deposition_id):
-        return self.service.publish_deposition(deposition_id)
+        if self.is_remote:
+            url = f"{self.base_url.rstrip('/')}/deposit/depositions/{deposition_id}/actions/publish"
+            resp = requests.post(url, timeout=10)
+            resp.raise_for_status()
+            return resp.json()
+        else:
+            svc = self._get_service()
+            return svc.publish_deposition(deposition_id)
 
     def get_doi(self, deposition_id):
-        rec = self.service.get_deposition(deposition_id)
-        if not rec:
+        if self.is_remote:
+            url = f"{self.base_url.rstrip('/')}/deposit/depositions/{deposition_id}"
+            resp = requests.get(url, timeout=10)
+            if not resp.ok:
+                return None
+            rec = resp.json()
+            doi = rec.get("doi")
+            if doi:
+                return doi
+            versions = rec.get("versions") or []
+            if versions:
+                return versions[-1].get("doi")
             return None
-        doi = rec.get("doi")
-        if doi:
-            return doi
-        versions = rec.get("versions") or []
-        if versions:
-            return versions[-1].get("doi")
-        return None
+        else:
+            svc = self._get_service()
+            return svc.get_doi(deposition_id)
 
 
-zenodo_service = FakenodoAdapter()
+zenodo_service = FakenodoAdapter(working_dir=os.getenv("WORKING_DIR"))
 doi_mapping_service = DOIMappingService()
 ds_view_record_service = DSViewRecordService()
 
