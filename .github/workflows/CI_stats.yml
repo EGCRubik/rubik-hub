@@ -6,6 +6,10 @@ on:
       - trunk
   workflow_dispatch: {}
 
+permissions:
+  issues: read
+  contents: read
+
 jobs:
   stats:
     name: Compute contributor stats
