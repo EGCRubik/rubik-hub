@@ -185,6 +185,12 @@ def create_dataset():
 
     return render_template("dataset/upload_dataset.html", form=form)
 
+@dataset_bp.route("/dataset/upload/uvl", methods=["GET"])
+@login_required
+def upload_uvl():
+    
+    form = DataSetForm()
+    return render_template("dataset/upload_uvl.html", form=form)
 
 @dataset_bp.route("/dataset/list", methods=["GET", "POST"])
 @login_required
