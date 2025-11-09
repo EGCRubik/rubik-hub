@@ -1,8 +1,10 @@
-from flask import Blueprint
+from flask import Blueprint, render_template
+from flask_login import login_required
 
 from . import tabular_bp
 
 
-@tabular_bp.route("/upload")
+@tabular_bp.route("/upload", methods=["GET"])
+@login_required
 def upload_tabular():
-    return "Aquí irá la subida de CSVs de Rubik"
+    return render_template("tabular/upload_tabular.html")
