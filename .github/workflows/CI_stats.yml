@@ -31,17 +31,6 @@ jobs:
               END {for (a in adds) print adds[a] "\t" a}' | sort -nr >> contributor_stats.txt
           echo "" >> contributor_stats.txt
 
-      - name: Compute issues closed per contributor (using GH API)
-        env:
-          REPO: EGCRubik/rubik-hub
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "# Issues closed per user" >> contributor_stats.txt
-          # Use GitHub API to list closed issues and count closed_by
-          gh api --paginate repos/${REPO}/issues -F state=closed --jq '.[] | .closed_by.login' \
-            | sed '/^null$/d' | sort | uniq -c | sort -nr >> contributor_stats.txt || true
-          echo "" >> contributor_stats.txt
-
       - name: Upload stats artifact
         uses: actions/upload-artifact@v4
         with:
