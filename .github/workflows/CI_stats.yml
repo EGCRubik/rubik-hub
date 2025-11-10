@@ -3,7 +3,7 @@ name: Contributor Stats
 on:
   push:
     branches:
-      - trunk
+      - main
   workflow_dispatch: {}
 
 permissions:
