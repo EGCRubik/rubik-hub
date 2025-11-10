@@ -5,7 +5,7 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord
+from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord, BaseDataset
 from core.repositories.BaseRepository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,11 @@ class DSViewRecordRepository(BaseRepository):
 
 class DataSetRepository(BaseRepository):
     def __init__(self):
-        super().__init__(DataSet)
+        # Use BaseDataset as the repository model so that all dataset polymorphic
+        # types (uvl, tabular, etc.) are returned by queries. Previously the
+        # module exported `DataSet = UVLDataset` which caused tabular datasets
+        # to be excluded from listings.
+        super().__init__(BaseDataset)
 
     def get_synchronized(self, current_user_id: int) -> DataSet:
         return (

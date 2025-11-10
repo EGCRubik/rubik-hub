@@ -149,7 +149,8 @@ def create_dataset():
         dataset_type = request.form.get("dataset_type", "uvl")
 
         if dataset_type == "tabular":
-            return redirect(url_for("tabular.upload_tabular"))
+            # Render the tabular continuation page with the same form (pre-filled)
+            return render_template("tabular/upload_tabular.html", form=form)
 
         # Render the UVL continuation page with the same form (pre-filled)
         # so the user does not lose the basic info and the final upload can

@@ -87,6 +87,16 @@ class BaseDataset(db.Model):
     def ui_blocks(self):
         return ["common-meta", "versioning"]
 
+    def get_uvlhub_doi(self):
+        """
+        Default helper used by templates to return a DOI/URL for the dataset.
+        Implemented on the base class so non-UVL dataset types (e.g. tabular)
+        also expose this method and don't break template rendering.
+        """
+        from app.modules.dataset.services import DataSetService
+
+        return DataSetService().get_uvlhub_doi(self)
+
 
 class UVLDataset(BaseDataset):
     __mapper_args__ = {"polymorphic_identity": "uvl"}

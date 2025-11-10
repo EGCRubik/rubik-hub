@@ -17,7 +17,32 @@
 <div class="row">
   <div class="col-xl-6 col-lg-8 col-md-12 col-sm-12">
 
+    {# Form contains both basic info (pre-filled) and the CSV upload fields #}
     <form method="post" action="{{ url_for('tabular.upload_tabular') }}" enctype="multipart/form-data">
+      {{ form.hidden_tag() }}
+      <div id="basic_info_form" style="padding-left: 1rem; margin-bottom: 1rem;">
+        <h2 class="h4">Basic info</h2>
+        <div class="mb-2">
+          {{ form.title.label(class="form-label") }}
+          {{ form.title(class="form-control", readonly=True) }}
+        </div>
+        <div class="mb-2">
+          {{ form.desc.label(class="form-label") }}
+          {{ form.desc(rows=3, class="form-control", readonly=True) }}
+        </div>
+        <div class="mb-2">
+          {{ form.publication_type.label(class="form-label") }}
+          {{ form.publication_type(class="form-control", disabled=True) }}
+        </div>
+        <div class="mb-2">
+          {{ form.publication_doi.label(class="form-label") }}
+          {{ form.publication_doi(class="form-control", readonly=True) }}
+        </div>
+        <div class="mb-2">
+          {{ form.tags.label(class="form-label") }}
+          {{ form.tags(class="form-control", readonly=True) }}
+        </div>
+      </div>
 
       <!-- 1. Fichero CSV -->
       <div class="mb-3">

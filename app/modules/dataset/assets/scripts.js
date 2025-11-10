@@ -131,7 +131,7 @@ var currentId = 0;
             upload_error.appendChild(alert);
             upload_error.style.display = 'block';
         }
-
+        
         window.addEventListener('load', function () {
 
             try {
@@ -233,26 +233,32 @@ var currentId = 0;
                             method: 'POST',
                             body: formUploadData
                         })
-                            .then(response => {
-                                if (response.ok) {
-                                    console.log('Dataset sent successfully');
-                                    response.json().then(data => {
-                                        console.log(data.message);
-                                        window.location.href = "/dataset/list";
-                                    });
-                                } else {
-                                    response.json().then(data => {
-                                        console.error('Error: ' + data.message);
-                                        hide_loading();
-
-                                        write_upload_error(data.message);
-
-                                    });
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error in POST request:', error);
-                            });
+                        // always attempt to parse JSON, but keep response.ok
+                        .then(response => response.text().then(text => {
+                            let data = null;
+                            try { data = text ? JSON.parse(text) : {}; } catch (e) { data = {raw: text}; }
+                            return { ok: response.ok, status: response.status, data };
+                        }))
+                        .then(result => {
+                            if (result.ok) {
+                                console.log('Dataset sent successfully', result.data);
+                                try {
+                                    write_upload_success(result.data && result.data.message ? result.data.message : 'Dataset created');
+                                } catch (e) { console.warn('Could not show success message', e); }
+                                // small delay so user sees the success message
+                                setTimeout(() => { window.location.href = "/dataset/list"; }, 800);
+                            } else {
+                                console.error('Error creating dataset', result.status, result.data);
+                                hide_loading();
+                                const msg = (result.data && (result.data.message || result.data.Exception || JSON.stringify(result.data))) || ('Server returned ' + result.status);
+                                write_upload_error(msg);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error in POST request:', error);
+                            hide_loading();
+                            write_upload_error(error && error.message ? error.message : String(error));
+                        });
                     }
 
 
