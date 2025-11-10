@@ -33,9 +33,11 @@ jobs:
 
       - name: Compute commits per author
         run: |
+          # Ensure we have full history
           git fetch --all --prune
           echo "# Commits per author" >> contributor_stats.txt
-          git shortlog -sne --no-merges | awk '{count=$1; $1=""; sub(/^\t+/, ""); print count "\t" $0}' | sort -nr >> contributor_stats.txt
+          # shortlog -s -n prints counts and author names; remove leading spaces and format as "count<TAB>author"
+          git shortlog -s -n --no-merges | sed -E 's/^[[:space:]]*([0-9]+)[[:space:]]+(.*)/\1\t\2/' >> contributor_stats.txt
           echo "" >> contributor_stats.txt
 
       - name: Upload stats artifact
