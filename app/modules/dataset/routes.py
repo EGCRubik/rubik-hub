@@ -284,6 +284,8 @@ def delete():
 def download_dataset(dataset_id):
     dataset = dataset_service.get_or_404(dataset_id)
 
+    DataSetService.update_download_count(dataset_id)
+    
     file_path = f"uploads/user_{dataset.user_id}/dataset_{dataset.id}/"
 
     temp_dir = tempfile.mkdtemp()

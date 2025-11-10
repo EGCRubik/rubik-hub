@@ -49,6 +49,14 @@ class DataSetService(BaseService):
         self.dsviewrecord_repostory = DSViewRecordRepository()
         self.hubfileviewrecord_repository = HubfileViewRecordRepository()
 
+    def update_download_count(dataset_id):
+        dataset = Dataset.query.get(dataset_id)
+        number_of_downloads = DataSetService().get_number_of_downloads(dataset_id)
+        if dataset:
+            dataset.download_count = number_of_downloads + 1
+            db.session.commit()
+
+
     def move_feature_models(self, dataset: DataSet):
         current_user = AuthenticationService().get_authenticated_user()
         source_dir = current_user.temp_folder()
@@ -145,6 +153,8 @@ class DataSetService(BaseService):
         domain = os.getenv("DOMAIN", "localhost")
         return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
 
+    def get_number_of_downloads(self, dataset_id: int) -> int:
+        return self.repository.get_number_of_downloads(dataset_id)
 
 class AuthorService(BaseService):
     def __init__(self):
