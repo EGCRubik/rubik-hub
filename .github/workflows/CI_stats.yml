@@ -3,7 +3,7 @@ name: Contributor Stats
 on:
   push:
     branches:
-      - main
+      - trunk
   workflow_dispatch: {}
 
 permissions:
@@ -29,6 +29,13 @@ jobs:
               /^==/ {author=substr($0,3); next}
               NF>=3 {add=$1; if(add=="-") add=0; adds[author]+=add}
               END {for (a in adds) print adds[a] "\t" a}' | sort -nr >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+
+      - name: Compute commits per author
+        run: |
+          git fetch --all --prune
+          echo "# Commits per author" >> contributor_stats.txt
+          git shortlog -sne --no-merges | awk '{count=$1; $1=""; sub(/^\t+/, ""); print count "\t" $0}' | sort -nr >> contributor_stats.txt
           echo "" >> contributor_stats.txt
 
       - name: Upload stats artifact
