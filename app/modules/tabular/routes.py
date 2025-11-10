@@ -80,3 +80,50 @@ def upload_tabular():
         return render_template("tabular/upload_tabular.html", error=str(e))
 
     return redirect(url_for('dataset.list_dataset'))
+
+@tabular_bp.route("/<int:dataset_id>", methods=["GET"])
+@login_required
+def show_tabular(dataset_id):
+    """Muestra la vista detallada de un dataset tabular."""
+
+    from app.modules.tabular.models import TabularDataset, TabularMetaData
+
+    # 1. Buscar el dataset tabular con su metadata asociada
+    tabular_ds = TabularDataset.query \
+        .filter_by(id=dataset_id) \
+        .first_or_404(description=f"Tabular dataset #{dataset_id} no encontrado")
+
+    meta = tabular_ds.meta_data
+
+    # 2. Validar acceso: solo el propietario o un admin pueden verlo
+    if tabular_ds.user_id != current_user.id and not current_user.is_admin:
+        return render_template(
+            "errors/403.html",
+            message="No tienes permiso para acceder a este dataset."
+        ), 403
+
+    # 3. (Opcional) Si hay sample_rows en JSON, asegurar que se pueden iterar
+    if meta and meta.sample_rows and isinstance(meta.sample_rows, str):
+        try:
+            import json
+            meta.sample_rows = json.loads(meta.sample_rows)
+        except Exception:
+            current_app.logger.warning(f"Error al parsear sample_rows para dataset {dataset_id}")
+
+    # 4. Renderizar la plantilla
+    return render_template(
+        "tabular/show.html",
+        dataset=tabular_ds,
+        meta=meta
+    )
+
+@tabular_bp.route("/download/<int:dataset_id>")
+@login_required
+def download_csv(dataset_id):
+    from flask import send_file
+    tabular_ds = TabularDataset.query.get_or_404(dataset_id)
+    csv_path = tabular_ds.get_csv_path()
+    if not csv_path or not os.path.exists(csv_path):
+        abort(404, "CSV no encontrado")
+    return send_file(csv_path, as_attachment=True)
+
