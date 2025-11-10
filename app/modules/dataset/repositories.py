@@ -102,6 +102,23 @@ class DataSetRepository(BaseRepository):
             .limit(5)
             .all()
         )
+    
+    def get_number_of_downloads(self, dataset_id: int) -> int:
+        dataset = self.model.query.filter_by(id=dataset_id).first()
+        if not dataset:
+            return 0
+
+        # If dataset types (e.g. tabular) expose a `metrics` relationship, prefer it
+        if hasattr(dataset, "metrics") and dataset.metrics:
+            # defensive: only return if the metrics object has the expected attribute
+            if hasattr(dataset.metrics, "number_of_downloads"):
+                return dataset.metrics.number_of_downloads or 0
+
+        # Fallback: DSMetaData may have a related DSMetrics instance
+        if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data and getattr(dataset.ds_meta_data, "ds_metrics", None):
+            return dataset.ds_meta_data.ds_metrics.number_of_downloads or 0
+
+        return 0
 
 
 class DOIMappingRepository(BaseRepository):
