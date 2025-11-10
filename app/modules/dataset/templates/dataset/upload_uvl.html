@@ -28,6 +28,32 @@
 
   <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
 
+    <!-- Basic info form (pre-filled from previous step) -->
+    <div id="basic_info_form" style="padding-left: 1rem; margin-bottom: 1rem;">
+      {{ form.hidden_tag() }}
+      <h2 class="h4">Basic info</h2>
+      <div class="mb-2">
+        {{ form.title.label(class="form-label") }}
+        {{ form.title(class="form-control", readonly=True) }}
+      </div>
+      <div class="mb-2">
+        {{ form.desc.label(class="form-label") }}
+        {{ form.desc(rows=3, class="form-control", readonly=True) }}
+      </div>
+      <div class="mb-2">
+        {{ form.publication_type.label(class="form-label") }}
+        {{ form.publication_type(class="form-control", disabled=True) }}
+      </div>
+      <div class="mb-2">
+        {{ form.publication_doi.label(class="form-label") }}
+        {{ form.publication_doi(class="form-control", readonly=True) }}
+      </div>
+      <div class="mb-2">
+        {{ form.tags.label(class="form-label") }}
+        {{ form.tags(class="form-control", readonly=True) }}
+      </div>
+    </div>
+
     <h1 class="h3 mb-3 mt-2">UVL models</h1>
 
     <div id="uploaded_models_form" style="padding-left: 2rem">
