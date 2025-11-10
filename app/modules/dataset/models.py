@@ -45,9 +45,10 @@ class DSMetrics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number_of_models = db.Column(db.String(120))
     number_of_features = db.Column(db.String(120))
+    number_of_downloads = db.Column(db.Integer, default=0)
 
     def __repr__(self):
-        return f"DSMetrics<models={self.number_of_models}, features={self.number_of_features}>"
+        return f"DSMetrics<models={self.number_of_models}, features={self.number_of_features}, downloads={self.number_of_downloads}>"
 
 
 class DSMetaData(db.Model):
