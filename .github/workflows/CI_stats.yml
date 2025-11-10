@@ -31,15 +31,6 @@ jobs:
               END {for (a in adds) print adds[a] "\t" a}' | sort -nr >> contributor_stats.txt
           echo "" >> contributor_stats.txt
 
-      - name: Compute commits per author
-        run: |
-          # Ensure we have full history
-          git fetch --all --prune
-          echo "# Commits per author" >> contributor_stats.txt
-          # shortlog -s -n prints counts and author names; remove leading spaces and format as "count<TAB>author"
-          git shortlog -s -n --no-merges | sed -E 's/^[[:space:]]*([0-9]+)[[:space:]]+(.*)/\1\t\2/' >> contributor_stats.txt
-          echo "" >> contributor_stats.txt
-
       - name: Upload stats artifact
         uses: actions/upload-artifact@v4
         with:
