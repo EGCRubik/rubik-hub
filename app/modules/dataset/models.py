@@ -81,6 +81,57 @@ class BaseDataset(db.Model):
         "with_polymorphic": "*",
     }
 
+    def get_cleaned_publication_type(self):
+        """Devuelve el tipo de publicación limpiado desde DSMetaData si existe."""
+        if self.ds_meta_data and hasattr(self.ds_meta_data, "get_cleaned_publication_type"):
+            return self.ds_meta_data.get_cleaned_publication_type()
+        return None
+    
+    def get_files_count(self):
+        """
+        Devuelve el número de archivos asociados al dataset.
+        Por defecto, los datasets tabulares tienen un único CSV.
+        """
+        try:
+            # Si hay un atributo 'files' en otros tipos de dataset (por ejemplo image, model, etc.)
+            if hasattr(self, "files") and self.files:
+                return len(self.files)
+            # En datasets tabulares normalmente hay 1 archivo CSV
+            return 1
+        except Exception:
+            return 0
+    
+    def get_file_total_size_for_human(self):
+        """
+        Devuelve el tamaño total de los archivos del dataset en formato legible (KB, MB, GB).
+        Para datasets tabulares, devuelve el tamaño estimado del CSV si existe.
+        """
+        total_bytes = 0
+
+        # 1️⃣ Si hay relación con archivos (otros tipos de dataset)
+        if hasattr(self, "files") and self.files:
+            total_bytes = sum(getattr(f, "size", 0) for f in self.files)
+
+        # 2️⃣ Si es tabular, intenta estimar a partir del CSV en carpeta temporal
+        elif hasattr(self, "get_csv_path"):
+            try:
+                import os
+                csv_path = self.get_csv_path()
+                if csv_path and os.path.exists(csv_path):
+                    total_bytes = os.path.getsize(csv_path)
+            except Exception:
+                pass
+
+        # 3️⃣ Convierte a formato legible
+        if total_bytes == 0:
+            return "0 B"
+
+        units = ["B", "KB", "MB", "GB", "TB"]
+        size = float(total_bytes)
+        i = int(math.floor(math.log(size, 1024)))
+        human_size = round(size / (1024 ** i), 2)
+        return f"{human_size} {units[i]}"
+
     def validate_domain(self):
         pass
 
