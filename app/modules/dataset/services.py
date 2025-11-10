@@ -105,7 +105,13 @@ class DataSetService(BaseService):
                 author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
                 dsmetadata.authors.append(author)
 
-            dataset = self.create(commit=False, user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
+            from app.modules.dataset.models import UVLDataset
+
+            dataset = UVLDataset(user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
+            
+            self.repository.session.add(dataset)
+            
+            self.repository.session.flush()
 
             for feature_model in form.feature_models:
                 uvl_filename = feature_model.uvl_filename.data
@@ -118,7 +124,6 @@ class DataSetService(BaseService):
                     commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
                 )
 
-                # associated files in feature model
                 file_path = os.path.join(current_user.temp_folder(), uvl_filename)
                 checksum, size = calculate_checksum_and_size(file_path)
 
