@@ -24,6 +24,7 @@ from app.modules.hubfile.repositories import (
     HubfileViewRecordRepository,
 )
 from core.services.BaseService import BaseService
+from app import db
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class DataSetService(BaseService):
         dataset = DataSet.query.get(dataset_id)
         number_of_downloads = self.repository.get_number_of_downloads(dataset_id)
         if dataset:
-            dataset.download_count = number_of_downloads + 1
+            dataset.download_count = int(number_of_downloads) + 1
             db.session.commit()
 
 

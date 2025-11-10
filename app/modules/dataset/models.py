@@ -45,7 +45,7 @@ class DSMetrics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number_of_models = db.Column(db.String(120))
     number_of_features = db.Column(db.String(120))
-    number_of_downloads = db.Column(db.Integer, default=0)
+    
 
     def __repr__(self):
         return f"DSMetrics<models={self.number_of_models}, features={self.number_of_features}, downloads={self.number_of_downloads}>"
@@ -63,7 +63,7 @@ class DSMetaData(db.Model):
     ds_metrics_id = db.Column(db.Integer, db.ForeignKey("ds_metrics.id"))
     ds_metrics = db.relationship("DSMetrics", uselist=False, backref="ds_meta_data", cascade="all, delete")
     authors = db.relationship("Author", backref="ds_meta_data", lazy=True, cascade="all, delete")
-
+    number_of_downloads = db.Column(db.Integer, default=0)
 
 class BaseDataset(db.Model):
     __tablename__ = "data_set"
