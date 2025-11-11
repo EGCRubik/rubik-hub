@@ -1,0 +1,214 @@
+{% extends "base_template.html" %}
+
+{% block title %}Community: {{ community.name }}{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+  <div class="col-6">
+    <a href="/authors-and-communities" class="btn btn-light btn-sm" style="border-radius:5px">
+      <i data-feather="arrow-left"></i> Back to list
+    </a>
+  </div>
+</div>
+
+<div class="row">
+
+  <div class="col-xl-8 col-lg-12 col-md-12 col-sm-12">
+
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+          <h1><b>{{ community.name }}</b></h1>
+          {% if community.banner_color %}
+          <span class="badge" style=>&nbsp;&nbsp;</span>
+          {% endif %}
+        </div>
+
+        <p class="text-secondary">{{ community.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+
+        <div class="row mb-3">
+          <div class="col-md-3 col-12 text-secondary">Description</div>
+          <div class="col-md-9 col-12">
+            <p class="mb-0">{{ community.description }}</p>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-3 col-12 text-secondary">Curators</div>
+          <div class="col-md-9 col-12">
+            {% for u in community.curators.all() %}
+            <span class="badge bg-secondary" style="margin-bottom:4px">
+              {% if u.profile %}{{ u.profile.surname }}, {{ u.profile.name }}{% else %}User #{{ u.id }}{% endif %}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="row mb-2">
+          <div class="col-md-3 col-12 text-secondary">Approved datasets</div>
+          <div class="col-md-9 col-12">
+            {% set approved = community.approved_datasets() %}
+            {% if approved %}
+            <ul class="mb-0">
+              {% for ds in approved %}
+              <li>
+                {{ ds.ds_meta_data.title if ds.ds_meta_data else ('Dataset #' ~ ds.id) }}
+                <a href="/dataset/download/{{ ds.id }}" class="btn btn-link btn-sm" style="border-radius:5px">
+                  <i data-feather="download"></i> Download all
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <span class="text-muted">No approved datasets yet.</span>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Propose dataset -->
+    {% if current_user.is_authenticated %}
+    <div class="card mt-3">
+      <div class="card-body">
+        <h4 class="mb-3">Propose a dataset</h4>
+        <form id="proposeForm">
+          <div class="row">
+            <div class="col-lg-6 col-12">
+              <div class="mb-3">
+                <label class="form-label">Dataset ID</label>
+                <input type="number" min="1" class="form-control" name="dataset_id" placeholder="e.g. 123">
+              </div>
+            </div>
+          </div>
+          <div id="proposeMsg" class="text-danger mb-2" style="display:none"></div>
+          <button type="submit" class="btn btn-outline-primary btn-sm" style="border-radius:5px">
+            <i data-feather="plus-circle"></i> Propose
+          </button>
+          <div id="proposeLoading" class="mt-2" style="display:none">
+            <img width="24" src="{{ url_for('static', filename='gifs/loading.svg') }}" />
+            Sending proposal...
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Pending proposals (only curators) -->
+    {% if current_user.is_authenticated and community.curators.filter_by(id=current_user.id).first() %}
+    <div class="card mt-3">
+      <div class="card-body">
+        <h4 class="mb-3">Pending proposals</h4>
+        <div id="pendingList">
+          {% set pending = community.datasets_links.filter_by(status='pending').all() %}
+          {% if pending %}
+          <ul class="list-group">
+            {% for link in pending %}
+            {% if link.dataset and link.dataset.ds_meta_data %}
+            <a href="/doi/{{ link.dataset.ds_meta_data.dataset_doi }}"
+              class="list-group-item d-flex justify-content-between align-items-center">
+              <span>
+                Dataset #{{ link.dataset_id }}
+                — {{ link.dataset.ds_meta_data.title }}
+                <small class="text-muted"> (by user #{{ link.proposed_by_id }})</small>
+              </span>
+              <span>
+                <button data-link="{{ link.id }}" class="btn btn-success btn-sm approve-btn"
+                  style="border-radius:5px;margin-right:6px">
+                  <i data-feather="check"></i> Approve
+                </button>
+                <button data-link="{{ link.id }}" class="btn btn-outline-danger btn-sm reject-btn"
+                  style="border-radius:5px">
+                  <i data-feather="x"></i> Reject
+                </button>
+              </span>
+            </a>
+            {% endif %}
+            {% endfor %}
+          </ul>
+          {% else %}
+          <span class="text-muted">No pending proposals.</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+    <form method="POST"
+      action="{{ url_for('followCommunity.unfollow' if is_following else 'followCommunity.follow', community_id=community.id) }}"
+      style="display: inline;">
+      <button type="submit" class="btn {{ 'btn-danger' if is_following else 'btn-primary' }}">
+        {{ 'Dejar de seguir' if is_following else 'Seguir' }}
+      </button>
+    </form>
+    {% endif %}
+
+
+  </div>
+
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    feather.replace();
+
+    // Propose dataset
+    const form = document.getElementById('proposeForm');
+    const msg = document.getElementById('proposeMsg');
+    const loading = document.getElementById('proposeLoading');
+
+    if (form) {
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        msg.style.display = 'none';
+        loading.style.display = 'inline-block';
+
+        const fd = new FormData(form);
+        try {
+          const res = await fetch(window.location.pathname + '/propose', { method: 'POST', body: fd });
+          const data = await res.json();
+          loading.style.display = 'none';
+          if (!res.ok) {
+            msg.textContent = (data.message || 'Invalid dataset');
+            msg.style.display = 'block';
+            return;
+          }
+          msg.classList.remove('text-danger');
+          msg.classList.add('text-success');
+          msg.textContent = 'Proposal sent!';
+          msg.style.display = 'block';
+          form.reset();
+        } catch (e) {
+          loading.style.display = 'none';
+          msg.textContent = 'Unexpected error: ' + e.message;
+          msg.style.display = 'block';
+        }
+      });
+    }
+
+    // Approve/Reject (only for curators)
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-link');
+        const res = await fetch(window.location.pathname + `/proposals/${id}/approve`, { method: 'POST' });
+        if (res.ok) location.reload();
+      });
+    });
+
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-link');
+        const res = await fetch(window.location.pathname + `/proposals/${id}/reject`, { method: 'POST' });
+        if (res.ok) location.reload();
+      });
+    });
+  });
+</script>
+{% endblock %}

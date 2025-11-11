@@ -5,8 +5,10 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord
+from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord, BaseDataset
 from core.repositories.BaseRepository import BaseRepository
+
+from app import db
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +61,11 @@ class DSViewRecordRepository(BaseRepository):
 
 class DataSetRepository(BaseRepository):
     def __init__(self):
-        super().__init__(DataSet)
+        # Use BaseDataset as the repository model so that all dataset polymorphic
+        # types (uvl, tabular, etc.) are returned by queries. Previously the
+        # module exported `DataSet = UVLDataset` which caused tabular datasets
+        # to be excluded from listings.
+        super().__init__(BaseDataset)
 
     def get_synchronized(self, current_user_id: int) -> DataSet:
         return (
@@ -98,6 +104,72 @@ class DataSetRepository(BaseRepository):
             .limit(5)
             .all()
         )
+    
+    def get_number_of_downloads(self, dataset_id: int) -> int:
+        dataset = self.model.query.filter_by(id=dataset_id).first()
+        if not dataset:
+            return 0
+
+        # If dataset types (e.g. tabular) expose a `metrics` relationship, prefer it
+        if hasattr(dataset, "metrics") and dataset.metrics:
+            # defensive: only return if the metrics object has the expected attribute
+            if hasattr(dataset.metrics, "number_of_downloads"):
+                return dataset.metrics.number_of_downloads or 0
+
+        # Fallback: DSMetaData may have a related DSMetrics instance
+        if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data and getattr(dataset.ds_meta_data, "ds_metrics", None):
+            return dataset.ds_meta_data.ds_metrics.number_of_downloads or 0
+
+        return 0
+
+    def get_by_id(self, dataset_id: int) -> Optional[DataSet]:
+        return DataSet.query.get(dataset_id)
+
+    def update_download_count(self, dataset, new_count):
+        """Update the number_of_downloads for a dataset.
+
+        Prefer dataset.metrics.number_of_downloads if present (other dataset types
+        like TabularDataset use a `metrics` relationship). Otherwise, update or
+        create the DSMetrics attached to the dataset's DSMetaData.
+        """
+        if not dataset:
+            return None
+
+        # 1) If dataset exposes a 'metrics' relationship (e.g. TabularDataset)
+        if hasattr(dataset, "metrics") and getattr(dataset, "metrics", None):
+            metrics = dataset.metrics
+            if hasattr(metrics, "number_of_downloads"):
+                metrics.number_of_downloads = new_count
+                db.session.add(metrics)
+                db.session.commit()
+                return metrics
+
+        # 2) Fallback to DSMetaData.ds_metrics for UVL datasets
+        if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data:
+            ds_metrics = getattr(dataset.ds_meta_data, "ds_metrics", None)
+            if ds_metrics:
+                ds_metrics.number_of_downloads = new_count
+                db.session.add(ds_metrics)
+                db.session.commit()
+                return ds_metrics
+            else:
+                # create DSMetrics record and attach it
+                try:
+                    from app.modules.dataset.models import DSMetrics
+
+                    new_metrics = DSMetrics(number_of_models=None, number_of_features=None, number_of_downloads=new_count)
+                    db.session.add(new_metrics)
+                    db.session.flush()
+                    dataset.ds_meta_data.ds_metrics_id = new_metrics.id
+                    dataset.ds_meta_data.ds_metrics = new_metrics
+                    db.session.add(dataset.ds_meta_data)
+                    db.session.commit()
+                    return new_metrics
+                except Exception:
+                    db.session.rollback()
+                    raise
+
+        return None
 
 
 class DOIMappingRepository(BaseRepository):

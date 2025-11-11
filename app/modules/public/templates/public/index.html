@@ -16,15 +16,19 @@
             {% for dataset in datasets %}
                 <div class="card">
                     <div class="card-body">
+                        {# If this dataset is a Data Management Plan, render a small download icon + count inline with the title #}
+                        {% set is_dmp = (dataset.ds_meta_data and dataset.ds_meta_data.publication_type and dataset.ds_meta_data.publication_type.value == 'datamanagementplan') %}
                         <div class="d-flex align-items-center justify-content-between">
-                            <h2>
-
-                                <a href="{{ dataset.get_uvlhub_doi() }}">
-                                    {{ dataset.ds_meta_data.title }}
-                                </a>
-
+                            <h2 class="mb-0">
+                                <a href="{{ dataset.get_uvlhub_doi() }}">{{ dataset.ds_meta_data.title }}</a>
                             </h2>
-                            <div>
+                            <div class="d-flex align-items-center">
+                                {% if is_dmp %}
+                                    <span class="me-2 text-center d-none d-md-inline-flex flex-column align-items-center" style="width:48px">
+                                        <i data-feather="download"></i>
+                                        <small class="text-muted">{{ dataset.ds_meta_data.ds_metrics.number_of_downloads if (dataset.ds_meta_data and dataset.ds_meta_data.ds_metrics and dataset.ds_meta_data.ds_metrics.number_of_downloads) else 0 }}</small>
+                                    </span>
+                                {% endif %}
                                 <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
                             </div>
                         </div>

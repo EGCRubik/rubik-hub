@@ -59,8 +59,14 @@ function send_query() {
                                 <div class="card-body">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <h3><a href="${dataset.url}">${dataset.title}</a></h3>
-                                        <div>
-                                            <span class="badge bg-primary" style="cursor: pointer;" onclick="set_publication_type_as_query('${dataset.publication_type}')">${dataset.publication_type}</span>
+                                        <div class="d-flex align-items-center">
+                                            <div class="d-flex flex-column align-items-center" style="width:48px">
+                                                <i data-feather="download"></i>
+                                                <small class="text-muted mt-1">${dataset.downloads || 0}</small>
+                                            </div>
+                                            <div class="ms-2">
+                                                <span class="badge bg-primary" style="cursor: pointer;" onclick="set_publication_type_as_query('${dataset.publication_type}')">${dataset.publication_type}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <p class="text-secondary">${formatDate(dataset.created_at)}</p>
@@ -129,6 +135,14 @@ function send_query() {
 
                         document.getElementById('results').appendChild(card);
                     });
+                    // Replace feather icons after DOM insertion so the download icon renders
+                    try {
+                        if (typeof feather !== 'undefined') {
+                            feather.replace();
+                        }
+                    } catch (e) {
+                        console.error('Error replacing feather icons:', e);
+                    }
                 });
         });
     });
