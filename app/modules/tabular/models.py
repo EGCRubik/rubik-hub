@@ -18,6 +18,15 @@ class TabularDataset(BaseDataset):
 
     def ui_blocks(self):
         return ["common-meta", "table-schema", "sample-rows", "versioning"]
+    
+    def get_csv_path(self):
+        """Devuelve la ruta completa del CSV asociado a este dataset."""
+        temp_folder = self.user.temp_folder()
+        if os.path.exists(temp_folder):
+            for f in os.listdir(temp_folder):
+                if f.lower().endswith(".csv"):
+                    return os.path.join(temp_folder, f)
+        return None
 
 
 class TabularMetaData(db.Model):

@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 
 from flask import request
+import math
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app import db
@@ -45,9 +46,10 @@ class DSMetrics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number_of_models = db.Column(db.String(120))
     number_of_features = db.Column(db.String(120))
+    number_of_downloads = db.Column(db.Integer, default=0)
 
     def __repr__(self):
-        return f"DSMetrics<models={self.number_of_models}, features={self.number_of_features}>"
+        return f"DSMetrics<models={self.number_of_models}, features={self.number_of_features}, downloads={self.number_of_downloads}>"
 
 
 class DSMetaData(db.Model):
@@ -81,11 +83,72 @@ class BaseDataset(db.Model):
         "with_polymorphic": "*",
     }
 
+    def get_cleaned_publication_type(self):
+        """Devuelve el tipo de publicación limpiado desde DSMetaData si existe."""
+        if self.ds_meta_data and hasattr(self.ds_meta_data, "get_cleaned_publication_type"):
+            return self.ds_meta_data.get_cleaned_publication_type()
+        return None
+    
+    def get_files_count(self):
+        """
+        Devuelve el número de archivos asociados al dataset.
+        Por defecto, los datasets tabulares tienen un único CSV.
+        """
+        try:
+            # Si hay un atributo 'files' en otros tipos de dataset (por ejemplo image, model, etc.)
+            if hasattr(self, "files") and self.files:
+                return len(self.files)
+            # En datasets tabulares normalmente hay 1 archivo CSV
+            return 1
+        except Exception:
+            return 0
+    
+    def get_file_total_size_for_human(self):
+        """
+        Devuelve el tamaño total de los archivos del dataset en formato legible (KB, MB, GB).
+        Para datasets tabulares, devuelve el tamaño estimado del CSV si existe.
+        """
+        total_bytes = 0
+
+        # 1️⃣ Si hay relación con archivos (otros tipos de dataset)
+        if hasattr(self, "files") and self.files:
+            total_bytes = sum(getattr(f, "size", 0) for f in self.files)
+
+        # 2️⃣ Si es tabular, intenta estimar a partir del CSV en carpeta temporal
+        elif hasattr(self, "get_csv_path"):
+            try:
+                import os
+                csv_path = self.get_csv_path()
+                if csv_path and os.path.exists(csv_path):
+                    total_bytes = os.path.getsize(csv_path)
+            except Exception:
+                pass
+
+        # 3️⃣ Convierte a formato legible
+        if total_bytes == 0:
+            return "0 B"
+
+        units = ["B", "KB", "MB", "GB", "TB"]
+        size = float(total_bytes)
+        i = int(math.floor(math.log(size, 1024)))
+        human_size = round(size / (1024 ** i), 2)
+        return f"{human_size} {units[i]}"
+
     def validate_domain(self):
         pass
 
     def ui_blocks(self):
         return ["common-meta", "versioning"]
+
+    def get_uvlhub_doi(self):
+        """
+        Default helper used by templates to return a DOI/URL for the dataset.
+        Implemented on the base class so non-UVL dataset types (e.g. tabular)
+        also expose this method and don't break template rendering.
+        """
+        from app.modules.dataset.services import DataSetService
+
+        return DataSetService().get_uvlhub_doi(self)
 
 
 class UVLDataset(BaseDataset):
@@ -139,6 +202,7 @@ class UVLDataset(BaseDataset):
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
             "url": self.get_uvlhub_doi(),
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
+            "downloads": (self.ds_meta_data.ds_metrics.number_of_downloads if (self.ds_meta_data and getattr(self.ds_meta_data, 'ds_metrics', None) and self.ds_meta_data.ds_metrics.number_of_downloads) else 0),
             "zenodo": self.get_zenodo_url(),
             "files": [file.to_dict() for fm in self.feature_models for file in fm.files],
             "files_count": self.get_files_count(),

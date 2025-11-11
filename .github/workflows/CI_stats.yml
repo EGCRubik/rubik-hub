@@ -1,0 +1,38 @@
+name: Contributor Stats
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  issues: read
+  contents: read
+
+jobs:
+  stats:
+    name: Compute contributor stats
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute lines contributed per author
+        run: |
+          git fetch --all --prune
+          echo "# Lines contributed per author (additions)" > contributor_stats.txt
+          git log --no-merges --numstat --pretty=format:"==%aN" | \
+            awk -F"\t" '
+              /^==/ {author=substr($0,3); next}
+              NF>=3 {add=$1; if(add=="-") add=0; adds[author]+=add}
+              END {for (a in adds) print adds[a] "\t" a}' | sort -nr >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+
+      - name: Upload stats artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: contributor_stats
+          path: contributor_stats.txt

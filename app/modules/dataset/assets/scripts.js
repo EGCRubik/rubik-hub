@@ -15,7 +15,7 @@ var currentId = 0;
 
             let label = document.createElement('label');
             label.className = 'form-label';
-            label.for = name;
+            label.htmlFor = name;
             label.textContent = text;
 
             let field = document.createElement('input');
@@ -82,11 +82,15 @@ var currentId = 0;
         }
 
 
-        document.getElementById('add_author').addEventListener('click', function () {
-            let authors = document.getElementById('authors');
-            let newAuthor = createAuthorBlock(amount_authors++, "");
-            authors.appendChild(newAuthor);
-        });
+        // attach add_author handler only if the button exists on the page
+        const addAuthorBtn = document.getElementById('add_author');
+        if (addAuthorBtn) {
+            addAuthorBtn.addEventListener('click', function () {
+                const authors = document.getElementById('authors');
+                const newAuthor = createAuthorBlock(amount_authors++, "");
+                if (authors) authors.appendChild(newAuthor);
+            });
+        }
 
 
         document.addEventListener('click', function (event) {
@@ -127,18 +131,39 @@ var currentId = 0;
             upload_error.appendChild(alert);
             upload_error.style.display = 'block';
         }
+        
+        window.addEventListener('load', function () {
 
-        window.onload = function () {
+            try {
+                test_fakenodo_connection();
+            } catch (e) {
+                console.error('test_fakenodo_connection error or not defined:', e);
+            }
 
-            test_fakenodo_connection();
+            const uploadBtn = document.getElementById('upload_button');
+            if (!uploadBtn) {
+                console.warn('upload_button not found in DOM');
+                return;
+            }
 
-            document.getElementById('upload_button').addEventListener('click', function () {
-
-                clean_upload_errors();
-                show_loading();
+            uploadBtn.addEventListener('click', function () {
+                    console.log('upload_button clicked');
+                    try {
+                        clean_upload_errors();
+                        show_loading();
+                    } catch (e) {
+                        console.error('Error during initial UI update:', e);
+                    }
 
                 // check title and description
-                let check = check_title_and_description();
+                let check = true;
+                try {
+                    check = check_title_and_description();
+                } catch (e) {
+                    console.error('Error during title/description check:', e);
+                    // if elements missing, proceed cautiously
+                    check = true;
+                }
 
                 if (check) {
                     // process data form
@@ -158,13 +183,20 @@ var currentId = 0;
                     let formDataJson = JSON.stringify(formData);
                     console.log(formDataJson);
 
-                    const csrfToken = document.getElementById('csrf_token').value;
+                    const csrfEl = document.querySelector('input[name="csrf_token"]');
                     const formUploadData = new FormData();
-                    formUploadData.append('csrf_token', csrfToken);
+                    if (csrfEl) {
+                        formUploadData.append('csrf_token', csrfEl.value);
+                    }
 
                     for (let key in formData) {
                         if (formData.hasOwnProperty(key)) {
-                            formUploadData.set(key, formData[key]);
+                            const val = formData[key];
+                            if (Array.isArray(val)) {
+                                val.forEach(v => formUploadData.append(key, v));
+                            } else {
+                                formUploadData.append(key, val);
+                            }
                         }
                     }
 
@@ -197,30 +229,36 @@ var currentId = 0;
 
 
                     if (checked_orcid && checked_name) {
-                        fetch('/dataset/upload', {
+                        fetch('/dataset/upload/uvl', {
                             method: 'POST',
                             body: formUploadData
                         })
-                            .then(response => {
-                                if (response.ok) {
-                                    console.log('Dataset sent successfully');
-                                    response.json().then(data => {
-                                        console.log(data.message);
-                                        window.location.href = "/dataset/list";
-                                    });
-                                } else {
-                                    response.json().then(data => {
-                                        console.error('Error: ' + data.message);
-                                        hide_loading();
-
-                                        write_upload_error(data.message);
-
-                                    });
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error in POST request:', error);
-                            });
+                        // always attempt to parse JSON, but keep response.ok
+                        .then(response => response.text().then(text => {
+                            let data = null;
+                            try { data = text ? JSON.parse(text) : {}; } catch (e) { data = {raw: text}; }
+                            return { ok: response.ok, status: response.status, data };
+                        }))
+                        .then(result => {
+                            if (result.ok) {
+                                console.log('Dataset sent successfully', result.data);
+                                try {
+                                    write_upload_success(result.data && result.data.message ? result.data.message : 'Dataset created');
+                                } catch (e) { console.warn('Could not show success message', e); }
+                                // small delay so user sees the success message
+                                setTimeout(() => { window.location.href = "/dataset/list"; }, 800);
+                            } else {
+                                console.error('Error creating dataset', result.status, result.data);
+                                hide_loading();
+                                const msg = (result.data && (result.data.message || result.data.Exception || JSON.stringify(result.data))) || ('Server returned ' + result.status);
+                                write_upload_error(msg);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error in POST request:', error);
+                            hide_loading();
+                            write_upload_error(error && error.message ? error.message : String(error));
+                        });
                     }
 
 
@@ -230,10 +268,9 @@ var currentId = 0;
 
 
             });
-        };
+    });
 
-
-        function isValidOrcid(orcid) {
+    function isValidOrcid(orcid) {
             let orcidRegex = /^\d{4}-\d{4}-\d{4}-\d{4}$/;
             return orcidRegex.test(orcid);
         }

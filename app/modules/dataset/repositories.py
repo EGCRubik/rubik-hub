@@ -5,7 +5,7 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord
+from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord, BaseDataset
 from core.repositories.BaseRepository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,11 @@ class DSViewRecordRepository(BaseRepository):
 
 class DataSetRepository(BaseRepository):
     def __init__(self):
-        super().__init__(DataSet)
+        # Use BaseDataset as the repository model so that all dataset polymorphic
+        # types (uvl, tabular, etc.) are returned by queries. Previously the
+        # module exported `DataSet = UVLDataset` which caused tabular datasets
+        # to be excluded from listings.
+        super().__init__(BaseDataset)
 
     def get_synchronized(self, current_user_id: int) -> DataSet:
         return (
@@ -98,6 +102,23 @@ class DataSetRepository(BaseRepository):
             .limit(5)
             .all()
         )
+    
+    def get_number_of_downloads(self, dataset_id: int) -> int:
+        dataset = self.model.query.filter_by(id=dataset_id).first()
+        if not dataset:
+            return 0
+
+        # If dataset types (e.g. tabular) expose a `metrics` relationship, prefer it
+        if hasattr(dataset, "metrics") and dataset.metrics:
+            # defensive: only return if the metrics object has the expected attribute
+            if hasattr(dataset.metrics, "number_of_downloads"):
+                return dataset.metrics.number_of_downloads or 0
+
+        # Fallback: DSMetaData may have a related DSMetrics instance
+        if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data and getattr(dataset.ds_meta_data, "ds_metrics", None):
+            return dataset.ds_meta_data.ds_metrics.number_of_downloads or 0
+
+        return 0
 
 
 class DOIMappingRepository(BaseRepository):

@@ -49,6 +49,14 @@ class DataSetService(BaseService):
         self.dsviewrecord_repostory = DSViewRecordRepository()
         self.hubfileviewrecord_repository = HubfileViewRecordRepository()
 
+    def update_download_count(self,dataset_id):
+        dataset = DataSet.query.get(dataset_id)
+        number_of_downloads = self.repository.get_number_of_downloads(dataset_id)
+        if dataset:
+            dataset.download_count = number_of_downloads + 1
+            db.session.commit()
+
+
     def move_feature_models(self, dataset: DataSet):
         current_user = AuthenticationService().get_authenticated_user()
         source_dir = current_user.temp_folder()
@@ -105,7 +113,13 @@ class DataSetService(BaseService):
                 author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
                 dsmetadata.authors.append(author)
 
-            dataset = self.create(commit=False, user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
+            from app.modules.dataset.models import UVLDataset
+
+            dataset = UVLDataset(user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
+            
+            self.repository.session.add(dataset)
+            
+            self.repository.session.flush()
 
             for feature_model in form.feature_models:
                 uvl_filename = feature_model.uvl_filename.data
@@ -118,7 +132,6 @@ class DataSetService(BaseService):
                     commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
                 )
 
-                # associated files in feature model
                 file_path = os.path.join(current_user.temp_folder(), uvl_filename)
                 checksum, size = calculate_checksum_and_size(file_path)
 
@@ -140,6 +153,8 @@ class DataSetService(BaseService):
         domain = os.getenv("DOMAIN", "localhost")
         return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
 
+    def get_number_of_downloads(self, dataset_id: int) -> int:
+        return self.repository.get_number_of_downloads(dataset_id)
 
 class AuthorService(BaseService):
     def __init__(self):
