@@ -50,11 +50,11 @@ class DataSetService(BaseService):
         self.hubfileviewrecord_repository = HubfileViewRecordRepository()
 
     def update_download_count(self,dataset_id):
-        dataset = DataSet.query.get(dataset_id)
+        dataset = DataSetRepository.get_by_id(self, dataset_id)
         number_of_downloads = self.repository.get_number_of_downloads(dataset_id)
         if dataset:
             dataset.download_count = number_of_downloads + 1
-            db.session.commit()
+            DataSetRepository.update_download_count(self, dataset, dataset.download_count)
 
 
     def move_feature_models(self, dataset: DataSet):
