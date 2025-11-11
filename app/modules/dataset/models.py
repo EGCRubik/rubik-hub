@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 
 from flask import request
+import math
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app import db
@@ -201,6 +202,7 @@ class UVLDataset(BaseDataset):
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
             "url": self.get_uvlhub_doi(),
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
+            "downloads": (self.ds_meta_data.ds_metrics.number_of_downloads if (self.ds_meta_data and getattr(self.ds_meta_data, 'ds_metrics', None) and self.ds_meta_data.ds_metrics.number_of_downloads) else 0),
             "zenodo": self.get_zenodo_url(),
             "files": [file.to_dict() for fm in self.feature_models for file in fm.files],
             "files_count": self.get_files_count(),

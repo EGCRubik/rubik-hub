@@ -143,27 +143,31 @@
 
             {% if dataset.ds_meta_data.dataset_doi %}
             <div class="card-body" style="padding-top: 0px">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div id="dataset_doi_uvlhub" style="display: none">{{ dataset.get_uvlhub_doi() }}</div>
+                        <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_doi_uvlhub')">
+                            <span class="button_doi_id">
+                                <i data-feather="clipboard" class="center-button-icon" style="cursor: pointer"></i>
+                                <b>DOI</b>
+                            </span>
+                            <span class="doi_text">
+                                {{ dataset.get_uvlhub_doi() }}
+                            </span>
+                        </button>
+                    </div>
 
-                <div id="dataset_doi_uvlhub" style="display: none">
-                    {{ dataset.get_uvlhub_doi() }}
+                    <div class="d-flex flex-column align-items-center" style="width:48px">
+                        <i data-feather="download"></i>
+                        <small class="text-muted mt-1">
+                            {{ dataset.ds_meta_data.ds_metrics.number_of_downloads if (dataset.ds_meta_data and dataset.ds_meta_data.ds_metrics and dataset.ds_meta_data.ds_metrics.number_of_downloads) else 0 }}
+                        </small>
+                    </div>
                 </div>
-
-                <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_doi_uvlhub')">
-                    <span class="button_doi_id">
-                        <i data-feather="clipboard" class="center-button-icon" style="cursor: pointer"></i>
-                        <b>DOI</b>
-                    </span>
-                    <span class="doi_text">
-                        {{ dataset.get_uvlhub_doi() }}
-                    </span>
-                </button>
-
-                <div id="dataset_doi_uvlhub" style="display: none">
-                    {{ dataset.get_uvlhub_doi() }}
-                </div>
-
             </div>
             {% endif %}
+
+            
 
         </div>
 
