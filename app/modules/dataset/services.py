@@ -54,8 +54,8 @@ class DataSetService(BaseService):
         dataset = DataSetRepository.get_by_id(self, dataset_id)
         number_of_downloads = self.repository.get_number_of_downloads(dataset_id)
         if dataset:
-            dataset.download_count = number_of_downloads + 1
-            DataSetRepository.update_download_count(self, dataset, dataset.download_count)
+            new_download_count = number_of_downloads + 1
+            DataSetRepository.update_download_count(self, dataset, new_download_count)
 
     def move_feature_models(self, dataset: DataSet):
         current_user = AuthenticationService().get_authenticated_user()

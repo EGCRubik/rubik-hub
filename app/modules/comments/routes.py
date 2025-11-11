@@ -6,6 +6,7 @@ from app import db
 from app.modules.dataset.models import DataSet
 from app.modules.comments.models import Comments
 from app.modules.comments.services import CommentsService
+from app.modules.dataset.services import DataSetService
 comments_service = CommentsService()
 
 @comments_bp.route('/create/<int:dataset_id>', methods=['POST'])
@@ -19,7 +20,8 @@ def create_comment(dataset_id):
     if comment is None:
         return redirect(url_for("dataset.view_dataset", dataset_id=dataset.id))
 
-    return render_template("dataset/view_dataset.html", dataset=dataset)
+    downloads = DataSetService().get_number_of_downloads(dataset.id)
+    return render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads)
 
 
 @comments_bp.route('/delete/<int:comment_id>', methods=['POST'])
@@ -30,4 +32,5 @@ def delete_comment(comment_id):
     if result is None:
         return redirect(url_for("dataset.dataset", id=dataset.id))
 
-    return render_template("dataset/view_dataset.html", dataset=dataset)
+    downloads = DataSetService().get_number_of_downloads(dataset.id)
+    return render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads)
