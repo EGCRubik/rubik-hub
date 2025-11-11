@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.modules.followCommunity import followCommunity_bp
 from app.modules.followCommunity.models import Followcommunity
+from app.modules.community.models import Community
 
 @followCommunity_bp.route("/communities/follows")
 def index():
@@ -18,6 +19,7 @@ def follow(community_id):
         follower_id=current_user.id
     ).first()
 
+
     if not existing:
         follow = Followcommunity(
             community_id=community_id,
@@ -29,7 +31,9 @@ def follow(community_id):
     else:
         flash("Ya sigues esta comunidad.", "info")
 
-    return redirect(url_for("community.view", community_id=community_id))
+    community = Community.query.get_or_404(community_id)
+
+    return redirect(url_for("community.community_detail", slug=community.slug))
 
 
 @followCommunity_bp.route("/communities/<int:community_id>/unfollow", methods=["POST"])
@@ -45,4 +49,6 @@ def unfollow(community_id):
         db.session.commit()
         flash("Has dejado de seguir la comunidad.", "warning")
 
-    return redirect(url_for("community.view", community_id=community_id))
+    community = Community.query.get_or_404(community_id)
+
+    return redirect(url_for("community.community_detail", slug=community.slug))

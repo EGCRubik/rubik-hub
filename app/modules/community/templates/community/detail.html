@@ -136,6 +136,17 @@
     </div>
     {% endif %}
 
+    {% if current_user.is_authenticated %}
+    <form method="POST"
+      action="{{ url_for('followCommunity.unfollow' if is_following else 'followCommunity.follow', community_id=community.id) }}"
+      style="display: inline;">
+      <button type="submit" class="btn {{ 'btn-danger' if is_following else 'btn-primary' }}">
+        {{ 'Dejar de seguir' if is_following else 'Seguir' }}
+      </button>
+    </form>
+    {% endif %}
+
+
   </div>
 
 
