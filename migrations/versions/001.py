@@ -250,6 +250,14 @@ def upgrade():
     sa.ForeignKeyConstraint(['meta_id'], ['tabular_meta_data.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('followcommunity',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('community_id', sa.Integer(), nullable=False),
+    sa.Column('follower_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['community_id'], ['community.id'], ),
+    sa.ForeignKeyConstraint(['follower_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     # ### end Alembic commands ###
 
 
@@ -258,6 +266,7 @@ def downgrade():
     op.drop_table('tabular_column')
     op.drop_table('tabular_metrics')
     op.drop_table('tabular_meta_data')
+    op.drop_table('followcommunity')
     op.drop_table('comments')
     op.drop_table('community_dataset')
     op.drop_table('community_curators')

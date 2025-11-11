@@ -7,6 +7,7 @@ from . import community_bp
 from .forms import CommunityForm
 from .models import CommunityDatasetStatus
 from .services import CommunityDatasetService, CommunityService
+from app.modules.auth.models import User
 
 community_service = CommunityService()
 link_service = CommunityDatasetService()
@@ -31,11 +32,26 @@ def create_community():
 def list_communities():
     return render_template("community/list.html", communities=community_service.get_synchronized(current_user.id))
 
+
 @community_bp.route("/community/<slug>", methods=["GET"])
 def community_detail(slug):
     c = community_service.get_by_slug(slug)
-    return render_template("community/detail.html", community=c, CommunityDatasetStatus=CommunityDatasetStatus)
+    if not c:
+        abort(404)
 
+    is_following = False
+    if current_user.is_authenticated:
+        # Verifica si el usuario aparece en los seguidores de la comunidad
+        is_following = c.followers.filter_by(follower_id=current_user.id).first() is not None
+
+
+
+    return render_template(
+        "community/detail.html",
+        community=c,
+        CommunityDatasetStatus=CommunityDatasetStatus,
+        is_following=is_following
+    )
 # Proponer un dataset para una comunidad
 @community_bp.route("/community/<slug>/propose", methods=["POST"])
 @login_required

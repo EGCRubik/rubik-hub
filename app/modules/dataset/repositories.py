@@ -8,6 +8,8 @@ from sqlalchemy import desc, func
 from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord, BaseDataset
 from core.repositories.BaseRepository import BaseRepository
 
+from app import db
+
 logger = logging.getLogger(__name__)
 
 
@@ -119,6 +121,13 @@ class DataSetRepository(BaseRepository):
             return dataset.ds_meta_data.ds_metrics.number_of_downloads or 0
 
         return 0
+
+    def get_by_id(self, dataset_id: int) -> Optional[DataSet]:
+        return DataSet.query.get(dataset_id)
+
+    def update_download_count(self, dataset, new_count):
+        dataset.download_count = new_count
+        db.session.commit()
 
 
 class DOIMappingRepository(BaseRepository):
