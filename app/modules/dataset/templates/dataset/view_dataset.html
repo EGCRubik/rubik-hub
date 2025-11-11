@@ -159,9 +159,19 @@
 
                     <div class="d-flex flex-column align-items-center" style="width:48px">
                         <i data-feather="download"></i>
-                        <small class="text-muted mt-1">
-                            {{ dataset.ds_meta_data.ds_metrics.number_of_downloads if (dataset.ds_meta_data and dataset.ds_meta_data.ds_metrics and dataset.ds_meta_data.ds_metrics.number_of_downloads) else 0 }}
-                        </small>
+                            <small class="text-muted mt-1">
+                                {% if downloads is defined %}
+                                    {{ downloads }}
+                                {% else %}
+                                    {% if dataset.metrics and dataset.metrics.number_of_downloads is not none %}
+                                        {{ dataset.metrics.number_of_downloads }}
+                                    {% elif dataset.ds_meta_data and dataset.ds_meta_data.ds_metrics and dataset.ds_meta_data.ds_metrics.number_of_downloads is not none %}
+                                        {{ dataset.ds_meta_data.ds_metrics.number_of_downloads }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                {% endif %}
+                            </small>
                     </div>
                 </div>
             </div>
