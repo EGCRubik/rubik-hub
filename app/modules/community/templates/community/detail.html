@@ -149,6 +149,51 @@
 
   </div>
 
+  <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
+
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 style="margin-bottom: 0px">Add curator</h4>
+        </div>
+        <p class="text-secondary small">Only existing curators can add new curators to this community.</p>
+
+        {% if current_user.is_authenticated and community.curators.filter_by(id=current_user.id).first() %}
+        <form method="POST" action="{{ url_for('community.add_curator', slug=community.slug) }}">
+          <div class="mb-3">
+            <label class="form-label">User ID</label>
+            <input type="number" min="1" class="form-control" name="user_id" placeholder="e.g. 123" required>
+          </div>
+          <button type="submit" class="btn btn-outline-primary btn-sm" style="border-radius:5px">
+            <i data-feather="user-plus"></i> Add curator
+          </button>
+        </form>
+        {% else %}
+        <div class="text-muted">You must be a curator to add another curator.</div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- existing curators quick list -->
+    <div class="card mt-3">
+      <div class="card-body">
+        <h5 style="margin-bottom:0">Curators</h5>
+        <div class="mt-2">
+          {% for u in community.curators.all() %}
+          <div class="mb-2">
+            <span class="badge bg-secondary">
+              {% if u.profile %}{{ u.profile.surname }}, {{ u.profile.name }}{% else %}User #{{ u.id }}{% endif %}
+            </span>
+          </div>
+          {% else %}
+          <div class="text-muted">No curators yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
 
 </div>
 
