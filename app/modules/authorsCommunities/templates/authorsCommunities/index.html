@@ -22,6 +22,15 @@
                     {% if a.affiliation %}{{ a.affiliation }}{% endif %}
                     {% if a.orcid %} — ORCID: {{ a.orcid }}{% endif %}
                 </div>
+                {% if current_user.is_authenticated %}
+                <form method="POST"
+                    action="{{ url_for('followAuthor.unfollow' if a.is_following else 'followAuthor.follow', author_id=a.id) }}"
+                    style="display: inline;">
+                    <button type="submit" class="btn {{ 'btn-danger' if a.is_following else 'btn-primary' }}">
+                        {{ 'Dejar de seguir' if a.is_following else 'Seguir' }}
+                    </button>
+                </form>
+                {% endif %}
             </li>
             {% endfor %}
         </ul>
