@@ -1,0 +1,26 @@
+model,cube_type,price_usd,rating,predicted_growth_percent,expected_next_month_sales,trend
+GAN 356 M,3x3,15.65,4.75,12.89,679,Downward
+GAN 11 M Pro,3x3,22.47,4.67,5.89,1421,Downward
+MoYu RS3M 2021,3x3,33.63,4.39,13.81,1955,Downward
+MoYu Weilong WRM V9,3x3,25.61,4.44,14.18,2308,Stable
+QiYi Tornado V3,3x3,12.82,4.84,5.72,6719,Stable
+Dayan TengYun V2,3x3,34.91,4.68,8.59,573,Upward
+Valk 3 Elite M,3x3,34.63,4.89,6.13,720,Upward
+YJ MGC Elite 2,2x2,12.92,4.36,9.91,1273,Downward
+GAN 249 V2,2x2,11.68,4.96,12.22,6038,Upward
+MoYu Meilong 2x2,2x2,9.04,4.33,12.67,961,Upward
+MoYu Aosu WRM,4x4,23.18,4.47,1.98,3062,Upward
+QiYi Valk 4 M,4x4,21.67,4.59,6.88,2764,Upward
+YJ MGC 4x4,4x4,44.99,3.99,9.57,855,Downward
+ShengShou 5x5 Legend,5x5,45.01,4.04,11.61,5116,Stable
+MoYu Aochuang GTS,5x5,35.81,4.6,5.82,4463,Stable
+QiYi X-Man Shadow 6x6,6x6,36.39,4.18,5.97,1014,Upward
+MoYu Aoshi WRM,6x6,73.82,4.43,14.35,3461,Stable
+YJ MGC 7x7,7x7,77.94,4.38,8.31,4996,Stable
+GAN Megaminx M,Megaminx,26.19,4.58,4.25,3851,Downward
+MoYu Magnetic Pyraminx,Pyraminx,19.93,4.79,8.64,7867,Upward
+QiYi X-Man Bell Pyraminx,Pyraminx,11.09,4.85,8.59,6081,Stable
+YJ MGC Skewb,Skewb,18.92,4.45,10.35,2854,Downward
+MoYu Mirror Cube,Mirror,6.18,4.09,12.29,3918,Downward
+MFJS MeiLong Mirror,Mirror,11.72,4.05,9.33,3887,Upward
+ShengShou Gigaminx,Gigaminx,99.5,4.35,8.19,207,Downward
