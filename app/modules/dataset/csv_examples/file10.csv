@@ -1,0 +1,26 @@
+model,cube_type,price_usd,rating,review_count,recommended_for,top_reviewer_group
+GAN 356 M,3x3,15.65,4.75,598,Intermediate,Casual Players
+GAN 11 M Pro,3x3,22.47,4.67,4562,Advanced,Collectors
+MoYu RS3M 2021,3x3,33.63,4.39,9433,Intermediate,Casual Players
+MoYu Weilong WRM V9,3x3,25.61,4.44,7925,Advanced,SpeedCubers
+QiYi Tornado V3,3x3,12.82,4.84,3213,Advanced,Casual Players
+Dayan TengYun V2,3x3,34.91,4.68,3392,Beginners,Casual Players
+Valk 3 Elite M,3x3,34.63,4.89,9479,Advanced,SpeedCubers
+YJ MGC Elite 2,2x2,12.92,4.36,7115,Advanced,Collectors
+GAN 249 V2,2x2,11.68,4.96,126,Advanced,Casual Players
+MoYu Meilong 2x2,2x2,9.04,4.33,5452,Intermediate,Collectors
+MoYu Aosu WRM,4x4,23.18,4.47,5287,Intermediate,Collectors
+QiYi Valk 4 M,4x4,21.67,4.59,4908,Advanced,SpeedCubers
+YJ MGC 4x4,4x4,44.99,3.99,9392,Intermediate,Collectors
+ShengShou 5x5 Legend,5x5,45.01,4.04,8182,Advanced,Collectors
+MoYu Aochuang GTS,5x5,35.81,4.6,6610,Intermediate,Casual Players
+QiYi X-Man Shadow 6x6,6x6,36.39,4.18,1189,Intermediate,Collectors
+MoYu Aoshi WRM,6x6,73.82,4.43,4163,Intermediate,SpeedCubers
+YJ MGC 7x7,7x7,77.94,4.38,6089,Intermediate,Casual Players
+GAN Megaminx M,Megaminx,26.19,4.58,4967,Advanced,Collectors
+MoYu Magnetic Pyraminx,Pyraminx,19.93,4.79,9706,Intermediate,SpeedCubers
+QiYi X-Man Bell Pyraminx,Pyraminx,11.09,4.85,2280,Beginners,SpeedCubers
+YJ MGC Skewb,Skewb,18.92,4.45,7556,Beginners,Casual Players
+MoYu Mirror Cube,Mirror,6.18,4.09,5152,Intermediate,Collectors
+MFJS MeiLong Mirror,Mirror,11.72,4.05,4180,Beginners,SpeedCubers
+ShengShou Gigaminx,Gigaminx,99.5,4.35,1923,Advanced,Casual Players

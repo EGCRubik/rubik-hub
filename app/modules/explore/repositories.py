@@ -4,7 +4,7 @@ import unidecode
 from sqlalchemy import any_, or_
 
 from app.modules.dataset.models import Author, DataSet, DSMetaData, PublicationType
-from app.modules.featuremodel.models import FeatureModel, FMMetaData
+from app.modules.fileModel.models import FileModel, FMMetaData
 from core.repositories.BaseRepository import BaseRepository
 
 
@@ -34,8 +34,8 @@ class ExploreRepository(BaseRepository):
         datasets = (
             self.model.query.join(DataSet.ds_meta_data)
             .join(DSMetaData.authors)
-            .join(DataSet.feature_models)
-            .join(FeatureModel.fm_meta_data)
+            .join(DataSet.file_models)
+            .join(FileModel.fm_meta_data)
             .filter(or_(*filters))
             .filter(DSMetaData.dataset_doi.isnot(None))  # Exclude datasets with empty dataset_doi
         )

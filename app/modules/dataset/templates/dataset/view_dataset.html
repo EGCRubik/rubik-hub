@@ -145,23 +145,33 @@
             <div class="card-body" style="padding-top: 0px">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div id="dataset_doi_uvlhub" style="display: none">{{ dataset.get_uvlhub_doi() }}</div>
-                        <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_doi_uvlhub')">
+                        <div id="dataset_doi_rubikhub" style="display: none">{{ dataset.get_rubikhub_doi() }}</div>
+                        <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_doi_rubikhub')">
                             <span class="button_doi_id">
                                 <i data-feather="clipboard" class="center-button-icon" style="cursor: pointer"></i>
                                 <b>DOI</b>
                             </span>
                             <span class="doi_text">
-                                {{ dataset.get_uvlhub_doi() }}
+                                {{ dataset.get_rubikhub_doi() }}
                             </span>
                         </button>
                     </div>
 
                     <div class="d-flex flex-column align-items-center" style="width:48px">
                         <i data-feather="download"></i>
-                        <small class="text-muted mt-1">
-                            {{ dataset.ds_meta_data.ds_metrics.number_of_downloads if (dataset.ds_meta_data and dataset.ds_meta_data.ds_metrics and dataset.ds_meta_data.ds_metrics.number_of_downloads) else 0 }}
-                        </small>
+                            <small class="text-muted mt-1">
+                                {% if downloads is defined %}
+                                    {{ downloads }}
+                                {% else %}
+                                    {% if dataset.metrics and dataset.metrics.number_of_downloads is not none %}
+                                        {{ dataset.metrics.number_of_downloads }}
+                                    {% elif dataset.ds_meta_data and dataset.ds_meta_data.ds_metrics and dataset.ds_meta_data.ds_metrics.number_of_downloads is not none %}
+                                        {{ dataset.ds_meta_data.ds_metrics.number_of_downloads }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                {% endif %}
+                            </small>
                     </div>
                 </div>
             </div>
@@ -274,8 +284,8 @@
             </div>
 
 
-            {% for feature_model in dataset.feature_models %}
-            {% for file in feature_model.files %}
+            {% for file_model in dataset.file_models %}
+            {% for file in file_model.files %}
             <div class="list-group-item">
 
                 <div class="row">
