@@ -1,6 +1,7 @@
 import logging
 
 from flask import render_template
+from flask_login import current_user
 
 from app.modules.authorsCommunities import authorsCommunities_bp
 from app.modules.authorsCommunities.services import AuthorscommunitiesService
@@ -26,6 +27,10 @@ def index():
     author_model = author_service.repository.model
     authors_q = author_model.query.all()
     authors = [a.to_dict() for a in authors_q]
+    for a in authors:
+        if(current_user.is_authenticated):
+            a['is_following'] = authors_q[authors.index(a)].followers.filter_by(follower_id=current_user.id).first() is not None
+        a['id'] =  authors_q[authors.index(a)].id
 
     # Load communities.
     community_service = CommunityService()

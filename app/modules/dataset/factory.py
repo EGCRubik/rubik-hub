@@ -4,8 +4,7 @@ from app import db
 from app.modules.dataset.models import BaseDataset, TabularDataset, UVLDataset
 
 _TYPE_MAP: dict[str, Type[BaseDataset]] = {
-    "uvl": UVLDataset,
-    "tabular": TabularDataset,
+    "tabular": UVLDataset,
 }
 
 
