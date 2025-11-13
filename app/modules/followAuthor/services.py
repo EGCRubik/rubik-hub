@@ -1,19 +1,29 @@
-from app.modules.followAuthor.repositories import FollowauthorRepository
-from core.services.BaseService import BaseService
 from app import db
-from modules.auth.models import User
-from modules.dataset.models import Author
+from app.modules.followAuthor.models import Followauthor
 
-class FollowauthorService(BaseService):
-    def __init__(self):
-        super().__init__(FollowauthorRepository())
 
-    def follow(user: User, author: Author):
-        if user not in author.followers:
-            author.followers.append(user)
+class FollowauthorService:
+    def follow(self, user, author):
+        """Crea una relación de seguimiento entre un usuario y un autor."""
+        existing = Followauthor.query.filter_by(
+            follower_id=user.id, author_id=author.id
+        ).first()
+
+        if not existing:
+            follow = Followauthor(follower_id=user.id, author_id=author.id)
+            db.session.add(follow)
             db.session.commit()
+            return follow
+        return existing
 
-    def unfollow(user: User, author: Author):
-        if user in author.followers:
-            author.followers.remove(user)
+    def unfollow(self, user, author):
+        """Elimina la relación de seguimiento si existe."""
+        existing = Followauthor.query.filter_by(
+            follower_id=user.id, author_id=author.id
+        ).first()
+
+        if existing:
+            db.session.delete(existing)
             db.session.commit()
+            return existing
+        return None
