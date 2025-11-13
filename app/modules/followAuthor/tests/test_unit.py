@@ -37,7 +37,7 @@ def test_client(test_client):
         ds_meta = DSMetaData(
             title="Test Dataset",
             description="Descripción de prueba",
-            publication_type=PublicationType.REPORT
+            publication_type=PublicationType.RECORDS
         )
         db.session.add(ds_meta)
         db.session.commit()
