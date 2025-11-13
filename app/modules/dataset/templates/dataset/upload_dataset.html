@@ -28,11 +28,21 @@
     </div>
 
     {% if messages %}
-        <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+            {% if messages is mapping %}
+                {% for field, errs in messages.items() %}
+                    {% for err in errs %}
+                        <li><strong>{{ field }}:</strong> {{ err }}</li>
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            {% endif %}
+            </ul>
+        </div>
     {% endif %}
 
     <div class="row">
@@ -197,10 +207,9 @@
                         <div class="row" style="padding-left: 2rem">
                             <div class="col-lg-6 col-12 mb-3">
                                 <label class="form-label" for="dataset_type">Dataset type</label>
-                                <select name="dataset_type" id="dataset_type" class="form-control">
-                                    <option value="uvl">UVL dataset</option>
-                                    <option value="tabular">Tabular (CSV)</option>
-                                </select>
+                                <!-- Mostrar únicamente el tipo CSV: campo visible deshabilitado y un input oculto con el valor real -->
+                                <input type="text" class="form-control" value="Tabular (CSV)" disabled>
+                                <input type="hidden" name="dataset_type" id="dataset_type" value="tabular">
                             </div>
                         </div>
 

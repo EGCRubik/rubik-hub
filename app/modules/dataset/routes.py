@@ -140,7 +140,7 @@ def create_dataset():
         valid = form.validate_on_submit()
         if not valid:
             
-            other_errors = {k: v for k, v in form.errors.items() if k != "feature_models"}
+            other_errors = {k: v for k, v in form.errors.items() if k != "file_models"}
             if other_errors:
                 
                 logger.debug("create_dataset validation failed with errors: %s", other_errors)
@@ -149,8 +149,9 @@ def create_dataset():
         dataset_type = request.form.get("dataset_type", "uvl")
 
         if dataset_type == "tabular":
-            # Render the tabular continuation page with the same form (pre-filled)
-            return render_template("tabular/upload_tabular.html", form=form)
+            # Redirect to a dedicated CSV/tabular upload route so the URL reflects
+            # the chosen flow and the user can bookmark/navigate to it.
+            return redirect(url_for("dataset.upload_csv"))
 
         # Render the UVL continuation page with the same form (pre-filled)
         # so the user does not lose the basic info and the final upload can
@@ -215,6 +216,19 @@ def create_uvl_dataset():
     msg = "Everything works!"
     return jsonify({"message": msg}), 200
 
+
+@dataset_bp.route("/dataset/upload/csv", methods=["GET", "POST"])
+@login_required
+def upload_csv():
+
+    form = DataSetForm()
+    if request.method == "POST":
+        if not form.validate_on_submit():
+            return render_template("dataset/upload_tabular.html", form=form)
+        
+        return render_template("dataset/upload_tabular.html", form=form)
+
+    return render_template("dataset/upload_tabular.html", form=form)
 
 @dataset_bp.route("/dataset/list", methods=["GET", "POST"])
 @login_required
