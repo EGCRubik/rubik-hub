@@ -1,0 +1,26 @@
+model,cube_type,price_usd,rating,fastest_time_sec,average_time_sec,solver_name,event
+GAN 356 M,3x3,15.65,4.75,4.6,7.68,Max Park,3x3
+GAN 11 M Pro,3x3,22.47,4.67,8.21,10.83,Tymon Kolasiński,3x3
+MoYu RS3M 2021,3x3,33.63,4.39,4.74,5.97,Yiheng Wang,3x3
+MoYu Weilong WRM V9,3x3,25.61,4.44,8.15,11.77,Feliks Zemdegs,3x3
+QiYi Tornado V3,3x3,12.82,4.84,3.69,5.34,Feliks Zemdegs,3x3
+Dayan TengYun V2,3x3,34.91,4.68,3.61,5.65,Yiheng Wang,3x3
+Valk 3 Elite M,3x3,34.63,4.89,7.95,9.21,Yiheng Wang,3x3
+YJ MGC Elite 2,2x2,12.92,4.36,8.34,10.09,Yiheng Wang,2x2
+GAN 249 V2,2x2,11.68,4.96,7.87,10.06,Max Park,2x2
+MoYu Meilong 2x2,2x2,9.04,4.33,6.14,7.84,Feliks Zemdegs,2x2
+MoYu Aosu WRM,4x4,23.18,4.47,3.65,6.24,Feliks Zemdegs,4x4
+QiYi Valk 4 M,4x4,21.67,4.59,6.62,10.02,Max Park,4x4
+YJ MGC 4x4,4x4,44.99,3.99,7.6,8.69,Feliks Zemdegs,4x4
+ShengShou 5x5 Legend,5x5,45.01,4.04,5.6,6.94,Feliks Zemdegs,5x5
+MoYu Aochuang GTS,5x5,35.81,4.6,3.92,5.48,Tymon Kolasiński,5x5
+QiYi X-Man Shadow 6x6,6x6,36.39,4.18,3.75,5.68,Yiheng Wang,6x6
+MoYu Aoshi WRM,6x6,73.82,4.43,4.36,6.22,Feliks Zemdegs,6x6
+YJ MGC 7x7,7x7,77.94,4.38,7.43,10.63,Feliks Zemdegs,7x7
+GAN Megaminx M,Megaminx,26.19,4.58,3.66,6.28,Feliks Zemdegs,Megaminx
+MoYu Magnetic Pyraminx,Pyraminx,19.93,4.79,5.58,7.11,Tymon Kolasiński,Pyraminx
+QiYi X-Man Bell Pyraminx,Pyraminx,11.09,4.85,3.8,6.29,Max Park,Pyraminx
+YJ MGC Skewb,Skewb,18.92,4.45,5.8,9.59,Tymon Kolasiński,Skewb
+MoYu Mirror Cube,Mirror,6.18,4.09,6.7,8.65,Tymon Kolasiński,Mirror
+MFJS MeiLong Mirror,Mirror,11.72,4.05,6.8,9.76,Yiheng Wang,Mirror
+ShengShou Gigaminx,Gigaminx,99.5,4.35,7.02,8.85,Feliks Zemdegs,Gigaminx

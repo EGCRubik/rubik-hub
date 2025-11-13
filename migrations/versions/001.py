@@ -26,8 +26,8 @@ def upgrade():
     op.create_table('ds_metrics',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('number_of_models', sa.String(length=120), nullable=True),
-    sa.Column('number_of_features', sa.String(length=120), nullable=True),
-    sa.Column('number_of_downloads', sa.String(length=120), nullable=True),
+    sa.Column('number_of_files', sa.String(length=120), nullable=True),
+    sa.Column('number_of_downloads', sa.Integer(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('fm_metrics',
@@ -57,7 +57,7 @@ def upgrade():
     sa.Column('deposition_id', sa.Integer(), nullable=True),
     sa.Column('title', sa.String(length=120), nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
-    sa.Column('publication_type', sa.Enum('NONE', 'ANNOTATION_COLLECTION', 'BOOK', 'BOOK_SECTION', 'CONFERENCE_PAPER', 'DATA_MANAGEMENT_PLAN', 'JOURNAL_ARTICLE', 'PATENT', 'PREPRINT', 'PROJECT_DELIVERABLE', 'PROJECT_MILESTONE', 'PROPOSAL', 'REPORT', 'SOFTWARE_DOCUMENTATION', 'TAXONOMIC_TREATMENT', 'TECHNICAL_NOTE', 'THESIS', 'WORKING_PAPER', 'OTHER', name='publicationtype'), nullable=False),
+    sa.Column('publication_type', sa.Enum('NONE', 'SPECIFICATIONS', 'SALES', 'RANKINGS', 'REVIEWS', 'MATERIALS', 'METHODS', 'RESULTS', 'DISTRIBUTORS', 'COMPETITORS', 'RECORDS', 'OTHER', name='publicationtype'), nullable=False),
     sa.Column('publication_doi', sa.String(length=120), nullable=True),
     sa.Column('dataset_doi', sa.String(length=120), nullable=True),
     sa.Column('tags', sa.String(length=120), nullable=True),
@@ -67,13 +67,13 @@ def upgrade():
     )
     op.create_table('fm_meta_data',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('uvl_filename', sa.String(length=120), nullable=False),
+    sa.Column('csv_filename', sa.String(length=120), nullable=False),
     sa.Column('title', sa.String(length=120), nullable=False),
     sa.Column('description', sa.Text(), nullable=False),
-    sa.Column('publication_type', sa.Enum('NONE', 'ANNOTATION_COLLECTION', 'BOOK', 'BOOK_SECTION', 'CONFERENCE_PAPER', 'DATA_MANAGEMENT_PLAN', 'JOURNAL_ARTICLE', 'PATENT', 'PREPRINT', 'PROJECT_DELIVERABLE', 'PROJECT_MILESTONE', 'PROPOSAL', 'REPORT', 'SOFTWARE_DOCUMENTATION', 'TAXONOMIC_TREATMENT', 'TECHNICAL_NOTE', 'THESIS', 'WORKING_PAPER', 'OTHER', name='publicationtype'), nullable=False),
+    sa.Column('publication_type', sa.Enum('NONE', 'SPECIFICATIONS', 'SALES', 'RANKINGS', 'REVIEWS', 'MATERIALS', 'METHODS', 'RESULTS', 'DISTRIBUTORS', 'COMPETITORS', 'RECORDS', 'OTHER', name='publicationtype'), nullable=False),
     sa.Column('publication_doi', sa.String(length=120), nullable=True),
     sa.Column('tags', sa.String(length=120), nullable=True),
-    sa.Column('uvl_version', sa.String(length=120), nullable=True),
+    sa.Column('csv_version', sa.String(length=120), nullable=True),
     sa.Column('fm_metrics_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['fm_metrics_id'], ['fm_metrics.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -103,7 +103,7 @@ def upgrade():
     op.create_table('data_set',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('type', sa.String(length=50), server_default='uvl', nullable=False),
+    sa.Column('type', sa.String(length=50), server_default='csv', nullable=False),
     sa.Column('schema_json', sa.Text(), nullable=True),
     sa.Column('rows_count', sa.Integer(), nullable=True),
     sa.Column('ds_meta_data_id', sa.Integer(), nullable=False),
@@ -132,7 +132,7 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('feature_model',
+    op.create_table('file_model',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('data_set_id', sa.Integer(), nullable=False),
     sa.Column('fm_meta_data_id', sa.Integer(), nullable=True),
@@ -145,8 +145,8 @@ def upgrade():
     sa.Column('name', sa.String(length=120), nullable=False),
     sa.Column('checksum', sa.String(length=120), nullable=False),
     sa.Column('size', sa.Integer(), nullable=False),
-    sa.Column('feature_model_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['feature_model_id'], ['feature_model.id'], ),
+    sa.Column('file_model_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['file_model_id'], ['file_model.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('file_download_record',
@@ -258,11 +258,20 @@ def upgrade():
     sa.ForeignKeyConstraint(['follower_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('followauthor',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('author_id', sa.Integer(), nullable=False),
+    sa.Column('follower_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['author_id'], ['author.id'], ),
+    sa.ForeignKeyConstraint(['follower_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('followauthor')
     op.drop_table('tabular_column')
     op.drop_table('tabular_metrics')
     op.drop_table('tabular_meta_data')
@@ -275,7 +284,7 @@ def downgrade():
     op.drop_table('file_view_record')
     op.drop_table('file_download_record')
     op.drop_table('file')
-    op.drop_table('feature_model')
+    op.drop_table('file_model')
     op.drop_table('ds_view_record')
     op.drop_table('ds_download_record')
     op.drop_table('data_set')

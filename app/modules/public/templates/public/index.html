@@ -20,7 +20,7 @@
                         {% set is_dmp = (dataset.ds_meta_data and dataset.ds_meta_data.publication_type and dataset.ds_meta_data.publication_type.value == 'datamanagementplan') %}
                         <div class="d-flex align-items-center justify-content-between">
                             <h2 class="mb-0">
-                                <a href="{{ dataset.get_uvlhub_doi() }}">{{ dataset.ds_meta_data.title }}</a>
+                                <a href="{{ dataset.get_rubikhub_doi() }}">{{ dataset.ds_meta_data.title }}</a>
                             </h2>
                             <div class="d-flex align-items-center">
                                 {% if is_dmp %}
@@ -64,14 +64,14 @@
                         <div class="row mb-2">
 
                             <div class="col-12">
-                                <a href="{{ dataset.get_uvlhub_doi() }}">{{ dataset.get_uvlhub_doi() }}</a>
-                                 <div id="dataset_doi_uvlhub_{{ dataset.id }}" style="display: none">
-                                {{ dataset.get_uvlhub_doi() }}
+                                <a href="{{ dataset.get_rubikhub_doi() }}">{{ dataset.get_rubikhub_doi() }}</a>
+                                 <div id="dataset_doi_rubikhub_{{ dataset.id }}" style="display: none">
+                                {{ dataset.get_rubikhub_doi() }}
                             </div>
 
                             <i data-feather="clipboard" class="center-button-icon"
                                style="cursor: pointer"
-                               onclick="copyText('dataset_doi_uvlhub_{{ dataset.id }}')"></i>
+                               onclick="copyText('dataset_doi_rubikhub_{{ dataset.id }}')"></i>
                             </div>
 
 
@@ -90,7 +90,7 @@
 
                         <div class="row  mt-4">
                             <div class="col-12">
-                                <a href="{{ dataset.get_uvlhub_doi() }}" class="btn btn-outline-primary btn-sm"
+                                <a href="{{ dataset.get_rubikhub_doi() }}" class="btn btn-outline-primary btn-sm"
                                    style="border-radius: 5px;">
                                     <i data-feather="eye" class="center-button-icon"></i>
                                     View dataset
@@ -135,7 +135,7 @@
                             </h4>
                     
                             <h4 class="h4 mb-3" class="stats-color">
-                                <i data-feather="file" class="align-middle mr-2 stats-color"></i>&nbsp;{{ feature_models_counter }} feature models
+                                <i data-feather="file" class="align-middle mr-2 stats-color"></i>&nbsp;{{ file_models_counter }} file models
                             </h4>
                     
                             <h4 class="h4 mb-3" class="stats-color">
@@ -143,7 +143,7 @@
                             </h4>
                     
                             <h4 class="h4 mb-3" class="stats-color">
-                                <i data-feather="eye" class="align-middle mr-2 stats-color"></i>&nbsp;{{ total_feature_model_views }} feature models viewed
+                                <i data-feather="eye" class="align-middle mr-2 stats-color"></i>&nbsp;{{ total_file_model_views }} file models viewed
                             </h4>
                     
                             <h4 class="h4 mb-3" class="stats-color">
@@ -151,7 +151,7 @@
                             </h4>
                     
                             <h4 class="h4" class="stats-color">
-                                <i data-feather="download" class="align-middle mr-2 stats-color"></i>&nbsp;{{ total_feature_model_downloads }} feature models downloaded
+                                <i data-feather="download" class="align-middle mr-2 stats-color"></i>&nbsp;{{ total_file_model_downloads }} file models downloaded
                             </h4>
                     
                         </h1>

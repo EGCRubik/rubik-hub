@@ -1,0 +1,26 @@
+model,cube_type,price_usd,rating,units_sold,region,total_revenue
+GAN 356 M,3x3,15.65,4.75,7548,South America,118126.2
+GAN 11 M Pro,3x3,22.47,4.67,2583,Asia,58040.01
+MoYu RS3M 2021,3x3,33.63,4.39,5514,South America,185435.82
+MoYu Weilong WRM V9,3x3,25.61,4.44,8177,Asia,209412.97
+QiYi Tornado V3,3x3,12.82,4.84,3385,South America,43395.7
+Dayan TengYun V2,3x3,34.91,4.68,1218,North America,42520.38
+Valk 3 Elite M,3x3,34.63,4.89,757,North America,26214.91
+YJ MGC Elite 2,2x2,12.92,4.36,9067,North America,117145.64
+GAN 249 V2,2x2,11.68,4.96,7022,Oceania,82016.96
+MoYu Meilong 2x2,2x2,9.04,4.33,9946,Europe,89911.84
+MoYu Aosu WRM,4x4,23.18,4.47,2736,South America,63420.48
+QiYi Valk 4 M,4x4,21.67,4.59,7456,North America,161571.52
+YJ MGC 4x4,4x4,44.99,3.99,543,South America,24429.57
+ShengShou 5x5 Legend,5x5,45.01,4.04,6211,Asia,279557.11
+MoYu Aochuang GTS,5x5,35.81,4.6,2920,Asia,104565.2
+QiYi X-Man Shadow 6x6,6x6,36.39,4.18,285,Oceania,10371.15
+MoYu Aoshi WRM,6x6,73.82,4.43,448,North America,33071.36
+YJ MGC 7x7,7x7,77.94,4.38,5245,Oceania,408795.3
+GAN Megaminx M,Megaminx,26.19,4.58,7320,Asia,191710.8
+MoYu Magnetic Pyraminx,Pyraminx,19.93,4.79,868,North America,17299.24
+QiYi X-Man Bell Pyraminx,Pyraminx,11.09,4.85,3715,North America,41199.35
+YJ MGC Skewb,Skewb,18.92,4.45,2829,Oceania,53524.68
+MoYu Mirror Cube,Mirror,6.18,4.09,6523,South America,40312.14
+MFJS MeiLong Mirror,Mirror,11.72,4.05,6006,Oceania,70390.32
+ShengShou Gigaminx,Gigaminx,99.5,4.35,918,North America,91341.0

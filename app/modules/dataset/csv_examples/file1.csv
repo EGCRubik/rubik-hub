@@ -1,0 +1,26 @@
+model,cube_type,price_usd,rating,weight_g,core_material,color_scheme,magnet_strength
+GAN 356 M,3x3,15.65,4.75,69.3,Magnetic Core,Transparent,Low
+GAN 11 M Pro,3x3,22.47,4.67,103.1,Carbon Fiber,Transparent,Medium
+MoYu RS3M 2021,3x3,33.63,4.39,78.5,Plastic,Black Base,High
+MoYu Weilong WRM V9,3x3,25.61,4.44,88.0,Plastic,Transparent,Medium
+QiYi Tornado V3,3x3,12.82,4.84,73.2,Carbon Fiber,Black Base,Medium
+Dayan TengYun V2,3x3,34.91,4.68,99.7,Magnetic Core,Stickerless,Medium
+Valk 3 Elite M,3x3,34.63,4.89,103.1,Plastic,Black Base,Low
+YJ MGC Elite 2,2x2,12.92,4.36,73.7,Magnetic Core,Black Base,High
+GAN 249 V2,2x2,11.68,4.96,99.9,Magnetic Core,Stickerless,High
+MoYu Meilong 2x2,2x2,9.04,4.33,66.3,Plastic,Stickerless,Medium
+MoYu Aosu WRM,4x4,23.18,4.47,85.1,Carbon Fiber,Stickerless,Low
+QiYi Valk 4 M,4x4,21.67,4.59,97.1,Magnetic Core,Black Base,Low
+YJ MGC 4x4,4x4,44.99,3.99,104.0,Carbon Fiber,Stickerless,Low
+ShengShou 5x5 Legend,5x5,45.01,4.04,88.5,Carbon Fiber,Transparent,High
+MoYu Aochuang GTS,5x5,35.81,4.6,98.1,Magnetic Core,Stickerless,High
+QiYi X-Man Shadow 6x6,6x6,36.39,4.18,87.9,Plastic,Transparent,Medium
+MoYu Aoshi WRM,6x6,73.82,4.43,74.2,Carbon Fiber,Stickerless,Low
+YJ MGC 7x7,7x7,77.94,4.38,69.6,Plastic,Stickerless,Low
+GAN Megaminx M,Megaminx,26.19,4.58,96.0,Magnetic Core,Transparent,High
+MoYu Magnetic Pyraminx,Pyraminx,19.93,4.79,64.3,Carbon Fiber,Black Base,High
+QiYi X-Man Bell Pyraminx,Pyraminx,11.09,4.85,80.8,Magnetic Core,Transparent,High
+YJ MGC Skewb,Skewb,18.92,4.45,74.6,Magnetic Core,Transparent,High
+MoYu Mirror Cube,Mirror,6.18,4.09,119.1,Carbon Fiber,Transparent,Low
+MFJS MeiLong Mirror,Mirror,11.72,4.05,90.5,Plastic,Black Base,Low
+ShengShou Gigaminx,Gigaminx,99.5,4.35,84.6,Magnetic Core,Stickerless,Medium
