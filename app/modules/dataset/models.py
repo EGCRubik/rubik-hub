@@ -39,7 +39,6 @@ class DSMetrics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number_of_models = db.Column(db.String(120))
     number_of_files = db.Column(db.String(120))
-    number_of_downloads = db.Column(db.Integer, default=0)
     
 
     def __repr__(self):

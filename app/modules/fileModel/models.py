@@ -11,6 +11,40 @@ class FileModel(db.Model):
     files = db.relationship("Hubfile", backref="file_model", lazy=True, cascade="all, delete")
     fm_meta_data = db.relationship("FMMetaData", uselist=False, backref="file_model", cascade="all, delete")
 
+    def get_number_of_downloads(self) -> int:
+    # Verifica si existe fm_meta_data
+        if not self.fm_meta_data:
+            # Si no existe, crea un nuevo fm_meta_data y fm_metrics
+            new_metrics = FMMetrics(number_of_downloads=0)  # Inicializa con un valor por defecto, por ejemplo 0
+            db.session.add(new_metrics)
+            db.session.flush()  # Asegura que el objeto se guarde y obtenga un ID
+
+            new_fm_meta_data = FMMetaData(
+                csv_filename="default.csv",  # Aquí pon valores predeterminados o vacíos según lo necesario
+                title="Default Title",
+                description="Default Description",
+                fm_metrics=new_metrics  # Asocia el nuevo FMMetrics
+            )
+            db.session.add(new_fm_meta_data)
+            db.session.flush()  # Asegura que fm_meta_data esté persistido
+
+            # Asocia el nuevo fm_meta_data al FileModel
+            self.fm_meta_data = new_fm_meta_data
+            db.session.add(self)
+
+        # Verifica si existe fm_metrics, si no, crea uno nuevo
+        if not self.fm_meta_data.fm_metrics:
+            new_metrics = FMMetrics(number_of_downloads=0)
+            db.session.add(new_metrics)
+            db.session.flush()  # Asegura que el objeto se guarde y obtenga un ID
+
+            self.fm_meta_data.fm_metrics = new_metrics
+            db.session.add(self.fm_meta_data)
+
+        # Ahora que tenemos fm_meta_data y fm_metrics válidos, retorna el número de descargas
+        return self.fm_meta_data.fm_metrics.number_of_downloads
+
+
     def __repr__(self):
         return f"FileModel<{self.id}>"
 
@@ -37,6 +71,7 @@ class FMMetrics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     solver = db.Column(db.Text)
     not_solver = db.Column(db.Text)
+    number_of_downloads = db.Column(db.Integer, default=0)
 
     def __repr__(self):
         return f"FMMetrics<solver={self.solver}, not_solver={self.not_solver}>"
