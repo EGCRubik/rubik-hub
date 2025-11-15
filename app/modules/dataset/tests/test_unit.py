@@ -2,7 +2,8 @@ import pytest
 
 from app import db
 from app.modules.dataset.services import DataSetService
-from app.modules.dataset.models import DSMetrics, DSMetaData, UVLDataset, PublicationType
+from app.modules.dataset.models import TabularDataset, PublicationType
+from app.modules.fileModel.models import FileModel, FMMetaData, FMMetrics
 from app.modules.auth.models import User
 
 
@@ -22,26 +23,22 @@ def test_get_number_of_downloads(clean_database, test_client):
 		db.session.flush()
 
 		# Crear métricas con número de descargas concreto
-		metrics = DSMetrics(number_of_models="1", number_of_features="10", number_of_downloads=7)
-		db.session.add(metrics)
+		fmMetrics = FMMetrics(number_of_downloads=7)
+		db.session.add(fmMetrics)
 		db.session.flush()
 
 		# Crear metadatos que apunten a las métricas
-		dsmeta = DSMetaData(
-			deposition_id=1,
-			title="Test Dataset",
-			description="Description",
-			publication_type=PublicationType.NONE,
-			publication_doi=None,
-			dataset_doi=None,
-			tags="",
-			ds_metrics_id=metrics.id,
+		fmMetaData = FMMetaData(
+			csv_filename="data.csv",
+			title="Test Data",
+			description="Test Description",
+			fm_metrics_id=fmMetrics.id
 		)
-		db.session.add(dsmeta)
+		db.session.add(fmMetaData)
 		db.session.flush()
 
 		# Crear dataset asociado al usuario y a los metadatos
-		dataset = UVLDataset(user_id=user.id, ds_meta_data_id=dsmeta.id)
+		dataset = TabularDataset(user_id=user.id, ds_meta_data_id=fmMetaData.id)
 		db.session.add(dataset)
 		db.session.commit()
 
