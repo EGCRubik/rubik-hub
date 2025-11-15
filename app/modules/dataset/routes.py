@@ -137,20 +137,17 @@ def create_dataset():
     form = DataSetForm()
 
     if request.method == "POST":
-        
         valid = form.validate_on_submit()
         if not valid:
-            
+            # Ignoramos errores de file_models en este primer paso
             other_errors = {k: v for k, v in form.errors.items() if k != "file_models"}
             if other_errors:
-                
                 logger.debug("create_dataset validation failed with errors: %s", other_errors)
                 return render_template("dataset/upload_dataset.html", form=form, messages=form.errors)
 
-        # Render the tabular upload form with the same DataSetForm so values (title, doi, etc.)
-        # are preserved across the multi-step flow instead of redirecting and losing data.
+        # Si el formulario básico es válido, pasamos al paso tabular
         return render_template("dataset/upload_tabular.html", form=form)
-    
+
     return render_template("dataset/upload_dataset.html", form=form)
 
 
@@ -216,48 +213,38 @@ def upload_csv():
     form = DataSetForm()
 
     if request.method == "GET":
-        # Al ser un GET, se renderiza el formulario de carga del archivo CSV.
+        # Render del paso tabular (metadatos + fichero CSV)
         return render_template("dataset/upload_tabular.html", form=form)
 
     # POST: procesamos la solicitud cuando el usuario envía el formulario con un archivo CSV.
-    if not form.validate_on_submit():
-        # Si no pasa la validación, retornamos un mensaje con los errores.
-        return jsonify({"message": form.errors}), 400
-
-    # Obtenemos el archivo CSV de la solicitud.
+    # 1) Obtenemos el archivo CSV de la solicitud.
     csv_file = request.files.get("csv_file")
     if csv_file is None or csv_file.filename == "":
-        # Si no hay archivo o el archivo está vacío, mostramos un mensaje de error.
         return jsonify({"message": "No CSV file uploaded"}), 400
 
     filename = secure_filename(csv_file.filename)
     if not filename.lower().endswith(".csv"):
-        # Validamos que el archivo sea un CSV.
         return jsonify({"message": "Please upload a .csv file"}), 400
 
-    # Guardamos el archivo en una carpeta temporal del usuario.
+    # 2) Guardamos el archivo en una carpeta temporal del usuario.
     temp_folder = current_user.temp_folder()
     os.makedirs(temp_folder, exist_ok=True)
 
-    # Generamos el path destino del archivo.
     dest_path = os.path.join(temp_folder, filename)
     if os.path.exists(dest_path):
         base, ext = os.path.splitext(filename)
         i = 1
-        # Si ya existe el archivo, le asignamos un nombre único (con un número entre paréntesis).
         while os.path.exists(os.path.join(temp_folder, f"{base} ({i}){ext}")):
             i += 1
         filename = f"{base} ({i}){ext}"
         dest_path = os.path.join(temp_folder, filename)
 
     try:
-        # Guardamos el archivo CSV en el destino.
         csv_file.save(dest_path)
     except Exception as exc:
-        # Si ocurre algún error al guardar el archivo, lo capturamos y lo informamos.
         return jsonify({"message": f"Could not save uploaded file: {exc}"}), 500
 
-    # Asociamos el archivo CSV con el dataset
+    # 3) Rellenamos los campos del formulario con los datos del POST
     form.title.data = request.form.get("title")
     form.desc.data = request.form.get("desc")
     form.publication_type.data = request.form.get("publication_type")
@@ -265,37 +252,35 @@ def upload_csv():
     form.dataset_doi.data = request.form.get("dataset_doi")
     form.tags.data = request.form.get("tags")
 
-    # Aseguramos que haya al menos una entrada en "file_models" y asignamos el archivo CSV.
+    # 4) Aseguramos que haya al menos una entrada en "file_models" y asignamos el nombre del CSV.
     try:
         if len(form.file_models.entries) == 0:
-            entry = form.file_models.append_entry()  # Añadimos una nueva entrada si no hay.
+            entry = form.file_models.append_entry()
         else:
-            entry = form.file_models.entries[0]  # Usamos la primera entrada si ya existe.
+            entry = form.file_models.entries[0]
         entry_form = getattr(entry, "form", entry)
-        entry_form.csv_filename.data = filename  # Asignamos el archivo CSV.
+        entry_form.csv_filename.data = filename
     except Exception as exc:
         logger.exception("Error preparing file_models entry: %s", exc)
         return jsonify({"message": "Internal error building form data"}), 500
 
-    # Validamos el formulario completo (esto incluye CSRF y otras validaciones).
+    # 5) Validamos el formulario completo (incluyendo file_models)
     if not form.validate():
         logger.debug("upload_csv validation failed: %s", form.errors)
         return jsonify({"message": form.errors}), 400
 
-    # Creamos el dataset en la base de datos y movemos los archivos al directorio final.
+    # 6) Creamos el dataset en la base de datos y movemos el archivo al directorio final.
     try:
         logger.info("Creating dataset...")
         dataset = dataset_service.create_from_form(form=form, current_user=current_user)
         logger.info(f"Created dataset with ID: {dataset.id} and title: {dataset.ds_meta_data.title}")
-        dataset_service.move_file_models(dataset)  # Mover los archivos si es necesario.
+        dataset_service.move_file_models(dataset)
     except Exception as exc:
         logger.exception(f"Error creating dataset: {exc}")
         return jsonify({"message": str(exc)}), 500
 
     # Finalmente, redirigimos al usuario a la lista de datasets.
     return redirect(url_for("dataset.list_dataset"))
-
-
 
 
 @dataset_bp.route("/dataset/list", methods=["GET", "POST"])

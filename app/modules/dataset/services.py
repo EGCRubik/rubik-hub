@@ -51,7 +51,7 @@ class DataSetService(BaseService):
         self.dsviewrecord_repostory = DSViewRecordRepository()
         self.hubfileviewrecord_repository = HubfileViewRecordRepository()
 
-    def update_download_count(self,dataset_id):
+    def update_download_count(self, dataset_id):
         dataset = DataSetRepository.get_by_id(self, dataset_id)
         number_of_downloads = self.repository.get_number_of_downloads(dataset_id)
         if dataset:
@@ -108,39 +108,74 @@ class DataSetService(BaseService):
             "orcid": current_user.profile.orcid,
         }
         try:
+            # 1) Crear DSMetaData del dataset
             logger.info(f"Creating dsmetadata...: {form.get_dsmetadata()}")
             dsmetadata = self.dsmetadata_repository.create(**form.get_dsmetadata())
+
+            # 2) Autores del dataset
             for author_data in [main_author] + form.get_authors():
                 author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
                 dsmetadata.authors.append(author)
 
+            # 3) Crear el TabularDataset asociado
             from app.modules.dataset.models import TabularDataset
 
             dataset = TabularDataset(user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
-
             self.repository.session.add(dataset)
-            
-            self.repository.session.flush()
+            self.repository.session.flush()  # Para tener dataset.id
 
+            # 4) Crear FileModel + FMMetaData + Hubfile por cada entry de file_models
             for file_model in form.file_models:
                 csv_filename = file_model.csv_filename.data
-                fmmetadata = self.fmmetadata_repository.create(commit=False, **file_model.get_fmmetadata())
+
+                # Diccionario base desde el form
+                fmmetadata_data = file_model.get_fmmetadata()
+
+                # ⚠️ FMMetaData NO tiene 'publication_type' → lo eliminamos
+                fmmetadata_data.pop("publication_type", None)
+
+                # Rellenar valores por defecto desde dsmetadata si vienen vacíos
+                if not fmmetadata_data.get("title"):
+                    fmmetadata_data["title"] = dsmetadata.title
+
+                if not fmmetadata_data.get("description"):
+                    fmmetadata_data["description"] = dsmetadata.description
+
+                if "publication_doi" in fmmetadata_data and not fmmetadata_data["publication_doi"]:
+                    fmmetadata_data["publication_doi"] = dsmetadata.publication_doi
+
+                if "tags" in fmmetadata_data and not fmmetadata_data["tags"]:
+                    fmmetadata_data["tags"] = dsmetadata.tags
+
+                # 4.1 Crear FMMetaData
+                fmmetadata = self.fmmetadata_repository.create(commit=False, **fmmetadata_data)
+
+                # 4.2 Autores del FMMetaData
                 for author_data in file_model.get_authors():
                     author = self.author_repository.create(commit=False, fm_meta_data_id=fmmetadata.id, **author_data)
                     fmmetadata.authors.append(author)
 
+                # 4.3 Crear FileModel
                 fm = self.feature_model_repository.create(
-                    commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
+                    commit=False,
+                    data_set_id=dataset.id,
+                    fm_meta_data_id=fmmetadata.id,
                 )
 
+                # 4.4 Crear Hubfile asociado al FileModel
                 file_path = os.path.join(current_user.temp_folder(), csv_filename)
                 checksum, size = calculate_checksum_and_size(file_path)
 
-                # When creating Hubfile, associate to the FileModel (formerly FeatureModel)
                 file = self.hubfilerepository.create(
-                    commit=False, name=csv_filename, checksum=checksum, size=size, file_model_id=fm.id
+                    commit=False,
+                    name=csv_filename,
+                    checksum=checksum,
+                    size=size,
+                    file_model_id=fm.id,
                 )
                 fm.files.append(file)
+
+            # 5) Confirmar todo
             self.repository.session.commit()
         except Exception as exc:
             logger.info(f"Exception creating dataset from form...: {exc}")
@@ -157,6 +192,7 @@ class DataSetService(BaseService):
 
     def get_number_of_downloads(self, dataset_id: int) -> int:
         return self.repository.get_number_of_downloads(dataset_id)
+
 
 class AuthorService(BaseService):
     def __init__(self):

@@ -209,7 +209,9 @@ class TabularDataset(BaseDataset):
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
             "url": self.get_rubikhub_doi(),
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
-            "downloads": (self.ds_meta_data.ds_metrics.number_of_downloads if (self.ds_meta_data and getattr(self.ds_meta_data, "ds_metrics", None) and self.ds_meta_data.ds_metrics.number_of_downloads) else 0),
+            "downloads": (self.file_models[0].fm_meta_data.fm_metrics.number_of_downloads
+                          if self.file_models and self.file_models[0].fm_meta_data and self.file_models[0].fm_meta_data.fm_metrics
+                          else 0),
             "zenodo": self.get_zenodo_url(),
             "files": [file.to_dict() for fm in self.file_models for file in fm.files],
             "files_count": self.get_files_count(),
