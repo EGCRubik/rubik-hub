@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<form method="post" action="{{ url_for('dataset.create_dataset') }}">
+<form method="post" action="{{ url_for('dataset.upload_csv') }}" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
 
     <h1 class="h2 mb-3"><b>Upload</b> dataset</h1>
@@ -14,7 +14,7 @@
             <div class="alert alert-warning" role="alert" id="test_fakenodo_connection_error" style="display: none">
                 <div class="alert-message">
 
-                            <h4 class="alert-heading"><i class="align-middle" data-feather="alert-triangle"></i> Limited
+                    <h4 class="alert-heading"><i class="align-middle" data-feather="alert-triangle"></i> Limited
                         connection to the FakeNODO service</h4>
                     <p class="p-0 m-0">
                         There seems to be some kind of problem with the FakeNODO API and synchronization of your dataset
@@ -56,9 +56,7 @@
 
                     <div class="col-12">
 
-                        <h1 class="h3 mb-3">Basic info</h1>
-
-                        <div class="row" style="padding-left: 2rem">
+                        <div class="row" style="display: none;">
 
                             <div class="col-lg-6 col-xs-12 col-md-12">
                                 <div class="mb-3">
@@ -109,13 +107,6 @@
                             </div>
 
                         </div>
-                        
-                        <h1 class="h3 mb-3 mt-4">
-                          Authors
-                          <a href="#" data-toggle="modal" data-target="#infoModal">
-                            <i data-feather="info"></i> <!-- Usamos "info" porque Feather no tiene un ícono específico llamado "feather" para más info -->
-                          </a>
-                        </h1>
 
                         <!-- Modal -->
                         <div class="modal fade" id="infoModal" tabindex="-1" role="dialog" aria-labelledby="infoModalLabel" aria-hidden="true" style="display: none">
@@ -137,7 +128,7 @@
                           </div>
                         </div>
 
-                        <div class="row" style="padding-left: 2rem">
+                        <div class="row" style="display: none;">
 
                             <div class="col-lg-6 col-12 mb-3">
                                 <label class="form-label">Author name</label>
@@ -204,6 +195,19 @@
 
                         </div>
 
+                        <!-- Campo para subir el CSV -->
+                        <div class="row" style="padding-left: 2rem">
+                            <div class="col-12 mb-3">
+                                <label class="form-label" for="csv_file">CSV file *</label>
+                                <input type="file"
+                                       class="form-control"
+                                       id="csv_file"
+                                       name="csv_file"
+                                       accept=".csv"
+                                       required>
+                            </div>
+                        </div>
+
                         <div class="row" style="padding-left: 2rem">
                             <div class="col-lg-6 col-12 mb-3">
                                 <label class="form-label" for="dataset_type">Dataset type</label>
@@ -215,7 +219,7 @@
 
                         <div class="row mt-4" style="padding-left: 2rem">
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary">Continue</button>
+                                <button type="submit" class="btn btn-primary">Upload</button>
                             </div>
                         </div>
 

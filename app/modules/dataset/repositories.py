@@ -110,64 +110,23 @@ class DataSetRepository(BaseRepository):
         if not dataset:
             return 0
 
-        # If dataset types (e.g. tabular) expose a `metrics` relationship, prefer it
-        if hasattr(dataset, "metrics") and dataset.metrics:
-            # defensive: only return if the metrics object has the expected attribute
-            if hasattr(dataset.metrics, "number_of_downloads"):
-                return dataset.metrics.number_of_downloads or 0
+        fm = dataset.file_models[0]
 
-        # Fallback: DSMetaData may have a related DSMetrics instance
-        if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data and getattr(dataset.ds_meta_data, "ds_metrics", None):
-            return dataset.ds_meta_data.ds_metrics.number_of_downloads or 0
-
-        return 0
+        return fm.get_number_of_downloads()
 
     def get_by_id(self, dataset_id: int) -> Optional[DataSet]:
         return DataSet.query.get(dataset_id)
 
     def update_download_count(self, dataset, new_count):
-        """Update the number_of_downloads for a dataset.
-
-        Prefer dataset.metrics.number_of_downloads if present (other dataset types
-        like TabularDataset use a `metrics` relationship). Otherwise, update or
-        create the DSMetrics attached to the dataset's DSMetaData.
-        """
         if not dataset:
             return None
 
-        # 1) If dataset exposes a 'metrics' relationship (e.g. TabularDataset)
-        if hasattr(dataset, "metrics") and getattr(dataset, "metrics", None):
-            metrics = dataset.metrics
-            if hasattr(metrics, "number_of_downloads"):
-                metrics.number_of_downloads = new_count
-                db.session.add(metrics)
-                db.session.commit()
-                return metrics
-
-        # 2) Fallback to DSMetaData.ds_metrics for UVL datasets
-        if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data:
-            ds_metrics = getattr(dataset.ds_meta_data, "ds_metrics", None)
-            if ds_metrics:
-                ds_metrics.number_of_downloads = new_count
-                db.session.add(ds_metrics)
-                db.session.commit()
-                return ds_metrics
-            else:
-                # create DSMetrics record and attach it
-                try:
-                    from app.modules.dataset.models import DSMetrics
-
-                    new_metrics = DSMetrics(number_of_models=None, number_of_features=None, number_of_downloads=new_count)
-                    db.session.add(new_metrics)
-                    db.session.flush()
-                    dataset.ds_meta_data.ds_metrics_id = new_metrics.id
-                    dataset.ds_meta_data.ds_metrics = new_metrics
-                    db.session.add(dataset.ds_meta_data)
-                    db.session.commit()
-                    return new_metrics
-                except Exception:
-                    db.session.rollback()
-                    raise
+        fm_metrics = dataset.file_models[0].fm_meta_data.fm_metrics  # Assuming one FileModel per DataSet
+        if fm_metrics:
+            fm_metrics.number_of_downloads = new_count
+            db.session.add(fm_metrics)
+            db.session.commit()
+            return fm_metrics
 
         return None
 

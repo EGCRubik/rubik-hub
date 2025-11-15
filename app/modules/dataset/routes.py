@@ -10,6 +10,7 @@ from zipfile import ZipFile
 
 import requests
 from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
+from werkzeug.utils import secure_filename
 from flask_login import current_user, login_required
 
 from app.modules.dataset import dataset_bp
@@ -136,26 +137,16 @@ def create_dataset():
     form = DataSetForm()
 
     if request.method == "POST":
-        
         valid = form.validate_on_submit()
         if not valid:
-            
-            other_errors = {k: v for k, v in form.errors.items() if k != "feature_models"}
+            # Ignoramos errores de file_models en este primer paso
+            other_errors = {k: v for k, v in form.errors.items() if k != "file_models"}
             if other_errors:
-                
                 logger.debug("create_dataset validation failed with errors: %s", other_errors)
                 return render_template("dataset/upload_dataset.html", form=form, messages=form.errors)
 
-        dataset_type = request.form.get("dataset_type", "uvl")
-
-        if dataset_type == "tabular":
-            # Render the tabular continuation page with the same form (pre-filled)
-            return render_template("tabular/upload_tabular.html", form=form)
-
-        # Render the UVL continuation page with the same form (pre-filled)
-        # so the user does not lose the basic info and the final upload can
-        # post the full dataset (basic + UVL files).
-        return render_template("dataset/upload_uvl.html", form=form)
+        # Si el formulario básico es válido, pasamos al paso tabular
+        return render_template("dataset/upload_tabular.html", form=form)
 
     return render_template("dataset/upload_dataset.html", form=form)
 
@@ -216,6 +207,114 @@ def create_uvl_dataset():
     return jsonify({"message": msg}), 200
 
 
+@dataset_bp.route("/dataset/upload/csv", methods=["GET", "POST"])
+@login_required
+def upload_csv():
+    form = DataSetForm()
+
+    if request.method == "GET":
+        # Render del paso tabular (metadatos + fichero CSV)
+        return render_template("dataset/upload_tabular.html", form=form)
+
+    # POST: procesamos la solicitud cuando el usuario envía el formulario con un archivo CSV.
+    # 1) Obtenemos el archivo CSV de la solicitud.
+    csv_file = request.files.get("csv_file")
+    if csv_file is None or csv_file.filename == "":
+        return jsonify({"message": "No CSV file uploaded"}), 400
+
+    filename = secure_filename(csv_file.filename)
+    if not filename.lower().endswith(".csv"):
+        return jsonify({"message": "Please upload a .csv file"}), 400
+
+    # 2) Guardamos el archivo en una carpeta temporal del usuario.
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+
+    dest_path = os.path.join(temp_folder, filename)
+    if os.path.exists(dest_path):
+        base, ext = os.path.splitext(filename)
+        i = 1
+        while os.path.exists(os.path.join(temp_folder, f"{base} ({i}){ext}")):
+            i += 1
+        filename = f"{base} ({i}){ext}"
+        dest_path = os.path.join(temp_folder, filename)
+
+    try:
+        csv_file.save(dest_path)
+    except Exception as exc:
+        return jsonify({"message": f"Could not save uploaded file: {exc}"}), 500
+
+    # 3) Rellenamos los campos del formulario con los datos del POST
+    form.title.data = request.form.get("title")
+    form.desc.data = request.form.get("desc")
+    form.publication_type.data = request.form.get("publication_type")
+    form.publication_doi.data = request.form.get("publication_doi")
+    form.dataset_doi.data = request.form.get("dataset_doi")
+    form.tags.data = request.form.get("tags")
+
+    # 4) Aseguramos que haya al menos una entrada en "file_models" y asignamos el nombre del CSV.
+    try:
+        if len(form.file_models.entries) == 0:
+            entry = form.file_models.append_entry()
+        else:
+            entry = form.file_models.entries[0]
+        entry_form = getattr(entry, "form", entry)
+        entry_form.csv_filename.data = filename
+    except Exception as exc:
+        logger.exception("Error preparing file_models entry: %s", exc)
+        return jsonify({"message": "Internal error building form data"}), 500
+
+    # 5) Validamos el formulario completo (incluyendo file_models)
+    if not form.validate():
+        logger.debug("upload_csv validation failed: %s", form.errors)
+        return jsonify({"message": form.errors}), 400
+
+    # 6) Creamos el dataset en la base de datos y movemos el archivo al directorio final.
+    try:
+        logger.info("Creating dataset...")
+        dataset = dataset_service.create_from_form(form=form, current_user=current_user)
+        logger.info(f"Created dataset with ID: {dataset.id} and title: {dataset.ds_meta_data.title}")
+        dataset_service.move_file_models(dataset)
+    except Exception as exc:
+        logger.exception(f"Error creating dataset: {exc}")
+        return jsonify({"message": str(exc)}), 500
+    
+    # send dataset as deposition to Fakenodo
+    data = {}
+    try:
+        fakenodo_response_json = zenodo_service.create_new_deposition(dataset)
+        response_data = json.dumps(fakenodo_response_json)
+        data = json.loads(response_data)
+    except Exception as exc:
+        data = {}
+        fakenodo_response_json = {}
+        logger.exception(f"Exception while create dataset data in Fakenodo {exc}")
+
+    if data.get("conceptrecid"):
+        deposition_id = data.get("id")
+
+        # update dataset with deposition id in Fakenodo
+        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+
+        try:
+            # iterate for each file model (one file model = one request to Fakenodo)
+            for file_model in dataset.file_models:
+                zenodo_service.upload_file(dataset, deposition_id, file_model)
+
+            # publish deposition
+            zenodo_service.publish_deposition(deposition_id)
+
+            # update DOI
+            deposition_doi = zenodo_service.get_doi(deposition_id)
+            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+        except Exception as e:
+            msg = f"it has not been possible upload feature models in Fakenodo and update the DOI: {e}"
+            return jsonify({"message": msg}), 200
+
+    # Finalmente, redirigimos al usuario a la lista de datasets.
+    return redirect(url_for("dataset.list_dataset"))
+
+
 @dataset_bp.route("/dataset/list", methods=["GET", "POST"])
 @login_required
 def list_dataset():
@@ -229,17 +328,17 @@ def list_dataset():
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
 def upload():
-    file = request.files["file"]
+    # Save uploaded CSV to user's temp folder (Backward-compatible endpoint).
+    file = request.files.get("csv_file")
     temp_folder = current_user.temp_folder()
 
-    if not file or not file.filename.endswith(".uvl"):
+    if file is None or not file.filename or not file.filename.lower().endswith(".csv"):
         return jsonify({"message": "No valid file"}), 400
 
-    if not os.path.exists(temp_folder):
-        os.makedirs(temp_folder)
+    os.makedirs(temp_folder, exist_ok=True)
 
+    # ensure unique filename in temp folder
     file_path = os.path.join(temp_folder, file.filename)
-
     if os.path.exists(file_path):
         base_name, extension = os.path.splitext(file.filename)
         i = 1
@@ -253,17 +352,50 @@ def upload():
     try:
         file.save(file_path)
     except Exception as e:
+        logger.exception("Error saving uploaded file: %s", e)
         return jsonify({"message": str(e)}), 500
 
-    return (
-        jsonify(
-            {
-                "message": "UVL uploaded and validated successfully",
-                "filename": new_filename,
-            }
-        ),
-        200,
-    )
+    # If the POST contains dataset fields (tabular multi-step flow), create the dataset now.
+    # We check for presence of a title or explicit dataset_type to detect the multi-step form.
+    dataset_type = request.form.get("dataset_type")
+    title = request.form.get("title")
+    if dataset_type == "tabular" or title:
+        try:
+            # Build a DataSetForm without CSRF for this programmatic flow
+            form = DataSetForm(meta={"csrf": False})
+
+            # Populate simple fields from the form data
+            form.title.data = title
+            form.desc.data = request.form.get("desc")
+            form.publication_type.data = request.form.get("publication_type")
+            form.publication_doi.data = request.form.get("publication_doi")
+            form.dataset_doi.data = request.form.get("dataset_doi")
+            form.tags.data = request.form.get("tags")
+
+            # Ensure a file_models entry exists and set the csv_filename
+            if len(form.file_models.entries) == 0:
+                entry = form.file_models.append_entry()
+            else:
+                entry = form.file_models.entries[0]
+            entry_form = getattr(entry, "form", entry)
+            entry_form.csv_filename.data = new_filename
+
+            # Validate form (note: CSRF disabled)
+            if not form.validate():
+                logger.debug("upload (file) form validation failed: %s", form.errors)
+                # return errors so the client can show them (keep compatible with JSON/redirect flows)
+                return jsonify({"message": form.errors}), 400
+
+            # Create dataset and move files
+            logger.info("Creating dataset from /dataset/file/upload...")
+            dataset = dataset_service.create_from_form(form=form, current_user=current_user)
+            dataset_service.move_file_models(dataset)
+        except Exception as exc:
+            logger.exception("Error creating dataset from uploaded file: %s", exc)
+            return jsonify({"message": str(exc)}), 500
+
+    # Redirect to dataset list in the browser
+    return redirect(url_for("dataset.list_dataset"))
 
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])

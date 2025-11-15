@@ -31,11 +31,8 @@ def index():
         "public/index.html",
         datasets=dataset_service.latest_synchronized(),
         datasets_counter=datasets_counter,
-        file_models_counter=file_models_counter,
         total_dataset_downloads=total_dataset_downloads,
-        total_file_model_downloads=total_file_model_downloads,
         total_dataset_views=total_dataset_views,
-        total_file_model_views=total_file_model_views,
     )
 
 

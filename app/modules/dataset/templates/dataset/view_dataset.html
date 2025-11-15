@@ -188,7 +188,8 @@
                 <h3> Related publication </h3>
 
                 David Romero-Organvidez, José A. Galindo, Chico Sundermann, Jose-Miguel Horcas, David Benavides,
-                <i>UVLHub: A feature model data repository using UVL and open science principles</i>,
+                <i>RubikHub: A rubik's model data repository using CSV
+                     and open science principles</i>,
                 Journal of Systems and Software,
                 2024,
                 112150,
@@ -274,7 +275,7 @@
 
                 <div class="row">
                     <div class="col-12 d-flex justify-content-between align-items-center">
-                        <h4 style="margin-bottom: 0px">UVL models</h4>
+                        <h4 style="margin-bottom: 0px">CSV models</h4>
                         <h4 style="margin-bottom: 0px;"><span class="badge bg-dark">{{ dataset.get_files_count()
                                 }}</span></h4>
                     </div>
@@ -341,7 +342,7 @@
                                 <li>
                                     <a class="dropdown-item"
                                         href="{{ url_for('hubfile.download_file', file_id=file.id) }}">
-                                        UVL
+                                        CSV
                                     </a>
                                     <a class="dropdown-item"
                                         href="{{ url_for('flamapy.to_glencoe', file_id=file.id) }}">
@@ -385,7 +386,7 @@
     <div class="modal-dialog modal-lg" style="height: 80vh; display: flex; align-items: center;">
         <div class="modal-content" style="height: 80vh;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h5 class="modal-title" id="fileViewerModalLabel">Feature model view</h5>
+                <h5 class="modal-title" id="fileViewerModalLabel">File model view</h5>
                 <div>
                     <a href="#" class="btn btn-outline-primary btn-sm" id="downloadButton"
                         style="margin-right: 5px; margin-bottom: 5px; border-radius: 5px;">
