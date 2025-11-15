@@ -278,6 +278,38 @@ def upload_csv():
     except Exception as exc:
         logger.exception(f"Error creating dataset: {exc}")
         return jsonify({"message": str(exc)}), 500
+    
+    # send dataset as deposition to Fakenodo
+    data = {}
+    try:
+        fakenodo_response_json = zenodo_service.create_new_deposition(dataset)
+        response_data = json.dumps(fakenodo_response_json)
+        data = json.loads(response_data)
+    except Exception as exc:
+        data = {}
+        fakenodo_response_json = {}
+        logger.exception(f"Exception while create dataset data in Fakenodo {exc}")
+
+    if data.get("conceptrecid"):
+        deposition_id = data.get("id")
+
+        # update dataset with deposition id in Fakenodo
+        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+
+        try:
+            # iterate for each file model (one file model = one request to Fakenodo)
+            for file_model in dataset.file_models:
+                zenodo_service.upload_file(dataset, deposition_id, file_model)
+
+            # publish deposition
+            zenodo_service.publish_deposition(deposition_id)
+
+            # update DOI
+            deposition_doi = zenodo_service.get_doi(deposition_id)
+            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+        except Exception as e:
+            msg = f"it has not been possible upload feature models in Fakenodo and update the DOI: {e}"
+            return jsonify({"message": msg}), 200
 
     # Finalmente, redirigimos al usuario a la lista de datasets.
     return redirect(url_for("dataset.list_dataset"))
