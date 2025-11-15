@@ -112,10 +112,43 @@ class DataSetService(BaseService):
             logger.info(f"Creating dsmetadata...: {form.get_dsmetadata()}")
             dsmetadata = self.dsmetadata_repository.create(**form.get_dsmetadata())
 
-            # 2) Autores del dataset
-            for author_data in [main_author] + form.get_authors():
-                author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
-                dsmetadata.authors.append(author)
+            # 2) Autor del dataset (regla de negocio: un dataset tiene 1 autor)
+            # Preferimos reutilizar un Author existente vinculado al usuario (user_id),
+            # luego por ORCID y finalmente por name+affiliation. Si no existe, lo creamos.
+            author_data = None
+            extra_authors = form.get_authors()
+            if extra_authors and len(extra_authors) > 0:
+                author_data = extra_authors[0]
+            else:
+                author_data = main_author
+
+            existing_author = None
+            try:
+                # 1) Prefer user-associated author
+                if current_user and getattr(current_user, "id", None):
+                    existing_author = self.author_repository.model.query.filter_by(user_id=current_user.id).first()
+
+                # 2) Then ORCID
+                if not existing_author and author_data.get("orcid"):
+                    existing_author = self.author_repository.model.query.filter_by(orcid=author_data.get("orcid")).first()
+
+                # 3) Finally name + affiliation
+                if not existing_author and author_data.get("name"):
+                    existing_author = (
+                        self.author_repository.model.query.filter_by(name=author_data.get("name"), affiliation=author_data.get("affiliation")).first()
+                    )
+            except Exception:
+                existing_author = None
+
+            if existing_author:
+                dsmetadata.author = existing_author
+            else:
+                author = self.author_repository.create(
+                    commit=False,
+                    user_id=current_user.id if current_user and getattr(current_user, "id", None) else None,
+                    **author_data,
+                )
+                dsmetadata.author = author
 
             # 3) Crear el TabularDataset asociado
             from app.modules.dataset.models import TabularDataset
@@ -150,10 +183,40 @@ class DataSetService(BaseService):
                 # 4.1 Crear FMMetaData
                 fmmetadata = self.fmmetadata_repository.create(commit=False, **fmmetadata_data)
 
-                # 4.2 Autores del FMMetaData
-                for author_data in file_model.get_authors():
-                    author = self.author_repository.create(commit=False, fm_meta_data_id=fmmetadata.id, **author_data)
-                    fmmetadata.authors.append(author)
+                # 4.2 Autor del FMMetaData: use the same author as the DSMetaData
+                if dsmetadata and dsmetadata.author:
+                    fmmetadata.author = dsmetadata.author
+                else:
+                    # Fallback (should be rare): reuse same logic to create/reuse an author
+                    fm_author_data = None
+                    fm_authors_list = file_model.get_authors()
+                    if fm_authors_list and len(fm_authors_list) > 0:
+                        fm_author_data = fm_authors_list[0]
+                    else:
+                        fm_author_data = {"name": dsmetadata.title if dsmetadata else "", "affiliation": None, "orcid": None}
+
+                    existing_fm_author = None
+                    try:
+                        if current_user and getattr(current_user, "id", None):
+                            existing_fm_author = self.author_repository.model.query.filter_by(user_id=current_user.id).first()
+                        if not existing_fm_author and fm_author_data.get("orcid"):
+                            existing_fm_author = self.author_repository.model.query.filter_by(orcid=fm_author_data.get("orcid")).first()
+                        if not existing_fm_author and fm_author_data.get("name"):
+                            existing_fm_author = (
+                                self.author_repository.model.query.filter_by(name=fm_author_data.get("name"), affiliation=fm_author_data.get("affiliation")).first()
+                            )
+                    except Exception:
+                        existing_fm_author = None
+
+                    if existing_fm_author:
+                        fmmetadata.author = existing_fm_author
+                    else:
+                        author = self.author_repository.create(
+                            commit=False,
+                            user_id=current_user.id if current_user and getattr(current_user, "id", None) else None,
+                            **fm_author_data,
+                        )
+                        fmmetadata.author = author
 
                 # 4.3 Crear FileModel
                 fm = self.feature_model_repository.create(

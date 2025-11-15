@@ -162,7 +162,7 @@ class ZenodoService(BaseService):
                     **({"affiliation": author.affiliation} if author.affiliation else {}),
                     **({"orcid": author.orcid} if author.orcid else {}),
                 }
-                for author in dataset.ds_meta_data.authors
+                for author in ([dataset.ds_meta_data.author] if dataset.ds_meta_data and dataset.ds_meta_data.author else [])
             ],
             "keywords": (
                 ["uvlhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["uvlhub"]

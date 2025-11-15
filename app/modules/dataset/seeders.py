@@ -57,17 +57,22 @@ class DataSetSeeder(BaseSeeder):
         ]
         seeded_ds_meta_data = self.seed(ds_meta_data_list)
 
-        # Create Author instances and associate with DSMetaData
+        # Create Author instances and associate with DSMetaData (one author per ds)
         authors = [
             Author(
                 name=f"Author {i+1}",
                 affiliation=f"Affiliation {i+1}",
                 orcid=f"0000-0000-0000-000{i}",
-                ds_meta_data_id=seeded_ds_meta_data[i].id,
             )
             for i in range(10)
         ]
-        self.seed(authors)
+        seeded_authors = self.seed(authors)
+
+        # Link each DSMetaData to its single Author
+        for i in range(10):
+            seeded_ds_meta_data[i].author_id = seeded_authors[i].id
+            self.db.session.add(seeded_ds_meta_data[i])
+        self.db.session.commit()
 
         # Create DataSet instances
         datasets = [
@@ -94,17 +99,12 @@ class DataSetSeeder(BaseSeeder):
         ]
         seeded_fm_meta_data = self.seed(fm_meta_data_list)
 
-        # Create Author instances and associate with FMMetaData
-        fm_authors = [
-            Author(
-                name=f"Author {i+5}",
-                affiliation=f"Affiliation {i+5}",
-                orcid=f"0000-0000-0000-000{i+5}",
-                fm_meta_data_id=seeded_fm_meta_data[i].id,
-            )
-            for i in range(10)  # 10 authors for the file models
-        ]
-        self.seed(fm_authors)
+        # Link each FMMetaData to the same Author as its DSMetaData (reuse authors)
+        for i in range(10):
+            # reuse the author created for the dataset metadata
+            seeded_fm_meta_data[i].author_id = seeded_authors[i].id
+            self.db.session.add(seeded_fm_meta_data[i])
+        self.db.session.commit()
 
         # Create the FileModels and associate them with the Datasets
         file_models = [

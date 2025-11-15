@@ -59,9 +59,10 @@ class FMMetaData(db.Model):
     csv_version = db.Column(db.String(120))
     fm_metrics_id = db.Column(db.Integer, db.ForeignKey("fm_metrics.id"))
     fm_metrics = db.relationship("FMMetrics", uselist=False, backref="fm_meta_data")
-    authors = db.relationship(
-        "Author", backref="fm_metadata", lazy=True, cascade="all, delete", foreign_keys=[Author.fm_meta_data_id]
-    )
+
+    # Single author for the file-level metadata (business rule: one author per FMMetaData)
+    author_id = db.Column(db.Integer, db.ForeignKey("author.id"), nullable=True)
+    author = db.relationship("Author", backref=db.backref("fm_meta_datas", lazy=True), uselist=False)
 
     def __repr__(self):
         return f"FMMetaData<{self.title}"

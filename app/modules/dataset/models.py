@@ -28,8 +28,9 @@ class Author(db.Model):
     name = db.Column(db.String(120), nullable=False)
     affiliation = db.Column(db.String(120))
     orcid = db.Column(db.String(120))
-    ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"))
-    fm_meta_data_id = db.Column(db.Integer, db.ForeignKey("fm_meta_data.id"))
+    # Optional link to a user account (allows reusing the same author for uploads)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    # Note: file-level authorship is represented from FMMetaData via FMMetaData.author_id
 
     def to_dict(self):
         return {"name": self.name, "affiliation": self.affiliation, "orcid": self.orcid}
@@ -56,7 +57,10 @@ class DSMetaData(db.Model):
     tags = db.Column(db.String(120))
     ds_metrics_id = db.Column(db.Integer, db.ForeignKey("ds_metrics.id"))
     ds_metrics = db.relationship("DSMetrics", uselist=False, backref="ds_meta_data", cascade="all, delete")
-    authors = db.relationship("Author", backref="ds_meta_data", lazy=True, cascade="all, delete")
+
+    # Each DSMetaData points to a single Author (business rule: one author per dataset)
+    author_id = db.Column(db.Integer, db.ForeignKey("author.id"), nullable=True)
+    author = db.relationship("Author", backref=db.backref("datasets", lazy=True), uselist=False)
 
 class BaseDataset(db.Model):
     __tablename__ = "data_set"
@@ -202,7 +206,8 @@ class TabularDataset(BaseDataset):
             "created_at": self.created_at,
             "created_at_timestamp": int(self.created_at.timestamp()),
             "description": self.ds_meta_data.description,
-            "authors": [author.to_dict() for author in self.ds_meta_data.authors],
+            # Keep compatibility with previous API returning a list of authors
+            "authors": ([self.ds_meta_data.author.to_dict()] if self.ds_meta_data and self.ds_meta_data.author else []),
             "publication_type": self.get_cleaned_publication_type(),
             "publication_doi": self.ds_meta_data.publication_doi,
             "dataset_doi": self.ds_meta_data.dataset_doi,

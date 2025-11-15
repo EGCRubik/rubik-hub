@@ -52,6 +52,15 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('author',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=120), nullable=False),
+    sa.Column('affiliation', sa.String(length=120), nullable=True),
+    sa.Column('orcid', sa.String(length=120), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('ds_meta_data',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('deposition_id', sa.Integer(), nullable=True),
@@ -61,6 +70,8 @@ def upgrade():
     sa.Column('publication_doi', sa.String(length=120), nullable=True),
     sa.Column('dataset_doi', sa.String(length=120), nullable=True),
     sa.Column('tags', sa.String(length=120), nullable=True),
+    sa.Column('author_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['author_id'], ['author.id'], ),
     sa.Column('ds_metrics_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['ds_metrics_id'], ['ds_metrics.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -74,6 +85,8 @@ def upgrade():
     sa.Column('publication_doi', sa.String(length=120), nullable=True),
     sa.Column('tags', sa.String(length=120), nullable=True),
     sa.Column('csv_version', sa.String(length=120), nullable=True),
+    sa.Column('author_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['author_id'], ['author.id'], ),
     sa.Column('fm_metrics_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['fm_metrics_id'], ['fm_metrics.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -88,17 +101,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
-    )
-    op.create_table('author',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=120), nullable=False),
-    sa.Column('affiliation', sa.String(length=120), nullable=True),
-    sa.Column('orcid', sa.String(length=120), nullable=True),
-    sa.Column('ds_meta_data_id', sa.Integer(), nullable=True),
-    sa.Column('fm_meta_data_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['ds_meta_data_id'], ['ds_meta_data.id'], ),
-    sa.ForeignKeyConstraint(['fm_meta_data_id'], ['fm_meta_data.id'], ),
-    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('data_set',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -288,10 +290,10 @@ def downgrade():
     op.drop_table('ds_view_record')
     op.drop_table('ds_download_record')
     op.drop_table('data_set')
-    op.drop_table('author')
     op.drop_table('user_profile')
     op.drop_table('fm_meta_data')
     op.drop_table('ds_meta_data')
+    op.drop_table('author')
     op.drop_table('zenodo')
     op.drop_table('webhook')
     op.drop_table('user')

@@ -33,7 +33,7 @@ class ExploreRepository(BaseRepository):
 
         datasets = (
             self.model.query.join(DataSet.ds_meta_data)
-            .join(DSMetaData.authors)
+            .join(DSMetaData.author)
             .join(DataSet.file_models)
             .join(FileModel.fm_meta_data)
             .filter(or_(*filters))
