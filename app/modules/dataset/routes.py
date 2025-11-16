@@ -9,9 +9,9 @@ from typing import Optional
 from zipfile import ZipFile
 
 import requests
-from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
-from werkzeug.utils import secure_filename
+from flask import abort, flash, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
+from werkzeug.utils import secure_filename
 
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
@@ -24,6 +24,8 @@ from app.modules.dataset.services import (
     DSMetaDataService,
     DSViewRecordService,
 )
+from app.utils import notifications
+from app.utils.notifications import notify_followers_of_author
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +98,7 @@ class FakenodoAdapter:
         else:
             svc = self._get_service()
             return svc.upload_file(deposition_id, name, content)
+        notifications.notify_followers_of_author(dataset)
 
     def publish_deposition(self, deposition_id):
         if self.is_remote:
@@ -505,3 +508,81 @@ def get_unsynchronized_dataset(dataset_id):
 
     downloads = DataSetService().get_number_of_downloads(dataset.id)
     return render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads)
+
+
+@dataset_bp.route("/dataset/<int:dataset_id>/sync", methods=["POST"])
+@login_required
+def sync_dataset(dataset_id):
+    """Sync (publish) an unsynchronized dataset via Zenodo/FakeNODO and mark it as synchronized.
+
+    Only the dataset owner may publish.
+    """
+    logger.debug("sync_dataset called by user=%s for dataset_id=%s", current_user.id if current_user and current_user.is_authenticated else None, dataset_id)
+
+    # Log existence and owner info for debugging why lookup may return None
+    try:
+        ds_any = dataset_service.repository.get_by_id(dataset_id)
+        if ds_any:
+            logger.debug("Found dataset id=%s user_id=%s dataset_doi=%s", ds_any.id, getattr(ds_any, 'user_id', None), getattr(getattr(ds_any, 'ds_meta_data', None), 'dataset_doi', None))
+        else:
+            logger.debug("No dataset found with id=%s", dataset_id)
+    except Exception:
+        logger.exception("Error fetching dataset by id for debug")
+
+    # Try to fetch dataset regardless of sync status to provide clearer feedback
+    ds_any = dataset_service.repository.get_by_id(dataset_id)
+    if not ds_any:
+        # Truly does not exist: show a user-friendly message and redirect to list
+        flash("Dataset no encontrado.", "warning")
+        return redirect(url_for("dataset.list_dataset"))
+
+    # Permission check: only owner may publish
+    if not (current_user and current_user.is_authenticated and ds_any.user_id == current_user.id):
+        # Friendly feedback instead of 403 page
+        flash("No tienes permiso para publicar este dataset.", "danger")
+        return redirect(url_for("dataset.list_dataset"))
+
+    # Check if it's already synchronized
+    existing_doi = getattr(getattr(ds_any, "ds_meta_data", None), "dataset_doi", None)
+    if existing_doi:
+        # Already published
+        flash("Este dataset ya está publicado en el repositorio remoto.", "info")
+        return redirect(url_for("dataset.list_dataset"))
+
+    # At this point we have the dataset object to publish
+    dataset = ds_any
+    print("aqui")
+    notify_followers_of_author(dataset)
+
+    try:
+        # Create deposition
+        resp = zenodo_service.create_new_deposition(dataset)
+        deposition_id = resp.get("id") if resp else None
+        if not deposition_id:
+            flash("No se pudo crear la deposition en el repositorio remoto.", "danger")
+            return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset.id))
+
+        # Save deposition id
+        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+
+        # Upload files: feature_models and file_models (if present)
+        for fm in getattr(dataset, "feature_models", []) + getattr(dataset, "file_models", []):
+            try:
+                zenodo_service.upload_file(dataset, deposition_id, fm)
+            except Exception as exc:
+                # Log and continue with other files
+                logger.exception("Error subiendo fichero para dataset %s fm=%s: %s", dataset.id, getattr(fm, "id", "?"), exc)
+
+        # Publish deposition
+        zenodo_service.publish_deposition(deposition_id)
+        doi = zenodo_service.get_doi(deposition_id)
+
+        # Update dataset DOI (this marks it as synchronized)
+        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=doi)        
+
+        flash(f"Dataset publicado correctamente. DOI: {doi}", "success")
+        return redirect(url_for("dataset.list_dataset"))
+    except Exception as exc:
+        logger.exception("Error sincronizando dataset %s: %s", dataset_id, exc)
+        flash(f"Error sincronizando dataset: {exc}", "danger")
+        return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset_id))

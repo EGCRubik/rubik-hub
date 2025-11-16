@@ -7,6 +7,7 @@ from typing import Optional
 
 from flask import request
 
+from app import db
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
 from app.modules.dataset.repositories import (
@@ -23,8 +24,8 @@ from app.modules.hubfile.repositories import (
     HubfileRepository,
     HubfileViewRecordRepository,
 )
+from app.utils import notifications
 from core.services.BaseService import BaseService
-from app import db
 
 logger = logging.getLogger(__name__)
 
@@ -240,6 +241,7 @@ class DataSetService(BaseService):
 
             # 5) Confirmar todo
             self.repository.session.commit()
+            notifications.notify_followers_of_author(current_user.id, dataset)
         except Exception as exc:
             logger.info(f"Exception creating dataset from form...: {exc}")
             self.repository.session.rollback()
@@ -255,6 +257,12 @@ class DataSetService(BaseService):
 
     def get_number_of_downloads(self, dataset_id: int) -> int:
         return self.repository.get_number_of_downloads(dataset_id)
+    
+    def get_author_id_by_user_id(self, user_id: int) -> Optional[int]:
+        author = self.author_repository.model.query.filter_by(user_id=user_id).first()
+        if author:
+            return author.id
+        return None
 
 
 class AuthorService(BaseService):
@@ -328,3 +336,5 @@ class SizeService:
             return f"{round(size / (1024 ** 2), 2)} MB"
         else:
             return f"{round(size / (1024 ** 3), 2)} GB"
+
+
