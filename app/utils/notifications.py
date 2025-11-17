@@ -27,7 +27,6 @@ except Exception:
         from app.modules.followCommunity.models import FollowCommunity as Followcommunity
     except Exception:
         raise
-from app.modules.dataset.services import DataSetService
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +64,8 @@ def notify_followers_of_author(user_id, dataset):
     author_id: integer id of the author whose followers should be notified
     dataset: DataSet instance used to build the email body
     """
+    from app.modules.dataset.services import DataSetService
+
     author_id = DataSetService().get_author_id_by_user_id(user_id)
     if not author_id:
         logger.debug("No author_id provided to notify_followers_of_author for dataset %s", getattr(dataset, "id", "?"))
