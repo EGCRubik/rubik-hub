@@ -130,3 +130,27 @@ class FakenodoService(BaseService):
             if not rec:
                 return None
             return rec.get("versions", [])
+
+    # --- Compatibility wrappers -------------------------------------------------
+    def create_new_deposition(self, metadata: Optional[Dict] = None) -> Dict:
+        """Backward-compatible alias for older code that called create_new_deposition.
+
+        Keeps the same semantics as create_deposition.
+        """
+        return self.create_deposition(metadata=metadata)
+
+    def get_doi(self, deposition_id: int) -> Optional[str]:
+        """Return DOI for a deposition (compatibility with adapter).
+
+        Looks for a top-level 'doi' key on the record or the last version's doi.
+        """
+        self._ensure_loaded()
+        rec = self._db.get("records", {}).get(str(deposition_id))
+        if not rec:
+            return None
+        if rec.get("doi"):
+            return rec.get("doi")
+        versions = rec.get("versions", [])
+        if versions:
+            return versions[-1].get("doi")
+        return None
