@@ -23,6 +23,11 @@ class PublicationType(Enum):
     OTHER = "other"
 
 
+class Download(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False)
+    download_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
 class Author(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
@@ -71,6 +76,8 @@ class BaseDataset(db.Model):
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     type = db.Column(db.String(50), nullable=False, server_default="csv", index=True)
+
+    downloads = db.relationship("Download", backref="data_set", lazy=True, cascade="all, delete-orphan")
 
     ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
     __mapper_args__ = {

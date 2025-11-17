@@ -114,6 +114,13 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('download',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('dataset_id', sa.Integer(), nullable=False),
+    sa.Column('download_date', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['dataset_id'], ['data_set.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('ds_download_record',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
@@ -289,6 +296,7 @@ def downgrade():
     op.drop_table('file_model')
     op.drop_table('ds_view_record')
     op.drop_table('ds_download_record')
+    op.drop_table('download')
     op.drop_table('data_set')
     op.drop_table('user_profile')
     op.drop_table('fm_meta_data')

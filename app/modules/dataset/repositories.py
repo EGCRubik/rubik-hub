@@ -5,13 +5,23 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord, BaseDataset
+from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord, BaseDataset, Download
 from core.repositories.BaseRepository import BaseRepository
 
 from app import db
 
 logger = logging.getLogger(__name__)
 
+
+class DownloadRepository(BaseRepository):
+    def __init__(self):
+        super().__init__(Download)
+
+    def create_download_record(self, dataset_id: int) -> Download:
+        return self.create(
+            dataset_id=dataset_id,
+            download_date=datetime.now(timezone.utc),
+        )
 
 class AuthorRepository(BaseRepository):
     def __init__(self):
