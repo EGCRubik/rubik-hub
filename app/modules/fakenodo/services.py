@@ -144,7 +144,6 @@ class FakenodoService(BaseService):
 
         Looks for a top-level 'doi' key on the record or the last version's doi.
         """
-        self._ensure_loaded()
         rec = self._db.get("records", {}).get(str(deposition_id))
         if not rec:
             return None
