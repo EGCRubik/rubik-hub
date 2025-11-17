@@ -77,7 +77,7 @@ class BaseDataset(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     type = db.Column(db.String(50), nullable=False, server_default="csv", index=True)
 
-    downloads = db.relationship("Download", backref="data_set", lazy=True, cascade="all, delete-orphan")
+    downloads = db.relationship("Download", backref="data_set", lazy="dynamic", cascade="all, delete-orphan")
 
     ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
     __mapper_args__ = {
@@ -85,6 +85,9 @@ class BaseDataset(db.Model):
         "polymorphic_identity": "base",
         "with_polymorphic": "*",
     }
+
+    def get_number_of_downloads(self):
+        return self.downloads.count()
 
     def get_cleaned_publication_type(self):
         """Devuelve el tipo de publicación limpiado desde DSMetaData si existe."""
@@ -221,9 +224,8 @@ class TabularDataset(BaseDataset):
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
             "url": self.get_rubikhub_doi(),
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
-            "downloads": (self.file_models[0].fm_meta_data.fm_metrics.number_of_downloads
-                          if self.file_models and self.file_models[0].fm_meta_data and self.file_models[0].fm_meta_data.fm_metrics
-                          else 0),
+            # Use the dataset-level method to obtain the number of downloads (counts Download rows)
+            "downloads": self.get_number_of_downloads() or 0,
             "zenodo": self.get_zenodo_url(),
             "files": [file.to_dict() for fm in self.file_models for file in fm.files],
             "files_count": self.get_files_count(),

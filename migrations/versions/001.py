@@ -33,7 +33,6 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('solver', sa.Text(), nullable=True),
     sa.Column('not_solver', sa.Text(), nullable=True),
-    sa.Column('number_of_downloads', sa.Integer(), nullable=False, server_default='0'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user',

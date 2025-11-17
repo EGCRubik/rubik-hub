@@ -120,9 +120,7 @@ class DataSetRepository(BaseRepository):
         if not dataset:
             return 0
 
-        fm = dataset.file_models[0]
-
-        return fm.get_number_of_downloads()
+        return dataset.downloads.count()
 
     def get_by_id(self, dataset_id: int) -> Optional[DataSet]:
         return DataSet.query.get(dataset_id)

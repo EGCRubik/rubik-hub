@@ -72,7 +72,6 @@ class FMMetrics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     solver = db.Column(db.Text)
     not_solver = db.Column(db.Text)
-    number_of_downloads = db.Column(db.Integer, default=0)
 
     def __repr__(self):
         return f"FMMetrics<solver={self.solver}, not_solver={self.not_solver}>"

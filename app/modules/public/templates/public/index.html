@@ -18,7 +18,7 @@
                                     <i data-feather="download"></i>
                                     <small class="text-muted">
                                         {# Verifica si existen métricas y devuelve el número de descargas o 0 si no existe #}
-                                        {{ dataset.file_models[0].fm_meta_data.fm_metrics.number_of_downloads if (dataset.file_models and dataset.file_models[0].fm_meta_data and dataset.file_models[0].fm_meta_data.fm_metrics and dataset.file_models[0].fm_meta_data.fm_metrics.number_of_downloads is not none) else 0 }}
+                                        {{ dataset.get_number_of_downloads() if dataset.get_number_of_downloads() is not none else 0 }}
                                     </small>
                                 </span>
                                 <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
