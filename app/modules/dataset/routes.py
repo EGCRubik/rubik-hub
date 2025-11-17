@@ -552,7 +552,6 @@ def sync_dataset(dataset_id):
     # At this point we have the dataset object to publish
     dataset = ds_any
     print("aqui")
-    notify_followers_of_author(dataset)
 
     try:
         # Create deposition
