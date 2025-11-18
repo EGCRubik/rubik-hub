@@ -1,11 +1,12 @@
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import uuid
 from dotenv import load_dotenv
 from random import choice
 
 from app.modules.auth.models import User
-from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType
+from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType, Download
 from app.modules.fileModel.models import FileModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 from core.seeders.BaseSeeder import BaseSeeder
@@ -84,6 +85,22 @@ class DataSetSeeder(BaseSeeder):
             for i in range(10)  # 10 datasets
         ]
         seeded_datasets = self.seed(datasets)
+
+        # Create Download entries for each dataset:
+        # dataset 10 (last) -> 10 downloads (12 days ago)
+        # dataset 9..1 -> N downloads (2 days ago)
+        download_records = []
+        now = datetime.now(timezone.utc)
+        total = len(seeded_datasets)
+        for idx, ds in enumerate(seeded_datasets):
+            count = idx + 1
+            days_ago = 12 if idx == (total - 1) else 2
+            download_date = now - timedelta(days=days_ago)
+            for _ in range(count):
+                download_records.append(Download(dataset_id=ds.id, download_date=download_date))
+
+        if download_records:
+            self.seed(download_records)
 
         # Now create FMMetaData and FileModels for 10 datasets
         fm_meta_data_list = [
