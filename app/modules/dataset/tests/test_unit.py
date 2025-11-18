@@ -3,7 +3,7 @@ import pytest
 
 from app import db
 from app.modules.dataset.services import DataSetService
-from app.modules.dataset.models import TabularDataset, PublicationType, DSMetaData
+from app.modules.dataset.models import TabularDataset, PublicationType, DSMetaData, Download
 from app.modules.fileModel.models import FileModel, FMMetaData, FMMetrics
 from app.modules.auth.models import User
 
@@ -34,7 +34,7 @@ def test_get_number_of_downloads(clean_database, test_client):
 		db.session.flush()
 
 		# Crear métricas con número de descargas concreto
-		fmMetrics = FMMetrics(number_of_downloads=7)
+		fmMetrics = FMMetrics()
 		db.session.add(fmMetrics)
 		db.session.flush()
 
@@ -54,6 +54,11 @@ def test_get_number_of_downloads(clean_database, test_client):
 		db.session.flush()
 
 		# Commit final
+		db.session.commit()
+
+		for _ in range(7):
+			download = Download(dataset_id=dataset.id)
+			db.session.add(download)
 		db.session.commit()
 
 		# Llamar al servicio y comprobar el resultado
@@ -82,7 +87,7 @@ def test_update_download_count_increments(clean_database, test_client):
 		db.session.flush()
 
 		# Crear métricas con número de descargas concreto
-		fmMetrics = FMMetrics(number_of_downloads=5)
+		fmMetrics = FMMetrics()
 		db.session.add(fmMetrics)
 		db.session.flush()
 
@@ -101,6 +106,11 @@ def test_update_download_count_increments(clean_database, test_client):
 		db.session.add(fileModel)
 		db.session.flush()
 
+		for _ in range(5):
+			download = Download(dataset_id=dataset.id)
+			db.session.add(download)
+		db.session.flush()
+
 		# Commit final
 		db.session.commit()
 
@@ -109,6 +119,4 @@ def test_update_download_count_increments(clean_database, test_client):
 		service.update_download_count(dataset.id)
 
 		# Refrescar las métricas desde la DB y comprobar el valor
-		refreshed_metrics = FMMetrics.query.get(fmMetrics.id)
-		assert refreshed_metrics is not None, "FMMetrics should exist"
-		assert refreshed_metrics.number_of_downloads == 6, f"Expected 6 downloads after increment, got {refreshed_metrics.number_of_downloads}"
+		assert service.get_number_of_downloads(dataset.id) == 6, f"Expected 6 downloads after increment, got {service.get_number_of_downloads(dataset.id)}"
