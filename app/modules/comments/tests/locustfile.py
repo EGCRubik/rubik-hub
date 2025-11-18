@@ -1,70 +1,68 @@
 from locust import HttpUser, TaskSet, task
 from core.environment.host import get_host_for_locust_testing
-from core.locust.common import fake, get_csrf_token
+from core.locust.common import get_csrf_token, fake
 
 
-class AuthBehavior(TaskSet):
+class CommentBehavior(TaskSet):
     def on_start(self):
-        self.ensure_logged_out()
+        # Al iniciar el usuario virtual, hacemos login
         self.login()
 
-    @task
-    def ensure_logged_out(self):
-        response = self.client.get("/logout")
-        if response.status_code != 200:
-            print(f"Logout failed or no active session: {response.status_code}")
-
-    @task
     def login(self):
         response = self.client.get("/login")
-        if response.status_code != 200 or "Login" not in response.text:
-            # En caso de estar logueado o respuesta inesperada
-            self.ensure_logged_out()
-            response = self.client.get("/login")
-
-        csrf_token = get_csrf_token(response)
-
+        self.csrf_token = get_csrf_token(response)
         response = self.client.post(
             "/login",
-            data={"email": "user1@example.com", "password": "1234", "csrf_token": csrf_token},
+            data={"email": "user1@example.com", "password": "1234", "csrf_token": self.csrf_token},
         )
         if response.status_code != 200:
             print(f"Login failed: {response.status_code}")
 
-
-class CommentsBehavior(TaskSet):
-    def on_start(self):
-        self.auth_behavior = AuthBehavior(self)
-        self.auth_behavior.on_start()
-        self.view_comments()
-
     @task
-    def view_comments(self):
-        response = self.client.get("/comments")
-        if response.status_code != 200:
-            print(f"Comments index failed: {response.status_code}")
-
-    @task
-    def add_comment(self):
-        # Obtener CSRF token de la página de comentarios
-        response = self.client.get("/comments")
-        if response.status_code != 200:
-            print(f"Failed to load comments page: {response.status_code}")
-            return
-
+    def view_comment(self):
+        # Simulamos ver un comentario existente
+        dataset_doi = "10.1234/dataset10/"  # asegúrate que existe en tu entorno de pruebas
+        response = self.client.get(f"/doi/{dataset_doi}/")
         csrf_token = get_csrf_token(response)
 
-        # Publicar un comentario de prueba
-        response = self.client.post(
-            "/comments",
-            data={"content": f"Test comment {fake.sentence()}", "csrf_token": csrf_token},
-        )
-        if response.status_code != 200:
-            print(f"Failed to add comment: {response.status_code}")
+    # @task
+    # def create_comment(self):
+    #     dataset_id = 10
+    #     dataset_doi = "10.1234/dataset10"
+
+    #     # Paso 1: obtener la vista del dataset para extraer CSRF
+    #     response = self.client.get(f"/doi/{dataset_doi}/")
+
+    #     # Paso 2: enviar el POST al endpoint de creación de comentario
+    #     with self.client.post(
+    #         f"/comments/create/{dataset_id}",
+    #         data={"content": fake.text(max_nb_chars=100), "csrf_token": self.csrf_token},
+    #         catch_response=True
+    #     ) as response:
+    #         if response.status_code != 200:
+    #             # Esto aparecerá en la UI de Locust como fallo con detalle
+    #             response.failure(
+    #                 f"Failed {response.status_code}: {response.text[:200]}"
+    #             )
+    #         else:
+    #             response.success()
+
+    # @task
+    # def delete_comment(self):
+    #     comment_id = 1  # comentario válido
+    #     response = self.client.get(f"/comments/view/{comment_id}")  # para obtener CSRF si aplica
+    #     csrf_token = get_csrf_token(response)
+
+    #     response = self.client.post(
+    #         f"/comments/delete/{comment_id}",
+    #         data={"csrf_token": csrf_token},
+    #     )
+    #     if response.status_code != 200:
+    #         print(f"Delete comment failed: {response.status_code}")
 
 
-class CommentsUser(HttpUser):
-    tasks = [CommentsBehavior]
+class CommentUser(HttpUser):
+    tasks = [CommentBehavior]
     min_wait = 5000
     max_wait = 9000
     host = get_host_for_locust_testing()
