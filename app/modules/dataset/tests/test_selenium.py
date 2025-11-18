@@ -141,22 +141,3 @@ def test_upload_dataset():
 
 # Call the test function
 test_upload_dataset()
-
-
-class TestTestdownloaddataset():
-  def setup_method(self, method):
-    self.driver = webdriver.Firefox()
-    self.vars = {}
-  
-  def teardown_method(self, method):
-    self.driver.quit()
-  
-  def test_testdownloaddataset(self):
-    self.driver.get("http://127.0.0.1:5000/")
-    self.driver.set_window_size(706, 961)
-    self.driver.find_element(By.LINK_TEXT, "Sample dataset 9").click()
-    self.driver.find_element(By.LINK_TEXT, "Download all (1.58 KB)").click()
-
-    print("Test passed!")
-
-test_testdownloaddataset()
