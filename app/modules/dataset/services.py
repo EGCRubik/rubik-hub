@@ -7,6 +7,7 @@ from typing import Optional
 
 from flask import request
 
+from app import db
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
 from app.modules.dataset.repositories import (
@@ -16,6 +17,7 @@ from app.modules.dataset.repositories import (
     DSDownloadRecordRepository,
     DSMetaDataRepository,
     DSViewRecordRepository,
+    DownloadRepository,
 )
 from app.modules.fileModel.repositories import FileModelRepository, FMMetaDataRepository
 from app.modules.hubfile.repositories import (
@@ -23,8 +25,8 @@ from app.modules.hubfile.repositories import (
     HubfileRepository,
     HubfileViewRecordRepository,
 )
+from app.utils import notifications
 from core.services.BaseService import BaseService
-from app import db
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +52,10 @@ class DataSetService(BaseService):
         self.hubfilerepository = HubfileRepository()
         self.dsviewrecord_repostory = DSViewRecordRepository()
         self.hubfileviewrecord_repository = HubfileViewRecordRepository()
+        self.download_repository = DownloadRepository()
 
-    def update_download_count(self,dataset_id):
-        dataset = DataSetRepository.get_by_id(self, dataset_id)
-        number_of_downloads = self.repository.get_number_of_downloads(dataset_id)
-        if dataset:
-            new_download_count = number_of_downloads + 1
-            DataSetRepository.update_download_count(self, dataset, new_download_count)
+    def update_download_count(self, dataset_id):
+        self.download_repository.create_download_record(dataset_id=dataset_id)
 
     def move_file_models(self, dataset: DataSet):
         current_user = AuthenticationService().get_authenticated_user()
@@ -108,40 +107,139 @@ class DataSetService(BaseService):
             "orcid": current_user.profile.orcid,
         }
         try:
+            # 1) Crear DSMetaData del dataset
             logger.info(f"Creating dsmetadata...: {form.get_dsmetadata()}")
             dsmetadata = self.dsmetadata_repository.create(**form.get_dsmetadata())
-            for author_data in [main_author] + form.get_authors():
-                author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
-                dsmetadata.authors.append(author)
 
+            # 2) Autor del dataset (regla de negocio: un dataset tiene 1 autor)
+            # Preferimos reutilizar un Author existente vinculado al usuario (user_id),
+            # luego por ORCID y finalmente por name+affiliation. Si no existe, lo creamos.
+            author_data = None
+            extra_authors = form.get_authors()
+            if extra_authors and len(extra_authors) > 0:
+                author_data = extra_authors[0]
+            else:
+                author_data = main_author
+
+            existing_author = None
+            try:
+                # 1) Prefer user-associated author
+                if current_user and getattr(current_user, "id", None):
+                    existing_author = self.author_repository.model.query.filter_by(user_id=current_user.id).first()
+
+                # 2) Then ORCID
+                if not existing_author and author_data.get("orcid"):
+                    existing_author = self.author_repository.model.query.filter_by(orcid=author_data.get("orcid")).first()
+
+                # 3) Finally name + affiliation
+                if not existing_author and author_data.get("name"):
+                    existing_author = (
+                        self.author_repository.model.query.filter_by(name=author_data.get("name"), affiliation=author_data.get("affiliation")).first()
+                    )
+            except Exception:
+                existing_author = None
+
+            if existing_author:
+                dsmetadata.author = existing_author
+            else:
+                author = self.author_repository.create(
+                    commit=False,
+                    user_id=current_user.id if current_user and getattr(current_user, "id", None) else None,
+                    **author_data,
+                )
+                dsmetadata.author = author
+
+            # 3) Crear el TabularDataset asociado
             from app.modules.dataset.models import TabularDataset
 
             dataset = TabularDataset(user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
-
             self.repository.session.add(dataset)
-            
-            self.repository.session.flush()
+            self.repository.session.flush()  # Para tener dataset.id
 
+            # 4) Crear FileModel + FMMetaData + Hubfile por cada entry de file_models
             for file_model in form.file_models:
                 csv_filename = file_model.csv_filename.data
-                fmmetadata = self.fmmetadata_repository.create(commit=False, **file_model.get_fmmetadata())
-                for author_data in file_model.get_authors():
-                    author = self.author_repository.create(commit=False, fm_meta_data_id=fmmetadata.id, **author_data)
-                    fmmetadata.authors.append(author)
 
+                # Diccionario base desde el form
+                fmmetadata_data = file_model.get_fmmetadata()
+
+                # ⚠️ FMMetaData NO tiene 'publication_type' → lo eliminamos
+                fmmetadata_data.pop("publication_type", None)
+
+                # Rellenar valores por defecto desde dsmetadata si vienen vacíos
+                if not fmmetadata_data.get("title"):
+                    fmmetadata_data["title"] = dsmetadata.title
+
+                if not fmmetadata_data.get("description"):
+                    fmmetadata_data["description"] = dsmetadata.description
+
+                if "publication_doi" in fmmetadata_data and not fmmetadata_data["publication_doi"]:
+                    fmmetadata_data["publication_doi"] = dsmetadata.publication_doi
+
+                if "tags" in fmmetadata_data and not fmmetadata_data["tags"]:
+                    fmmetadata_data["tags"] = dsmetadata.tags
+
+                # 4.1 Crear FMMetaData
+                fmmetadata = self.fmmetadata_repository.create(commit=False, **fmmetadata_data)
+
+                # 4.2 Autor del FMMetaData: use the same author as the DSMetaData
+                if dsmetadata and dsmetadata.author:
+                    fmmetadata.author = dsmetadata.author
+                else:
+                    # Fallback (should be rare): reuse same logic to create/reuse an author
+                    fm_author_data = None
+                    fm_authors_list = file_model.get_authors()
+                    if fm_authors_list and len(fm_authors_list) > 0:
+                        fm_author_data = fm_authors_list[0]
+                    else:
+                        fm_author_data = {"name": dsmetadata.title if dsmetadata else "", "affiliation": None, "orcid": None}
+
+                    existing_fm_author = None
+                    try:
+                        if current_user and getattr(current_user, "id", None):
+                            existing_fm_author = self.author_repository.model.query.filter_by(user_id=current_user.id).first()
+                        if not existing_fm_author and fm_author_data.get("orcid"):
+                            existing_fm_author = self.author_repository.model.query.filter_by(orcid=fm_author_data.get("orcid")).first()
+                        if not existing_fm_author and fm_author_data.get("name"):
+                            existing_fm_author = (
+                                self.author_repository.model.query.filter_by(name=fm_author_data.get("name"), affiliation=fm_author_data.get("affiliation")).first()
+                            )
+                    except Exception:
+                        existing_fm_author = None
+
+                    if existing_fm_author:
+                        fmmetadata.author = existing_fm_author
+                    else:
+                        author = self.author_repository.create(
+                            commit=False,
+                            user_id=current_user.id if current_user and getattr(current_user, "id", None) else None,
+                            **fm_author_data,
+                        )
+                        fmmetadata.author = author
+
+                # 4.3 Crear FileModel
                 fm = self.feature_model_repository.create(
-                    commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
+                    commit=False,
+                    data_set_id=dataset.id,
+                    fm_meta_data_id=fmmetadata.id,
                 )
 
+                # 4.4 Crear Hubfile asociado al FileModel
                 file_path = os.path.join(current_user.temp_folder(), csv_filename)
                 checksum, size = calculate_checksum_and_size(file_path)
 
-                # When creating Hubfile, associate to the FileModel (formerly FeatureModel)
                 file = self.hubfilerepository.create(
-                    commit=False, name=csv_filename, checksum=checksum, size=size, file_model_id=fm.id
+                    commit=False,
+                    name=csv_filename,
+                    checksum=checksum,
+                    size=size,
+                    file_model_id=fm.id,
                 )
                 fm.files.append(file)
+
+            # 5) Confirmar todo
             self.repository.session.commit()
+            notifications.notify_followers_of_author(current_user.id, dataset)
         except Exception as exc:
             logger.info(f"Exception creating dataset from form...: {exc}")
             self.repository.session.rollback()
@@ -157,6 +255,13 @@ class DataSetService(BaseService):
 
     def get_number_of_downloads(self, dataset_id: int) -> int:
         return self.repository.get_number_of_downloads(dataset_id)
+    
+    def get_author_id_by_user_id(self, user_id: int) -> Optional[int]:
+        author = self.author_repository.model.query.filter_by(user_id=user_id).first()
+        if author:
+            return author.id
+        return None
+
 
 class AuthorService(BaseService):
     def __init__(self):
@@ -229,3 +334,5 @@ class SizeService:
             return f"{round(size / (1024 ** 2), 2)} MB"
         else:
             return f"{round(size / (1024 ** 3), 2)} GB"
+
+

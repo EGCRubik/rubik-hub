@@ -24,7 +24,7 @@ class ExploreRepository(BaseRepository):
             filters.append(Author.name.ilike(f"%{word}%"))
             filters.append(Author.affiliation.ilike(f"%{word}%"))
             filters.append(Author.orcid.ilike(f"%{word}%"))
-            filters.append(FMMetaData.uvl_filename.ilike(f"%{word}%"))
+            filters.append(FMMetaData.csv_filename.ilike(f"%{word}%"))
             filters.append(FMMetaData.title.ilike(f"%{word}%"))
             filters.append(FMMetaData.description.ilike(f"%{word}%"))
             filters.append(FMMetaData.publication_doi.ilike(f"%{word}%"))
@@ -33,7 +33,7 @@ class ExploreRepository(BaseRepository):
 
         datasets = (
             self.model.query.join(DataSet.ds_meta_data)
-            .join(DSMetaData.authors)
+            .join(DSMetaData.author)
             .join(DataSet.file_models)
             .join(FileModel.fm_meta_data)
             .filter(or_(*filters))

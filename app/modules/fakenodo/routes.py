@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import current_app, jsonify, redirect, request, url_for
 
 from app.modules.fakenodo import fakenodo_bp
 from app.modules.fakenodo.services import FakenodoService
@@ -68,3 +68,91 @@ def listar_versiones(deposition_id):
 @fakenodo_bp.route('/fakenodo/test', methods=['GET'], endpoint='test_endpoint')
 def prueba_endpoint():
     return service.test_full_connection()
+
+
+
+@fakenodo_bp.route('/dataset/<int:dataset_id>/sync', methods=['GET', 'POST'], endpoint='dataset_sync_proxy')
+def dataset_sync_proxy(deposition_id=None, dataset_id=None):
+    from app.modules.dataset import routes as dataset_routes
+
+    if request.method == 'GET':
+        return redirect(url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset_id))
+
+    view_fn = current_app.view_functions.get("dataset.sync_dataset")
+    if view_fn:
+        return view_fn(dataset_id)
+
+    try:
+       
+        import importlib
+
+        mod = importlib.import_module("app.modules.dataset.routes")
+        fn = getattr(mod, "sync_dataset", None)
+        if fn:
+            return fn(dataset_id)
+
+       
+        current_app.logger.warning(
+            "dataset.sync_dataset not available in module app.modules.dataset.routes; attempting direct service fallback"
+        )
+
+        ds_service = getattr(mod, "dataset_service", None)
+        zen_service = getattr(mod, "zenodo_service", None)
+        if not ds_service or not zen_service:
+            current_app.logger.error("Required services not available on dataset module: dataset_service=%s zenodo_service=%s", ds_service, zen_service)
+            return (jsonify({"message": "Sync handler not available"}), 500)
+
+        try:
+            ds_any = ds_service.repository.get_by_id(dataset_id)
+            if not ds_any:
+                from flask import flash
+
+                flash("Dataset no encontrado.", "warning")
+                return redirect(url_for("dataset.list_dataset"))
+
+            from flask_login import current_user
+
+            if not (current_user and current_user.is_authenticated and ds_any.user_id == current_user.id):
+                from flask import flash
+
+                flash("No tienes permiso para publicar este dataset.", "danger")
+                return redirect(url_for("dataset.list_dataset"))
+
+            existing_doi = getattr(getattr(ds_any, "ds_meta_data", None), "dataset_doi", None)
+            if existing_doi:
+                from flask import flash
+
+                flash("Este dataset ya está publicado en el repositorio remoto.", "info")
+                return redirect(url_for("dataset.list_dataset"))
+
+            dataset = ds_any
+
+            resp = zen_service.create_new_deposition(dataset)
+            deposition_id = resp.get("id") if resp else None
+            if not deposition_id:
+                from flask import flash
+
+                flash("No se pudo crear la deposition en el repositorio remoto.", "danger")
+                return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset.id))
+
+            ds_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
+
+            for fm in getattr(dataset, "feature_models", []) + getattr(dataset, "file_models", []):
+                try:
+                    zen_service.upload_file(dataset, deposition_id, fm)
+                except Exception:
+                    current_app.logger.exception("Error subiendo fichero para dataset %s fm=%s", getattr(dataset, 'id', '?'), getattr(fm, 'id', '?'))
+
+            zen_service.publish_deposition(deposition_id)
+            doi = zen_service.get_doi(deposition_id)
+            ds_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=doi)
+
+        except Exception as exc:
+            current_app.logger.exception("Error during fallback sync for dataset %s: %s", dataset_id, exc)
+            from flask import flash
+
+            flash(f"Error sincronizando dataset: {exc}", "danger")
+            return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset_id))
+    except Exception as exc:
+        current_app.logger.exception("Error calling dataset.sync_dataset fallback: %s", exc)
+        return (jsonify({"message": "Internal error while trying to sync dataset"}), 500)

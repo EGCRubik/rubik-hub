@@ -23,13 +23,19 @@ class PublicationType(Enum):
     OTHER = "other"
 
 
+class Download(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"), nullable=False)
+    download_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
 class Author(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     affiliation = db.Column(db.String(120))
     orcid = db.Column(db.String(120))
-    ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"))
-    fm_meta_data_id = db.Column(db.Integer, db.ForeignKey("fm_meta_data.id"))
+    # Optional link to a user account (allows reusing the same author for uploads)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    # Note: file-level authorship is represented from FMMetaData via FMMetaData.author_id
 
     def to_dict(self):
         return {"name": self.name, "affiliation": self.affiliation, "orcid": self.orcid}
@@ -39,7 +45,6 @@ class DSMetrics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number_of_models = db.Column(db.String(120))
     number_of_files = db.Column(db.String(120))
-    number_of_downloads = db.Column(db.Integer, default=0)
     
 
     def __repr__(self):
@@ -57,7 +62,10 @@ class DSMetaData(db.Model):
     tags = db.Column(db.String(120))
     ds_metrics_id = db.Column(db.Integer, db.ForeignKey("ds_metrics.id"))
     ds_metrics = db.relationship("DSMetrics", uselist=False, backref="ds_meta_data", cascade="all, delete")
-    authors = db.relationship("Author", backref="ds_meta_data", lazy=True, cascade="all, delete")
+
+    # Each DSMetaData points to a single Author (business rule: one author per dataset)
+    author_id = db.Column(db.Integer, db.ForeignKey("author.id"), nullable=True)
+    author = db.relationship("Author", backref=db.backref("datasets", lazy=True), uselist=False)
 
 class BaseDataset(db.Model):
     __tablename__ = "data_set"
@@ -69,12 +77,17 @@ class BaseDataset(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     type = db.Column(db.String(50), nullable=False, server_default="csv", index=True)
 
+    downloads = db.relationship("Download", backref="data_set", lazy="dynamic", cascade="all, delete-orphan")
+
     ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
     __mapper_args__ = {
         "polymorphic_on": type,
         "polymorphic_identity": "base",
         "with_polymorphic": "*",
     }
+
+    def get_number_of_downloads(self):
+        return self.downloads.count()
 
     def get_cleaned_publication_type(self):
         """Devuelve el tipo de publicación limpiado desde DSMetaData si existe."""
@@ -203,14 +216,16 @@ class TabularDataset(BaseDataset):
             "created_at": self.created_at,
             "created_at_timestamp": int(self.created_at.timestamp()),
             "description": self.ds_meta_data.description,
-            "authors": [author.to_dict() for author in self.ds_meta_data.authors],
+            # Keep compatibility with previous API returning a list of authors
+            "authors": ([self.ds_meta_data.author.to_dict()] if self.ds_meta_data and self.ds_meta_data.author else []),
             "publication_type": self.get_cleaned_publication_type(),
             "publication_doi": self.ds_meta_data.publication_doi,
             "dataset_doi": self.ds_meta_data.dataset_doi,
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
             "url": self.get_rubikhub_doi(),
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
-            "downloads": (self.ds_meta_data.ds_metrics.number_of_downloads if (self.ds_meta_data and getattr(self.ds_meta_data, "ds_metrics", None) and self.ds_meta_data.ds_metrics.number_of_downloads) else 0),
+            # Use the dataset-level method to obtain the number of downloads (counts Download rows)
+            "downloads": self.get_number_of_downloads() or 0,
             "zenodo": self.get_zenodo_url(),
             "files": [file.to_dict() for fm in self.file_models for file in fm.files],
             "files_count": self.get_files_count(),
