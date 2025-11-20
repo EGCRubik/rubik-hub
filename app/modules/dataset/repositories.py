@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from flask_login import current_user
@@ -114,6 +114,24 @@ class DataSetRepository(BaseRepository):
             .limit(5)
             .all()
         )
+
+    def top_downloaded_last_week(self, limit: int = 3):
+        cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        rows = (
+            db.session.query(Download.dataset_id, func.count(Download.id).label("cnt"))
+            .filter(Download.download_date >= cutoff)
+            .group_by(Download.dataset_id)
+            .order_by(func.count(Download.id).desc())
+            .limit(limit)
+            .all()
+        )
+        dataset_ids = [r.dataset_id for r in rows]
+        if not dataset_ids:
+            return []
+        datasets = self.model.query.filter(self.model.id.in_(dataset_ids)).all()
+
+        ds_map = {d.id: d for d in datasets}
+        return [ds_map[i] for i in dataset_ids if i in ds_map]
     
     def get_number_of_downloads(self, dataset_id: int) -> int:
         dataset = self.model.query.filter_by(id=dataset_id).first()

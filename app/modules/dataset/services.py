@@ -262,6 +262,9 @@ class DataSetService(BaseService):
             return author.id
         return None
 
+    def get_top_downloaded_last_week(self, limit: int = 3):
+        return self.repository.top_downloaded_last_week(limit)
+
 
 class AuthorService(BaseService):
     def __init__(self):
