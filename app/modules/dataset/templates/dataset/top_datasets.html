@@ -1,0 +1,83 @@
+{% extends "base_template.html" %}
+
+{% block title %}Top datasets{% endblock %}
+
+{% block content %}
+
+    <h1 class="h3 mb-3">Top 3 Most Downloaded Datasets</h1>
+
+    {% if top_datasets %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Publication type</th>
+                            <th>Downloads</th>
+                            <th>Dataset DOI</th>
+                            <th>Options</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for ds in top_datasets[:3] %}
+                            <tr>
+                                <td>
+                                    <a href="{{ ds.get_rubikhub_doi() if ds.get_rubikhub_doi is defined else url_for('dataset.show_dataset', dataset_id=ds.id) }}">
+                                        {{ ds.ds_meta_data.title if (ds.ds_meta_data and ds.ds_meta_data.title) else (ds.title if ds.title else 'Untitled') }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% set desc = (ds.ds_meta_data.description if (ds.ds_meta_data and ds.ds_meta_data.description) else (ds.description if ds.description else '')) %}
+                                    {{ desc[:100] ~ ('...' if desc|length > 100 else '') if desc else 'No description' }}
+                                </td>
+                                <td>
+                                    {{ ds.ds_meta_data.publication_type.name.replace('_', ' ').title() if (ds.ds_meta_data and ds.ds_meta_data.publication_type) else 'N/A' }}
+                                </td>
+                                <td>
+                                    <strong>
+                                        {{ ds.get_number_of_downloads() if ds.get_number_of_downloads is defined else ds.downloads.count() if ds.downloads else 0 }}
+                                    </strong>
+                                </td>
+                                <td>
+                                    {% if ds.get_rubikhub_doi is defined and ds.get_rubikhub_doi() %}
+                                        <a href="{{ ds.get_rubikhub_doi() }}" target="_blank">{{ ds.get_rubikhub_doi() }}</a>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ ds.get_rubikhub_doi() if (ds.get_rubikhub_doi is defined and ds.get_rubikhub_doi()) else url_for('dataset.show_dataset', dataset_id=ds.id) }}">
+                                        <i data-feather="eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('dataset.download_dataset', dataset_id=ds.id) }}">
+                                        <i data-feather="download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-12 col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">No datasets found</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        There are no datasets available to display.
+                    </p>
+                    <a href="{{ url_for('dataset.list_dataset') }}" class="btn btn-primary">
+                        View all datasets</a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}

@@ -65,6 +65,12 @@ chico sundermann">
                     </a>
                 </li>
 
+                <li class="sidebar-item {{ 'active' if request.endpoint == 'dataset.get_top_datasets' else '' }}">
+                    <a class="sidebar-link" href="{{ url_for('dataset.get_top_datasets') }}">
+                        <i class="align-middle" data-feather="star"></i> <span class="align-middle">Top Datasets</span>
+                    </a>
+                </li>
+
                 <li class="sidebar-item {{ 'active' if request.endpoint == 'team.index' else '' }}">
                     <a class="sidebar-link" href="{{ url_for('team.index') }}">
                         <i class="align-middle" data-feather="users"></i> <span

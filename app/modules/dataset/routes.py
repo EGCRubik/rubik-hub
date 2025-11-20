@@ -585,3 +585,13 @@ def sync_dataset(dataset_id):
         logger.exception("Error sincronizando dataset %s: %s", dataset_id, exc)
         flash(f"Error sincronizando dataset: {exc}", "danger")
         return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset_id))
+
+@dataset_bp.route("/dataset/top", methods=["GET"])
+def get_top_datasets():
+    """Muestra los 3 datasets más descargados"""
+    try:
+        top = dataset_service.get_top_downloaded_last_week(limit=3)
+        return render_template("dataset/top_datasets.html", top_datasets=top)
+    except Exception:
+        logger.exception("Error loading top datasets")
+        return render_template("dataset/top_datasets.html", top_datasets=[])
