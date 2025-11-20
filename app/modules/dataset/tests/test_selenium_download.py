@@ -14,13 +14,19 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from core.selenium.common import close_driver, initialize_driver
+
+
 class TestTestDownloadDataset:
     def setup_method(self, method):
-        self.driver = webdriver.Firefox()
+        self.driver = initialize_driver()
         self.vars = {}
 
     def teardown_method(self, method):
-        self.driver.quit()
+        try:
+            close_driver(self.driver)
+        except Exception:
+            self.driver.quit()
 
     def recuperar_texto_descargas(self):
         # Buscar el elemento que contiene el texto de descargas (el <small> al lado del ícono de descarga)
