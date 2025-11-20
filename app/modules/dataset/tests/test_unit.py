@@ -7,6 +7,8 @@ from app.modules.dataset.models import TabularDataset, PublicationType, DSMetaDa
 from app.modules.fileModel.models import FileModel, FMMetaData, FMMetrics
 from app.modules.auth.models import User
 
+from datetime import datetime, timezone, timedelta
+
 
 @pytest.fixture(scope="module")
 def test_client(test_client):
@@ -120,3 +122,42 @@ def test_update_download_count_increments(clean_database, test_client):
 
 		# Refrescar las métricas desde la DB y comprobar el valor
 		assert service.get_number_of_downloads(dataset.id) == 6, f"Expected 6 downloads after increment, got {service.get_number_of_downloads(dataset.id)}"
+
+def test_get_top_downloaded_last_week(clean_database, test_client):
+	"""Verifica que DataSetService.get_top_downloaded_last_week devuelve los 3 datasets más descargados en la última semana."""
+	with test_client.application.app_context():
+		user = User(email="user3@example.com", password="1234")
+		db.session.add(user)
+		db.session.flush()
+
+		two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
+		twelve_days_ago = datetime.now(timezone.utc) - timedelta(days=12)
+
+		datasets = []
+		for i in range(1, 11):  # 1..10
+			dsmd = DSMetaData(title=f"DS{i}", description=f"Desc {i}", publication_type=PublicationType.NONE)
+			db.session.add(dsmd)
+			db.session.flush()
+
+			ds = TabularDataset(user_id=user.id, ds_meta_data_id=dsmd.id)
+			db.session.add(ds)
+			db.session.flush()
+
+			# Create downloads: dataset 10 older than a week; others recent
+			count = i
+			when = twelve_days_ago if i == 10 else two_days_ago
+			for _ in range(count):
+				db.session.add(Download(dataset_id=ds.id, download_date=when))
+
+			datasets.append(ds)
+
+		db.session.commit()
+
+		service = DataSetService()
+		top3 = service.get_top_downloaded_last_week(limit=3)
+
+		assert len(top3) == 3, f"Expected 3 datasets, got {len(top3)}"
+		# Verify order and specific datasets by title (9,8,7)
+		titles = [d.ds_meta_data.title for d in top3]
+		assert titles == ["DS9", "DS8", "DS7"], f"Unexpected order: {titles}"
+	
