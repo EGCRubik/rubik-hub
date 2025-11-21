@@ -108,7 +108,7 @@
                 </div>
                 {% endif %}
 
-                {% if dataset.ds_meta_data.dataset_doi %}
+                {% if dataset.ds_meta_data.deposition_id %}
                 <div class="row mb-2">
                     <div class="col-md-4 col-12">
                         <span class=" text-secondary">
@@ -119,6 +119,11 @@
                         <a href="{{ url_for('fakenodo.get_deposition', deposition_id=dataset.ds_meta_data.deposition_id) }}" target="_blank">
                             {{ url_for('fakenodo.get_deposition', deposition_id=dataset.ds_meta_data.deposition_id, _external=True) }}
                         </a>
+                        {% if not dataset.ds_meta_data.dataset_doi %}
+                        <span class="badge bg-warning text-dark">Draft (not published)</span>
+                        {% else %}
+                        <span class="badge bg-success">Published</span>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -175,16 +180,68 @@
 
         </div>
 
-        {% if not dataset.ds_meta_data.dataset_doi and current_user.is_authenticated and current_user.id == dataset.user_id %}
+        {% if current_user.is_authenticated and current_user.id == dataset.user_id %}
         <div class="card mt-3">
             <div class="card-body">
-            <form method="POST" action="/dataset/{{ dataset.id }}/sync"
-                      onsubmit="return confirm('¿Publicar el dataset en FakeNODO? Esto publicará y notificará a tus seguidores.');">
-                    <button type="submit" class="btn btn-success btn-sm">
+                {% if not dataset.ds_meta_data.deposition_id %}
+                <form method="POST" action="/fakenodo/dataset/{{ dataset.id }}/create" onsubmit="return confirm('Crear un registro preliminar en FakeNODO para este dataset?');">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i data-feather="file-plus"></i>
+                        Crear registro en FakeNODO
+                    </button>
+                </form>
+                {% else %}
+                {% if not dataset.ds_meta_data.dataset_doi %}
+                <form method="POST" action="/fakenodo/dataset/{{ dataset.id }}/publish" onsubmit="return confirm('¿Publicar el dataset en FakeNODO? Esto generará el DOI y notificará a tus seguidores.');">
+                    <button type="submit" id="publishBtn" class="btn btn-success btn-sm">
                         <i data-feather="upload"></i>
                         Publicar en FakeNODO
                     </button>
                 </form>
+                {% endif %}
+                <hr class="my-2"/>
+                <h6 class="mb-2">Editar metadata</h6>
+                <form id="metadataForm" onsubmit="return updateMetadata(event);" class="mb-2">
+                    <div class="mb-2">
+                        <label class="form-label">Título</label>
+                        <input type="text" name="title" class="form-control form-control-sm" value="{{ dataset.ds_meta_data.title }}" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Descripción</label>
+                        <textarea name="description" class="form-control form-control-sm" rows="2">{{ dataset.ds_meta_data.description }}</textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Tags (coma separados)</label>
+                        <input type="text" name="tags" class="form-control form-control-sm" value="{{ dataset.ds_meta_data.tags }}" />
+                    </div>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Guardar metadata</button>
+                </form>
+                <hr class="my-2"/>
+                <h6 class="mb-2">Archivos adicionales para nueva versión</h6>
+                <form id="fileUploadForm" onsubmit="return uploadNewFile(event);" class="mb-2">
+                    <div class="mb-2">
+                        <input type="file" name="file" class="form-control form-control-sm" required />
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" name="name" class="form-control form-control-sm" placeholder="Nombre opcional (por defecto usa el nombre del archivo)" />
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i data-feather="file-plus"></i> Subir archivo y marcar versión dirty
+                    </button>
+                </form>
+                <div class="mb-2 small text-muted">Subir o cambiar archivos marca el estado como "dirty" y habilita generar una nueva versión y DOI al publicar.</div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span id="dirtyStatus" class="badge bg-secondary">Estado...</span>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="forceRefreshStatus()">Refrescar estado</button>
+                </div>
+                <small class="text-muted">Nueva versión sólo al subir/añadir archivos.</small>
+                <div class="mt-2">
+                    <h6 class="mb-1">Versiones</h6>
+                    <ul id="versionsList" class="list-unstyled mb-0" style="max-height:140px; overflow:auto;"></ul>
+                    <h6 class="mt-3 mb-1">Archivos en el registro</h6>
+                    <ul id="filesList" class="list-unstyled mb-0" style="max-height:140px; overflow:auto;"></ul>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -548,6 +605,99 @@
             console.error('Failed to copy text: ', err);
         });
     }
-</script>
 
-{% endblock %}
+    // --- FakeNODO versioning & metadata logic (in-block) ---
+    const depositionId = '{{ dataset.ds_meta_data.deposition_id or "" }}';
+    function updateMetadata(ev){
+        ev.preventDefault();
+        if(!depositionId){ alert('No hay depósito preliminar todavía.'); return false; }
+        const form = document.getElementById('metadataForm');
+        const fd = new FormData(form);
+        const payload = {
+            title: fd.get('title'),
+            description: fd.get('description'),
+            tags: (fd.get('tags')||'').split(',').map(t=>t.trim()).filter(t=>t)
+        };
+        fetch(`/fakenodo/deposit/depositions/${depositionId}/metadata`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(r=>r.json()).then(data=>{
+            if(data.message){ alert('Error al actualizar metadata: '+data.message); return; }
+            showDirtyStatus(data.dirty);
+            renderVersions(data.versions||[]);
+            renderFiles(data.files||[]);
+            if(data.metadata){
+                const m = data.metadata;
+                if(form.querySelector('[name="title"]')) form.querySelector('[name="title"]').value = m.title||'';
+                if(form.querySelector('[name="description"]')) form.querySelector('[name="description"]').value = m.description||'';
+                if(form.querySelector('[name="tags"]')) form.querySelector('[name="tags"]').value = m.tags||'';
+            }
+            alert('Metadata guardada (sin nuevo DOI).');
+        }).catch(e=>{ console.error(e); alert('Fallo en la petición de metadata.'); });
+        return false;
+    }
+    function uploadNewFile(ev){
+        ev.preventDefault();
+        if(!depositionId){ alert('No hay depósito preliminar todavía.'); return false; }
+        const form = document.getElementById('fileUploadForm');
+        const fd = new FormData(form);
+        if(!fd.get('file')){ alert('Selecciona un archivo.'); return false; }
+        fetch(`/fakenodo/deposit/depositions/${depositionId}/files`, { method:'POST', body: fd })
+            .then(r=>r.json()).then(data=>{
+                if(data.message){ alert('Error subiendo archivo: '+data.message); return; }
+                alert('Archivo subido. Se marcó dirty para nueva versión.');
+                form.reset();
+                forceRefreshStatus();
+            }).catch(e=>{ console.error(e); alert('Fallo subiendo archivo.'); });
+        return false;
+    }
+    function forceRefreshStatus(){
+        if(!depositionId){ return; }
+        fetch(`/fakenodo/deposit/depositions/${depositionId}`)
+            .then(r=>r.json()).then(data=>{
+                if(data.message){ console.warn(data.message); return; }
+                showDirtyStatus(data.dirty);
+                renderVersions(data.versions||[]);
+                renderFiles(data.files||[]);
+            }).catch(e=> console.error(e));
+    }
+    function showDirtyStatus(isDirty){
+        const el = document.getElementById('dirtyStatus');
+        if(!el) return;
+        if(isDirty){ el.className='badge bg-warning text-dark'; el.textContent='Cambios de archivos sin publicar (dirty)'; }
+        else { el.className='badge bg-success'; el.textContent='Sin cambios de archivos pendientes'; }
+        const publishBtn = document.getElementById('publishBtn');
+        if(publishBtn){
+            const hasDoi = '{{ dataset.ds_meta_data.dataset_doi or "" }}';
+            if(hasDoi && !isDirty){ publishBtn.disabled = true; publishBtn.title='Ya publicado. Sube/edita archivos para nueva versión.'; }
+            else { publishBtn.disabled = false; publishBtn.title=''; }
+        }
+    }
+    function renderVersions(versions){
+        const ul = document.getElementById('versionsList');
+        if(!ul) return;
+        ul.innerHTML='';
+        versions.slice().reverse().forEach(v=>{
+            const li=document.createElement('li');
+            li.className='small';
+            li.textContent=`v${v.version}: ${v.doi}`;
+            ul.appendChild(li);
+        });
+    }
+    function renderFiles(files){
+        const ul = document.getElementById('filesList');
+        if(!ul) return;
+        ul.innerHTML='';
+        files.forEach(f=>{
+            const li=document.createElement('li');
+            li.className='small';
+            li.textContent=`${f.name} (${f.size} bytes)`;
+            ul.appendChild(li);
+        });
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{ if(depositionId){ forceRefreshStatus(); } });
+    // --- end FakeNODO logic ---
+    </script>
+
+    {% endblock %}

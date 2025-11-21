@@ -124,6 +124,18 @@ class FakenodoService(BaseService):
             self._save()
             return version
 
+    def update_metadata(self, deposition_id: int, metadata: Dict) -> Optional[Dict]:
+        """Update metadata WITHOUT marking record dirty.
+        """
+        with self._lock:
+            rec = self._db.get("records", {}).get(str(deposition_id))
+            if not rec:
+                return None
+            rec["metadata"] = metadata or {}
+            rec["updated_at"] = _current_iso()
+            self._save()
+            return rec
+
     def list_versions(self, deposition_id: int) -> Optional[List[Dict]]:
         with self._lock:
             rec = self._db.get("records", {}).get(str(deposition_id))
@@ -131,7 +143,6 @@ class FakenodoService(BaseService):
                 return None
             return rec.get("versions", [])
 
-    # --- Compatibility wrappers -------------------------------------------------
     def create_new_deposition(self, metadata: Optional[Dict] = None) -> Dict:
         """Backward-compatible alias for older code that called create_new_deposition.
 
