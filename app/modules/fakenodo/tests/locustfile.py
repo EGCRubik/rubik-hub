@@ -1,105 +1,80 @@
-from __future__ import annotations
-
-import io
-import json
-import time
-from typing import Optional
-
-from locust import HttpUser, SequentialTaskSet, TaskSet, between, task
+from locust import HttpUser, TaskSet, task
 
 from core.environment.host import get_host_for_locust_testing
+from core.locust.common import get_csrf_token
 
 
-def _now_suffix() -> str:
-    return str(int(time.time() * 1000))
+class FakenodoBehavior(TaskSet):
 
+    deposition_id: int | None = None
+    published_once: bool = False
+    toggle_metadata_format: bool = False
 
-class FakenodoBrowseBehavior(TaskSet):
-    """Tareas ligeras para navegación y listados."""
+    def on_start(self):
+        self.login()
+        self.create_deposition()
 
-    @task(3)
-    def list_depositions(self):
-        resp = self.client.get("/fakenodo/deposit/depositions", name="GET /depositions")
-        if resp.status_code != 200:
-            resp.failure(f"/depositions status={resp.status_code}")
+    def login(self):
+        resp = self.client.get("/login")
+        csrf = get_csrf_token(resp)
+        self.client.post(
+            "/login",
+            data={"email": "user1@example.com", "password": "1234", "csrf_token": csrf},
+        )
 
-
-class FakenodoFlow(SequentialTaskSet):
-    """Flujo E2E: crear -> subir -> publicar -> listar versiones -> eliminar."""
-
-    deposition_id: Optional[int] = None
+    def create_deposition(self):
+        payload = {"metadata": {"title": "LocustLoad", "description": "Initial desc"}}
+        r = self.client.post("/fakenodo/deposit/depositions", json=payload)
+        if r.status_code == 201:
+            self.deposition_id = r.json().get("id")
+        else:
+            self.deposition_id = None
 
     @task
-    def create_deposition(self):
-        payload = {"metadata": {"title": f"locust-{_now_suffix()}"}}
-        resp = self.client.post(
-            "/fakenodo/deposit/depositions",
-            data=json.dumps(payload),
-            name="POST /depositions",
-            headers={"Content-Type": "application/json"},
-        )
-        if resp.status_code == 201:
-            try:
-                self.deposition_id = resp.json().get("id")
-            except Exception:
-                resp.failure("Invalid JSON creating deposition")
+    def patch_metadata(self):
+        if not self.deposition_id:
+            return
+        if self.toggle_metadata_format:
+            payload = {"metadata": {"title": "LocustNested", "description": "Nested desc", "tags": ["a", "b"]}}
         else:
-            resp.failure(f"Create status={resp.status_code}")
+            payload = {"title": "LocustFlat", "description": "Flat desc", "tags": ["x"]}
+        self.client.patch(f"/fakenodo/deposit/depositions/{self.deposition_id}/metadata", json=payload)
+        self.toggle_metadata_format = not self.toggle_metadata_format
 
     @task
     def upload_file(self):
         if not self.deposition_id:
             return
-        file_name = f"data-{_now_suffix()}.csv"
-        file_content = b"col1,col2\n1,2\n"
-        files = {"file": (file_name, io.BytesIO(file_content), "text/csv")}
-        data = {"name": file_name}
-        resp = self.client.post(
+        self.client.post(
             f"/fakenodo/deposit/depositions/{self.deposition_id}/files",
-            files=files,
-            data=data,
-            name="POST /depositions/{id}/files",
+            data={"name": "locust.txt"},
         )
-        if resp.status_code not in (200, 201):
-            resp.failure(f"Upload status={resp.status_code}")
 
     @task
     def publish(self):
         if not self.deposition_id:
             return
-        resp = self.client.post(
-            f"/fakenodo/deposit/depositions/{self.deposition_id}/actions/publish",
-            name="POST /depositions/{id}/actions/publish",
-        )
-        if resp.status_code not in (200, 202):
-            resp.failure(f"Publish status={resp.status_code}")
+        r = self.client.post(f"/fakenodo/deposit/depositions/{self.deposition_id}/actions/publish")
+        if r.status_code == 202:
+            self.published_once = True
 
     @task
     def list_versions(self):
         if not self.deposition_id:
             return
-        resp = self.client.get(
-            f"/fakenodo/deposit/depositions/{self.deposition_id}/versions",
-            name="GET /depositions/{id}/versions",
-        )
-        if resp.status_code != 200:
-            resp.failure(f"List versions status={resp.status_code}")
+        self.client.get(f"/fakenodo/deposit/depositions/{self.deposition_id}/versions")
 
     @task
-    def delete(self):
-        if not self.deposition_id:
-            return
-        resp = self.client.delete(
-            f"/fakenodo/deposit/depositions/{self.deposition_id}",
-            name="DELETE /depositions/{id}",
-        )
-        if resp.status_code not in (200, 204):
-            resp.failure(f"Delete status={resp.status_code}")
-        self.deposition_id = None
-        self.interrupt()
+    def maybe_delete_and_recreate(self):
+        if self.deposition_id and self.published_once:
+            self.client.delete(f"/fakenodo/deposit/depositions/{self.deposition_id}")
+            self.deposition_id = None
+            self.published_once = False
+            self.create_deposition()
 
 
 class FakenodoUser(HttpUser):
-    tasks = {FakenodoBrowseBehavior: 3, FakenodoFlow: 1}
-    wait_time = between(1, 5)
+    tasks = [FakenodoBehavior]
+    min_wait = 3000
+    max_wait = 7000
     host = get_host_for_locust_testing()
