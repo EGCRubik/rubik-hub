@@ -30,6 +30,9 @@ jobs:
               NF>=3 {add=$1; if(add=="-") add=0; adds[author]+=add}
               END {for (a in adds) print adds[a] "\t" a}' | sort -nr >> contributor_stats.txt
           echo "" >> contributor_stats.txt
+          echo "# Commits per author" >> contributor_stats.txt
+          git log --no-merges --pretty=format:"%aN" | awk '{commits[$0]++} END {for (a in commits) print commits[a] "\t" a}' | sort -nr >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
 
       - name: Upload stats artifact
         uses: actions/upload-artifact@v4
