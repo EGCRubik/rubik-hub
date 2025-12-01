@@ -78,13 +78,17 @@ class BaseDataset(db.Model):
     type = db.Column(db.String(50), nullable=False, server_default="csv", index=True)
 
     downloads = db.relationship("Download", backref="data_set", lazy="dynamic", cascade="all, delete-orphan")
-
+    version = db.relationship("DatasetVersion", backref="data_set", uselist=False, cascade="all, delete-orphan")
+    
     ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
     __mapper_args__ = {
         "polymorphic_on": type,
         "polymorphic_identity": "base",
         "with_polymorphic": "*",
     }
+
+    version = db.relationship("DatasetVersion", backref="data_set", uselist=False, cascade="all, delete-orphan")
+
 
     def get_number_of_downloads(self):
         return self.downloads.count()
@@ -334,6 +338,71 @@ class DOIMapping(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     dataset_doi_old = db.Column(db.String(120))
     dataset_doi_new = db.Column(db.String(120))
+
+class DatasetConcept(db.Model):
+    __tablename__ = "dataset_concept"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # DOI conceptual → siempre apunta a la última versión
+    conceptual_doi = db.Column(db.String(255), unique=True, nullable=False)
+
+    name = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    versions = db.relationship(
+        "DatasetVersion",
+        backref="concept",
+        lazy=True,
+        cascade="all, delete-orphan"
+    )
+
+    def latest_version(self):
+        return max(self.versions, key=lambda v: (v.version_major, v.version_minor), default=None)
+
+class DatasetVersion(db.Model):
+    __tablename__ = "dataset_version"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    concept_id = db.Column(
+        db.Integer,
+        db.ForeignKey("dataset_concept.id"),
+        nullable=False
+    )
+
+    # Dataset real, donde están archivos y metadata
+    dataset_id = db.Column(
+        db.Integer,
+        db.ForeignKey("data_set.id"),
+        nullable=False,
+        unique=True
+    )
+
+    version_major = db.Column(db.Integer, nullable=False)
+    version_minor = db.Column(db.Integer, nullable=False, default=0)
+
+    # DOI específico (solo para versiones mayores)
+    version_doi = db.Column(db.String(255), nullable=True)
+
+    release_date = db.Column(db.DateTime, default=datetime.utcnow)
+    changelog = db.Column(db.Text)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "concept_id",
+            "version_major",
+            "version_minor",
+            name="uq_dataset_version_number"
+        ),
+    )
+
+    def is_major(self):
+        return self.version_minor == 0
+
+    def version_label(self):
+        return f"{self.version_major}.{self.version_minor}"
+
 
 
 DataSet = TabularDataset  # Alias para compatibilidad hacia atrás

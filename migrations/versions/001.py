@@ -7,6 +7,7 @@ Create Date: 2024-09-08 16:50:20.326640
 """
 import sqlalchemy as sa
 from alembic import op
+from datetime import datetime
 
 # revision identifiers, used by Alembic.
 revision = '001'
@@ -274,6 +275,25 @@ def upgrade():
     sa.ForeignKeyConstraint(['follower_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table(
+        "dataset_concept",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("conceptual_doi", sa.String(255), unique=True, nullable=False),
+        sa.Column("name", sa.String(255)),
+        sa.Column("created_at", sa.DateTime(), default=datetime.utcnow),
+    )
+    op.create_table(
+        "dataset_version",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("concept_id", sa.Integer(), sa.ForeignKey("dataset_concept.id"), nullable=False),
+        sa.Column("dataset_id", sa.Integer(), sa.ForeignKey("data_set.id"), nullable=False, unique=True),
+        sa.Column("version_major", sa.Integer(), nullable=False),
+        sa.Column("version_minor", sa.Integer(), nullable=False, default=0),
+        sa.Column("version_doi", sa.String(255)),
+        sa.Column("release_date", sa.DateTime(), default=datetime.utcnow),
+        sa.Column("changelog", sa.Text()),
+        sa.UniqueConstraint("concept_id", "version_major", "version_minor", name="uq_dataset_version_number")
+    )
     # ### end Alembic commands ###
 
 
@@ -307,4 +327,6 @@ def downgrade():
     op.drop_table('fm_metrics')
     op.drop_table('ds_metrics')
     op.drop_table('doi_mapping')
+    op.drop_table("dataset_concept")
+    op.drop_table("dataset_version")
     # ### end Alembic commands ###
