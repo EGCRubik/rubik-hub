@@ -58,17 +58,6 @@ jobs:
             awk '{c[$0]++} END {for (a in c) print c[a] "\t" a}' | sort -nr >> contributor_stats.txt
           echo "" >> contributor_stats.txt
 
-          echo "# Top modified files (by changes count)" >> contributor_stats.txt
-          git log --no-merges --name-only --pretty=format:"" | \
-            awk 'NF>0 {files[$0]++} END {for (f in files) print files[f] "\t" f}' | sort -nr | head -n 50 >> contributor_stats.txt
-          echo "" >> contributor_stats.txt
-
-          echo "# Additions per top-level directory" >> contributor_stats.txt
-          git log --no-merges --numstat --pretty=format:"" | \
-            awk -F"\t" 'NF>=3 {add=$1; file=$3; if(add=="-") add=0; split(file,parts,"/"); dir=parts[1]; adds[dir]+=add}
-            END {for (d in adds) print adds[d] "\t" d}' | sort -nr >> contributor_stats.txt
-          echo "" >> contributor_stats.txt
-
           echo "# Commits per author (excluding bots)" >> contributor_stats.txt
           git log --no-merges --pretty=format:"%aN" | grep -v -E "dependabot|bot\]|github-actions|noreply@users.noreply.github.com" | \
             awk '{c[$0]++} END {for (a in c) print c[a] "\t" a}' | sort -nr >> contributor_stats.txt
