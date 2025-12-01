@@ -3,7 +3,7 @@ import pytest
 
 from app import db
 from app.modules.dataset.services import DataSetService
-from app.modules.dataset.models import TabularDataset, PublicationType, DSMetaData, Download
+from app.modules.dataset.models import TabularDataset, PublicationType, DSMetaData, Download, DatasetConcept, DatasetVersion
 from app.modules.fileModel.models import FileModel, FMMetaData, FMMetrics
 from app.modules.auth.models import User
 
@@ -160,4 +160,156 @@ def test_get_top_downloaded_last_week(clean_database, test_client):
 		# Verify order and specific datasets by title (9,8,7)
 		titles = [d.ds_meta_data.title for d in top3]
 		assert titles == ["DS9", "DS8", "DS7"], f"Unexpected order: {titles}"
-	
+
+
+def create_dataset(user_email, title="Test DS"):
+    """Utility para crear un dataset mínimo válido."""
+    user = User(email=user_email, password="1234")
+    db.session.add(user)
+    db.session.flush()
+
+    meta = DSMetaData(
+        title=title,
+        description="DS description",
+        publication_type=PublicationType.NONE
+    )
+    db.session.add(meta)
+    db.session.flush()
+
+    ds = TabularDataset(
+        user_id=user.id,
+        ds_meta_data_id=meta.id
+    )
+    db.session.add(ds)
+    db.session.flush()
+
+    return user, meta, ds
+
+
+def test_create_version_1_0(clean_database, test_client):
+    """Verifica que se puede crear una versión 1.0 asociada a un concepto."""
+    with test_client.application.app_context():
+
+        user, meta, ds = create_dataset("vtest1@example.com", "Dataset V1")
+
+        concept = DatasetConcept(
+            conceptual_doi="10.concept.1",
+            name="Concept 1"
+        )
+        db.session.add(concept)
+        db.session.flush()
+
+        v1 = DatasetVersion(
+            concept_id=concept.id,
+            dataset_id=ds.id,
+            version_major=1,
+            version_minor=0,
+            version_doi="10.concept.1.v1",
+            changelog="Initial release"
+        )
+        db.session.add(v1)
+        db.session.commit()
+
+        assert v1.id is not None, "Version 1.0 did not persist"
+        assert v1.version_major == 1
+        assert v1.version_minor == 0
+        assert v1.dataset_id == ds.id
+        assert concept.versions[0].version_doi == "10.concept.1.v1"
+
+
+def test_multiple_versions_same_dataset(clean_database, test_client):
+    """Verifica que un dataset puede tener varias versiones sin UNIQUE(dataset_id)."""
+    with test_client.application.app_context():
+
+        user, meta, ds = create_dataset("vtest2@example.com", "Dataset V2")
+
+        concept = DatasetConcept(
+            conceptual_doi="10.concept.2",
+            name="Concept 2"
+        )
+        db.session.add(concept)
+        db.session.flush()
+
+        versions = [
+            DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=1, version_minor=0),
+            DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=1, version_minor=1),
+            DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=2, version_minor=0),
+        ]
+
+        for v in versions:
+            db.session.add(v)
+
+        db.session.commit()
+
+        assert len(concept.versions) == 3, f"Expected 3 versions, got {len(concept.versions)}"
+
+def test_unique_version_number_constraint(clean_database, test_client):
+    """Verifica que NO se permiten dos versiones con {concept_id,major,minor} iguales."""
+    with test_client.application.app_context():
+
+        user, meta, ds = create_dataset("vtest3@example.com", "Dataset V3")
+
+        concept = DatasetConcept(conceptual_doi="10.concept.3", name="Concept 3")
+        db.session.add(concept)
+        db.session.flush()
+
+        # Create 1.0
+        v1 = DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=1, version_minor=0)
+        db.session.add(v1)
+        db.session.commit()
+
+        # Attempt to create duplicate 1.0
+        dup = DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=1, version_minor=0)
+        db.session.add(dup)
+
+        with pytest.raises(Exception):
+            db.session.commit()
+
+
+def test_latest_version(clean_database, test_client):
+    """Verifica que latest_version devuelve la versión mayor correcta."""
+    with test_client.application.app_context():
+
+        user, meta, ds = create_dataset("vtest4@example.com", "Dataset V4")
+
+        concept = DatasetConcept(conceptual_doi="10.concept.4", name="Concept 4")
+        db.session.add(concept)
+        db.session.flush()
+
+        versions = [
+            DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=1, version_minor=0),
+            DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=1, version_minor=1),
+            DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=2, version_minor=0),
+            DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=2, version_minor=3),
+        ]
+
+        for v in versions:
+            db.session.add(v)
+
+        db.session.commit()
+
+        latest = concept.latest_version()
+
+        assert latest.version_major == 2
+        assert latest.version_minor == 3
+        assert latest.dataset_id == ds.id
+
+
+def test_concept_relationship(clean_database, test_client):
+    """Verifica que DatasetConcept -> DatasetVersion genera la relación correcta."""
+    with test_client.application.app_context():
+
+        user, meta, ds = create_dataset("vtest5@example.com", "Dataset V5")
+
+        concept = DatasetConcept(conceptual_doi="10.concept.5", name="Concept 5")
+        db.session.add(concept)
+        db.session.flush()
+
+        v10 = DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=1, version_minor=0)
+        v20 = DatasetVersion(concept_id=concept.id, dataset_id=ds.id, version_major=2, version_minor=0)
+
+        db.session.add_all([v10, v20])
+        db.session.commit()
+
+        assert len(concept.versions) == 2
+        assert (concept.versions[0].version_major, concept.versions[1].version_major) == (1,2)
