@@ -286,7 +286,7 @@ def upgrade():
         "dataset_version",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("concept_id", sa.Integer(), sa.ForeignKey("dataset_concept.id"), nullable=False),
-        sa.Column("dataset_id", sa.Integer(), sa.ForeignKey("data_set.id"), nullable=False, unique=True),
+        sa.Column("dataset_id", sa.Integer(), sa.ForeignKey("data_set.id"), nullable=False),
         sa.Column("version_major", sa.Integer(), nullable=False),
         sa.Column("version_minor", sa.Integer(), nullable=False, default=0),
         sa.Column("version_doi", sa.String(255)),

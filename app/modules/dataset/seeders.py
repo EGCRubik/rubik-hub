@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from random import choice
 
 from app.modules.auth.models import User
-from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType, Download
+from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType, Download, DatasetConcept, DatasetVersion
 from app.modules.fileModel.models import FileModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 from core.seeders.BaseSeeder import BaseSeeder
@@ -155,3 +155,60 @@ class DataSetSeeder(BaseSeeder):
                 file_model_id=file_model.id,
             )
             self.seed([uvl_file])
+            
+        concepts = []
+        versions = []
+
+        for i, dataset in enumerate(seeded_datasets):
+            # 1️⃣ Create a DatasetConcept for each dataset
+            concept = DatasetConcept(
+                conceptual_doi=f"10.9999/concept{i+1}",
+                name=f"Concept for dataset {i+1}"
+            )
+            concepts.append(concept)
+
+        self.seed(concepts)
+
+        # Refresh DB session objects
+        self.db.session.flush()
+
+        # 2️⃣ Create versions for each dataset
+        for i, dataset in enumerate(seeded_datasets):
+            concept = concepts[i]
+
+            # ---- Version 1.0 (major, always present)
+            v1 = DatasetVersion(
+                concept_id=concept.id,
+                dataset_id=dataset.id,
+                version_major=1,
+                version_minor=0,
+                version_doi=f"10.9999/dataset{i+1}.v1",
+                changelog="Initial release"
+            )
+            versions.append(v1)
+
+            # ---- Optional minor version: 1.1
+            if i % 2 == 0:  # create for even datasets
+                v11 = DatasetVersion(
+                    concept_id=concept.id,
+                    dataset_id=dataset.id,  # NOTE: For real systems you would duplicate dataset
+                    version_major=1,
+                    version_minor=1,
+                    version_doi=None,
+                    changelog="Small fixes and metadata updates"
+                )
+                versions.append(v11)
+
+            # ---- Optional major version: 2.0
+            if i % 3 == 0:  # create for 1/3 datasets
+                v2 = DatasetVersion(
+                    concept_id=concept.id,
+                    dataset_id=dataset.id,
+                    version_major=2,
+                    version_minor=0,
+                    version_doi=f"10.9999/dataset{i+1}.v2",
+                    changelog="Major update with structural changes"
+                )
+                versions.append(v2)
+
+        self.seed(versions)

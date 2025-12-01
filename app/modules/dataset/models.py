@@ -78,8 +78,8 @@ class BaseDataset(db.Model):
     type = db.Column(db.String(50), nullable=False, server_default="csv", index=True)
 
     downloads = db.relationship("Download", backref="data_set", lazy="dynamic", cascade="all, delete-orphan")
-    version = db.relationship("DatasetVersion", backref="data_set", uselist=False, cascade="all, delete-orphan")
-    
+    version = db.relationship("DatasetVersion", backref="data_set", lazy="dynamic", cascade="all, delete-orphan")
+
     ds_meta_data = db.relationship("DSMetaData", backref=db.backref("data_set", uselist=False))
     __mapper_args__ = {
         "polymorphic_on": type,
@@ -375,9 +375,8 @@ class DatasetVersion(db.Model):
     dataset_id = db.Column(
         db.Integer,
         db.ForeignKey("data_set.id"),
-        nullable=False,
-        unique=True
-    )
+        nullable=False
+        )
 
     version_major = db.Column(db.Integer, nullable=False)
     version_minor = db.Column(db.Integer, nullable=False, default=0)
