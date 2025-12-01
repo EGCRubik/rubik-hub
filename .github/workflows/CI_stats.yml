@@ -58,16 +58,6 @@ jobs:
             awk '{c[$0]++} END {for (a in c) print c[a] "\t" a}' | sort -nr >> contributor_stats.txt
           echo "" >> contributor_stats.txt
 
-          echo "# Commits per author (excluding bots)" >> contributor_stats.txt
-          git log --no-merges --pretty=format:"%aN" | grep -v -E "dependabot|bot\]|github-actions|noreply@users.noreply.github.com" | \
-            awk '{c[$0]++} END {for (a in c) print c[a] "\t" a}' | sort -nr >> contributor_stats.txt
-          echo "" >> contributor_stats.txt
-
-          echo "# Commits per author (normalized by email)" >> contributor_stats.txt
-          git log --no-merges --pretty=format:"%aE" | \
-            awk '{c[tolower($0)]++} END {for (a in c) print c[a] "\t" a}' | sort -nr >> contributor_stats.txt
-          echo "" >> contributor_stats.txt
-
           echo "# Active days per author" >> contributor_stats.txt
           git log --no-merges --pretty=format:"%aN|%ad" --date=short | \
             awk -F"|" '{key=$1 "|" $2; uniq[key]=1} END {for (k in uniq) {split(k,a,"|"); days[a[1]]++}} END {for (a in days) print days[a] "\t" a}' | sort -nr >> contributor_stats.txt
