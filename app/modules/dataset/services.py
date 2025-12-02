@@ -264,6 +264,19 @@ class DataSetService(BaseService):
 
     def get_top_downloaded_last_week(self, limit: int = 3):
         return self.repository.top_downloaded_last_week(limit)
+        
+    def create_version(self, dataset: DataSet, major: int, minor: int, changelog=""):
+        new_dataset = dataset.clone()   # CLAVE
+        version = DatasetVersion(
+            concept_id=dataset.version.concept_id,
+            dataset_id=new_dataset.id,
+            version_major=major,
+            version_minor=minor,
+            changelog=changelog
+        )
+        db.session.add(version)
+        db.session.commit()
+        return version
 
 
 class AuthorService(BaseService):

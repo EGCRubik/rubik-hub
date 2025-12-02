@@ -236,6 +236,66 @@ class TabularDataset(BaseDataset):
             "total_size_in_bytes": self.get_file_total_size(),
             "total_size_in_human_format": self.get_file_total_size_for_human(),
         }
+    def clone(self):
+        # Clonar DSMetaData
+        new_meta = DSMetaData(
+            title=self.ds_meta_data.title,
+            description=self.ds_meta_data.description,
+            publication_type=self.ds_meta_data.publication_type,
+            publication_doi=self.ds_meta_data.publication_doi,
+            dataset_doi=self.ds_meta_data.dataset_doi,
+            tags=self.ds_meta_data.tags,
+            ds_metrics_id=self.ds_meta_data.ds_metrics_id,
+            author_id=self.ds_meta_data.author_id
+        )
+        db.session.add(new_meta)
+        db.session.flush()
+
+        # Crear nuevo dataset
+        new_ds = TabularDataset(
+            user_id=self.user_id,
+            ds_meta_data_id=new_meta.id,
+            rows_count=self.rows_count,
+            schema_json=self.schema_json
+        )
+        db.session.add(new_ds)
+        db.session.flush()
+
+        # Clonar FileModels + archivos físicos
+        for fm in self.file_models:
+            new_fm_meta = FMMetaData(
+                csv_filename=fm.fm_meta_data.csv_filename,
+                title=fm.fm_meta_data.title,
+                description=fm.fm_meta_data.description,
+                publication_doi=fm.fm_meta_data.publication_doi,
+                tags=fm.fm_meta_data.tags,
+                csv_version=fm.fm_meta_data.csv_version,
+                author_id=fm.fm_meta_data.author_id
+            )
+            db.session.add(new_fm_meta)
+            db.session.flush()
+
+            new_fm = FileModel(
+                data_set_id=new_ds.id,
+                fm_meta_data_id=new_fm_meta.id
+            )
+            db.session.add(new_fm)
+            db.session.flush()
+
+            # Copiar archivos físicos
+            import shutil, os
+            user_folder = f"user_{self.user_id}/dataset_{self.id}"
+            new_folder = f"user_{self.user_id}/dataset_{new_ds.id}"
+
+            old_path = os.path.join("uploads", user_folder)
+            new_path = os.path.join("uploads", new_folder)
+            os.makedirs(new_path, exist_ok=True)
+
+            for f in fm.files:
+                shutil.copy(f.path(), new_path)
+
+        db.session.flush()
+        return new_ds
 
     def __repr__(self):
         return f"DataSet<{self.id}>"
