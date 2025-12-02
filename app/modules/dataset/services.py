@@ -9,7 +9,7 @@ from flask import request
 
 from app import db
 from app.modules.auth.services import AuthenticationService
-from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
+from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord, DatasetVersion
 from app.modules.dataset.repositories import (
     AuthorRepository,
     DataSetRepository,
@@ -266,13 +266,33 @@ class DataSetService(BaseService):
         return self.repository.top_downloaded_last_week(limit)
         
     def create_version(self, dataset: DataSet, major: int, minor: int, changelog=""):
-        new_dataset = dataset.clone()   # CLAVE
+        # Clone the dataset first
+        new_dataset = dataset.clone()
+
+        # Try to determine the concept_id for the new version.
+        # Prefer dataset.version if present, otherwise look up an existing DatasetVersion
+        concept_id = None
+        try:
+            if getattr(dataset, "version", None) is not None and getattr(dataset.version, "concept_id", None):
+                concept_id = dataset.version.concept_id
+        except Exception:
+            concept_id = None
+
+        if concept_id is None:
+            # Fallback: search for a DatasetVersion that references this dataset
+            dv = DatasetVersion.query.filter_by(dataset_id=dataset.id).first()
+            if dv:
+                concept_id = dv.concept_id
+
+        if concept_id is None:
+            raise ValueError("Cannot determine concept for dataset when creating a new version")
+
         version = DatasetVersion(
-            concept_id=dataset.version.concept_id,
+            concept_id=concept_id,
             dataset_id=new_dataset.id,
             version_major=major,
             version_minor=minor,
-            changelog=changelog
+            changelog=changelog,
         )
         db.session.add(version)
         db.session.commit()

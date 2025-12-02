@@ -8,6 +8,7 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 from app import db
 
 
+
 class PublicationType(Enum):
     NONE = "none"
     SPECIFICATIONS = "specifications"
@@ -237,6 +238,9 @@ class TabularDataset(BaseDataset):
             "total_size_in_human_format": self.get_file_total_size_for_human(),
         }
     def clone(self):
+        # Import local to avoid circular imports with fileModel.models
+        from app.modules.fileModel.models import FMMetaData, FileModel
+
         # Clonar DSMetaData
         new_meta = DSMetaData(
             title=self.ds_meta_data.title,
@@ -292,7 +296,28 @@ class TabularDataset(BaseDataset):
             os.makedirs(new_path, exist_ok=True)
 
             for f in fm.files:
-                shutil.copy(f.path(), new_path)
+                # Resolve the source path in a backward-compatible way.
+                src = None
+                # Preferred: Hubfile.get_path() which uses HubfileService
+                if hasattr(f, "get_path"):
+                    try:
+                        src = f.get_path()
+                    except Exception:
+                        src = None
+                # Older code might expose a path() method
+                if not src and hasattr(f, "path"):
+                    try:
+                        src = f.path()
+                    except Exception:
+                        src = None
+
+                # As a last resort try to compose the path from the known uploads layout
+                if not src:
+                    src = os.path.join(old_path, getattr(f, "name", ""))
+
+                # Only copy if the source exists
+                if src and os.path.exists(src):
+                    shutil.copy(src, new_path)
 
         db.session.flush()
         return new_ds
