@@ -1,4 +1,0 @@
-blank_issues_enabled: false  
-contact_links:
-  - name: "Crear un Issue"
-    url: "/issues/new?template=issue.md"
