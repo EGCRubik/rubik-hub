@@ -16,13 +16,11 @@ link_service = CommunityDatasetService()
 @pytest.fixture(scope='module')
 def test_client(test_client):
     with test_client.application.app_context():
-        # Ensure test user does not already exist
         existing = User.query.filter_by(email='user1@example.com').first()
         if existing:
             db.session.delete(existing)
             db.session.commit()
 
-        # Create a user for the tests
         user = User(email='user1@example.com', password='1234')
         db.session.add(user)
         db.session.commit()
@@ -34,13 +32,11 @@ def test_create_community_service(test_client):
     """Verifica que CommunityService.create persiste la comunidad y añade al creador como curador."""
     with test_client.application.app_context(), test_client.application.test_request_context():
         user = User.query.filter_by(email='user1@example.com').first()
-        # If clean_database fixture ran it may have removed the module user; recreate it here
         if user is None:
             user = User(email='user1@example.com', password='1234')
             db.session.add(user)
             db.session.commit()
         
-        # Build a minimal form-like object expected by the service
         class F:
             pass
 
@@ -79,15 +75,12 @@ def test_propose_and_set_status(clean_database, test_client):
         db.session.add(profile)
         db.session.commit()
 
-        # Create a community directly
         community = Community(name='Prop Community', slug='prop-community', description='x', created_by_id=user.id)
         db.session.add(community)
         db.session.flush()
-        # Add creator as curator
         db.session.add(CommunityCurator(community_id=community.id, user_id=user.id))
         db.session.commit()
 
-        # Create DSMetaData and dataset
         meta = DSMetaData(title='DS Test', description='desc', publication_type=PublicationType.NONE)
         db.session.add(meta)
         db.session.flush()
@@ -95,16 +88,13 @@ def test_propose_and_set_status(clean_database, test_client):
         db.session.add(ds)
         db.session.commit()
 
-        # Propose
         link = link_service.propose(community, ds, user)
         assert link.id is not None
         assert link.status == CommunityDatasetStatus.PENDING
 
-        # Approve
         approved = link_service.set_status(link.id, CommunityDatasetStatus.APPROVED, user)
         assert approved.status == CommunityDatasetStatus.APPROVED
 
-        # Create another link and reject
         link2 = link_service.propose(community, ds, user)
         rejected = link_service.set_status(link2.id, CommunityDatasetStatus.REJECTED, user)
         assert rejected.status == CommunityDatasetStatus.REJECTED
