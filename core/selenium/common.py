@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
@@ -12,7 +13,14 @@ def initialize_driver():
     os.makedirs(snap_tmp, exist_ok=True)
     os.environ["TMPDIR"] = snap_tmp
 
-    service = Service(GeckoDriverManager().install())
+    gecko_path = shutil.which("geckodriver")
+    if gecko_path is None:
+        raise RuntimeError(
+            "geckodriver no se encuentra en PATH. "
+            "Instálalo o añade su ruta al PATH."
+        )
+
+    service = Service(gecko_path)
     driver = webdriver.Firefox(service=service, options=options)
     return driver
 
