@@ -18,7 +18,7 @@ from core.selenium.common import close_driver, initialize_driver
 
 class TestTesterseleniumcommunity():
   def setup_method(self, method):
-    self.driver = webdriver.Firefox()
+    self.driver = initialize_driver()
     self.vars = {}
   
   def teardown_method(self, method):
