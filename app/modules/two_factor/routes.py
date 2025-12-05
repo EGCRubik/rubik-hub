@@ -32,6 +32,10 @@ def index():
             return redirect(url_for('auth.login'))
         code = request.form.get("two_factor_code")
         print(f"Verifying 2FA code: {code} for user ID: {pending_user_id}")
+        totp = pyotp.TOTP(two_factor_service.get_by_user_id(user.id).key)
+        print(totp.now())
+        if not totp.verify(code):
+            return render_template('two_factor/index.html', error="Invalid 2FA code")
         login_user(user, remember=True)
         session.pop('pending_2fa_user_id', None)
         return redirect(url_for('public.index'))
