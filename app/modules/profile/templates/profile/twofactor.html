@@ -1,0 +1,92 @@
+{% extends "base_template.html" %}
+
+{% block title %}Enable Two-Factor{% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+	<div class="col-6">
+		<a href="{{ url_for('profile.my_profile') }}" class="btn btn-light btn-sm" style="border-radius:5px">
+			<i data-feather="arrow-left"></i> Back to profile
+		</a>
+	</div>
+	<div class="col-6 text-end">
+		<span class="badge bg-primary">Two-Factor Setup</span>
+	</div>
+	</div>
+
+<div class="row">
+
+	<div class="col-xl-8 col-lg-12 col-md-12 col-sm-12">
+		<div class="card">
+			<div class="card-body">
+				<div class="d-flex align-items-center justify-content-between">
+					<h1 class="h3 mb-3"><b>Enable two-factor authentication</b></h1>
+				</div>
+				<p class="text-secondary">Scan the QR with your authenticator app (Google Authenticator, Authy, etc.) and enter the code to verify.</p>
+
+				<div class="row mb-3">
+					<div class="col-md-6 col-12">
+						<div class="p-2" style="border:1px solid #eee;border-radius:6px;display:inline-block">
+							<img src="{{ url_for('two_factor.qr_image') }}" alt="2FA QR" style="max-width: 240px;">
+						</div>
+						<p class="text-muted mt-2" style="font-size: 0.9rem;">If the QR does not load, ensure 2FA is enabled and a provisioning URI exists for your account.</p>
+					</div>
+					<div class="col-md-6 col-12">
+						<form id="twoFactorVerifyForm" class="needs-validation" novalidate>
+							<div class="mb-3">
+								<label class="form-label" for="two_factor_code">Verification code</label>
+								<input type="text" class="form-control" id="two_factor_code" name="two_factor_code" placeholder="e.g. 123456" required>
+								<div class="invalid-feedback">Please enter the 6-digit code from your authenticator app.</div>
+							</div>
+							<button type="submit" class="btn btn-primary btn-sm" style="border-radius:5px">
+								<i data-feather="shield"></i> Verify and enable
+							</button>
+							<div id="twofactor-msg" class="mt-2" style="display:none"></div>
+						</form>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	<div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
+		<div class="card">
+			<div class="card-body">
+				<h5 class="mb-2">Tips</h5>
+				<ul class="mb-0">
+					<li>Codes are time-based and refresh every 30 seconds.</li>
+					<li>If your code fails, wait for a new one and try again.</li>
+					<li>Keep a recovery method in case you lose your device.</li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		feather.replace();
+		const form = document.getElementById('twoFactorVerifyForm');
+		const msg = document.getElementById('twofactor-msg');
+		if (form) {
+			form.addEventListener('submit', function (e) {
+				e.preventDefault();
+				// UI-only feedback; no POST route wiring yet
+				if (!form.checkValidity()) {
+					form.classList.add('was-validated');
+					return;
+				}
+				msg.style.display = 'block';
+				msg.className = 'mt-2 text-success';
+				msg.textContent = 'Code captured. Verification will be processed on submit when backend is wired.';
+			});
+		}
+	});
+</script>
+{% endblock %}

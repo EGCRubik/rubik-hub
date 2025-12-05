@@ -15,8 +15,21 @@ function initProfile2FA() {
 			body: data,
 			credentials: 'same-origin'
 		}).then(function (response) {
+			if (response.redirected) {
+				window.location.href = response.url;
+				return;
+			}
 			if (response.ok) {
-				window.location.reload();
+				// Try to read JSON for optional redirect_url
+				response.clone().json().then(function (json) {
+					if (json && json.redirect_url) {
+						window.location.href = json.redirect_url;
+					} else {
+						window.location.reload();
+					}
+				}).catch(function () {
+					window.location.reload();
+				});
 			} else {
 				response.text().then(function (text) {
 					alert('Error: ' + (text || response.status));
