@@ -10,7 +10,7 @@
                 <h1 class="h3 mb-3">Two-factor authentication</h1>
                 <p class="text-secondary">Introduce el código de verificación de 2FA para continuar.</p>
 
-                <form id="twoFactorCodeForm" class="needs-validation" novalidate>
+                <form id="twoFactorCodeForm" action="{{ url_for('two_factor.index') }}" method="POST" class="needs-validation" novalidate>
                     <div class="row">
                         <div class="col-lg-6 col-12">
                             <div class="mb-3">
