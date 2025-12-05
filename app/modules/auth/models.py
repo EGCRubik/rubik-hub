@@ -16,6 +16,7 @@ class User(db.Model, UserMixin):
 
     data_sets = db.relationship("BaseDataset", backref="user", lazy=True)
     profile = db.relationship("UserProfile", backref="user", uselist=False)
+    two_factor = db.relationship("TwoFactor", backref="user", uselist=False)
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
