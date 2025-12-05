@@ -1,5 +1,5 @@
-from flask import redirect, render_template, request, url_for
-from flask_login import current_user, login_user, logout_user
+from flask import redirect, render_template, request, url_for, jsonify
+from flask_login import current_user, login_user, logout_user, login_required
 
 from app.modules.auth import auth_bp
 from app.modules.auth.forms import LoginForm, SignupForm
@@ -52,3 +52,20 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("public.index"))
+
+
+# Update two-factor authentication (2FA) flag for current user
+@auth_bp.route("/auth/update-factor-enabled", methods=["POST"])
+@login_required
+def update_factor_enabled():
+    enabled_value = request.form.get("enabled")
+    if enabled_value is None:
+        return jsonify({"message": "'enabled' is required"}), 400
+
+    # Accept '1'/'0' or boolean-like strings
+    factor_enabled = str(enabled_value).lower() in ("1", "true", "yes")
+    try:
+        user = authentication_service.update_factor_enabled(current_user.id, factor_enabled)
+        return jsonify({"message": "Updated", "factor_enabled": bool(user.factor_enabled)})
+    except Exception as exc:
+        return jsonify({"message": f"Error updating 2FA: {exc}"}), 400
