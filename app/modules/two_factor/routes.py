@@ -58,8 +58,11 @@ def update_factor_enabled():
         if factor_enabled:
             key = pyotp.random_base32()
             uri = pyotp.totp.TOTP(key).provisioning_uri(name=current_user.email, issuer_name="RubikHub")
-            
-            two_factor_service.create_two_factor_entry(current_user.id, key, uri)
+            session['two_factor_setup_uri'] = uri
+            session['two_factor_setup_key'] = key
+            # Return JSON with redirect to allow fetch() to navigate
+            return jsonify({"message": "2FA setup initiated", "factor_enabled": True, "redirect_url": url_for('profile.twofactor_setup')})
+            # two_factor_service.create_two_factor_entry(current_user.id, key, uri)
         else:
             two_factor_service.delete_by_user_id(current_user.id)
 
@@ -70,25 +73,55 @@ def update_factor_enabled():
         db.session.rollback()
         return jsonify({"message": f"Error updating 2FA: {exc}"}), 400
 
+@two_factor_bp.route("/two_factor/verify", methods=["POST"])
+@login_required
+def verify_two_factor():
+    code = request.form.get("two_factor_code")
+    uri = session.get("two_factor_setup_uri")
+    key = session.get("two_factor_setup_key")
+    if not code:
+        return jsonify({"message": "'two_factor_code' is required"}), 400
+
+    record = two_factor_service.get_by_user_id(current_user.id)
+    if not record:
+        return jsonify({"message": "2FA not set up for user"}), 400
+
+    totp = pyotp.TOTP(record.key)
+    if totp.verify(code):
+        try:
+            two_factor_service.create_two_factor_entry(current_user.id, key, uri)
+            user = two_factor_service.update_factor_enabled(True)
+            db.session.commit()
+            # Clear setup session data
+            session.pop("two_factor_setup_uri", None)
+            session.pop("two_factor_setup_key", None)
+            return redirect(url_for("profile.summary"))
+        except Exception as exc:
+            db.session.rollback()
+            return jsonify({"message": f"Error updating 2FA: {exc}"}), 400
+    else:
+        return jsonify({"message": "Invalid 2FA code"}), 400
 
 # Serve QR image (PNG) for current user's 2FA setup without storing binary in DB
 @two_factor_bp.route('/two_factor/qr_image', methods=['GET'])
 @login_required
 def qr_image():
     try:
-        # Only show QR if 2FA is enabled and we have a stored URI
-        if not getattr(current_user, 'factor_enabled', False):
+        uri = session.get("two_factor_setup_uri") if session.get("two_factor_setup_uri") else current_user.two_factor.uri
+        # Only show QR if 2FA is enabled and we have a stored URI or parameters
+        print('Generating QR image, URI from session:', uri)
+        if not getattr(current_user, 'factor_enabled', False) and not uri:
             return jsonify({"message": "2FA not enabled"}), 404
 
         record = two_factor_service.get_by_user_id(current_user.id)
         print(record)
-        if not record or not getattr(record, 'uri', None):
+        if (not record or not getattr(record, 'uri', None)) and not uri:
             print(True)
             return jsonify({"message": "QR data not found"}), 404
 
         # Generate PNG from stored URI on-the-fly
-        print('URI:' + record.uri)
-        qr = qrcode.make(record.uri)
+        print('URI:' + (uri if uri else record.uri))
+        qr = qrcode.make(uri if uri else record.uri)
         buf = BytesIO()
         qr.save(buf, format='PNG')
         png_bytes = buf.getvalue()
