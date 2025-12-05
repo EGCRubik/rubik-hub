@@ -3,6 +3,8 @@ from app.modules.two_factor import two_factor_bp
 from flask_login import current_user, login_user, login_required
 from app.modules.auth.services import AuthenticationService
 from app.modules.two_factor.services import TwoFactorService
+from io import BytesIO
+import base64
 import time
 import pyotp
 import qrcode
@@ -52,6 +54,7 @@ def update_factor_enabled():
         if factor_enabled:
             key = pyotp.random_base32()
             uri = pyotp.totp.TOTP(key).provisioning_uri(name=current_user.email, issuer_name="RubikHub")
+            
             two_factor_service.create_two_factor_entry(current_user.id, key, uri)
         else:
             two_factor_service.delete_by_user_id(current_user.id)
@@ -62,3 +65,32 @@ def update_factor_enabled():
     except Exception as exc:
         db.session.rollback()
         return jsonify({"message": f"Error updating 2FA: {exc}"}), 400
+
+
+# Serve QR image (PNG) for current user's 2FA setup without storing binary in DB
+@two_factor_bp.route('/two_factor/qr_image', methods=['GET'])
+@login_required
+def qr_image():
+    try:
+        # Only show QR if 2FA is enabled and we have a stored URI
+        if not getattr(current_user, 'factor_enabled', False):
+            return jsonify({"message": "2FA not enabled"}), 404
+
+        record = two_factor_service.get_by_user_id(current_user.id)
+        print(record)
+        if not record or not getattr(record, 'uri', None):
+            print(True)
+            return jsonify({"message": "QR data not found"}), 404
+
+        # Generate PNG from stored URI on-the-fly
+        print('URI:' + record.uri)
+        qr = qrcode.make(record.uri)
+        buf = BytesIO()
+        qr.save(buf, format='PNG')
+        png_bytes = buf.getvalue()
+        return (png_bytes, 200, {
+            'Content-Type': 'image/png',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+        })
+    except Exception as exc:
+        return jsonify({"message": f"Error generating QR: {exc}"}), 400

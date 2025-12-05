@@ -112,6 +112,13 @@
                         {{ 'Desactivar 2FA' if factor_enabled else 'Activar 2FA' }}
                     </button>
                 </form>
+
+                {% if factor_enabled %}
+                <div class="mt-3">
+                    <h6>Scan this QR to setup 2FA</h6>
+                    <img src="{{ url_for('two_factor.qr_image') }}" alt="2FA QR" style="max-width: 240px; border: 1px solid #eee; border-radius: 6px; padding: 6px;">
+                </div>
+                {% endif %}
             </div>
 
             
