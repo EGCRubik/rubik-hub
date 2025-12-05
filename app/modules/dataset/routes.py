@@ -475,23 +475,15 @@ def download_dataset(dataset_id):
     return resp
 
 
-@dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
-def subdomain_index(doi):
+@dataset_bp.route("/dataset/view/<int:dataset_id>", methods=["GET"])
+def subdomain_index(dataset_id):
 
-    new_doi = doi_mapping_service.get_new_doi(doi)
-    if new_doi:
-        return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
-
-    ds_meta_data = dsmetadata_service.filter_by_doi(doi)
-
-    if not ds_meta_data:
-        abort(404)
-
-    dataset = ds_meta_data.data_set
+    dataset = DataSetService().get_or_404(dataset_id)
 
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
     downloads = DataSetService().get_number_of_downloads(dataset.id)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads))
+    versions = DataSetService().get_dataset_versions(dataset.id)
+    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset, versions=versions, downloads=downloads))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -506,8 +498,9 @@ def get_unsynchronized_dataset(dataset_id):
     if not dataset:
         abort(404)
 
+    versions = DataSetService().get_dataset_versions(dataset.id)
     downloads = DataSetService().get_number_of_downloads(dataset.id)
-    return render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads)
+    return render_template("dataset/view_dataset.html", dataset=dataset, versions=versions, downloads=downloads)
 
 
 @dataset_bp.route("/dataset/<int:dataset_id>/sync", methods=["POST"])

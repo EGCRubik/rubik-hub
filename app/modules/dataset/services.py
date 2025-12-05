@@ -53,6 +53,23 @@ class DataSetService(BaseService):
         self.dsviewrecord_repostory = DSViewRecordRepository()
         self.hubfileviewrecord_repository = HubfileViewRecordRepository()
         self.download_repository = DownloadRepository()
+    
+    def get_dataset_versions(self, dataset_id):
+        # Primero buscamos el dataset por su ID
+        dataset = DataSet.query.filter_by(id=dataset_id).first()
+        if not dataset:
+            return []
+
+        version = DatasetVersion.query.filter_by(dataset_id=dataset.id).first()
+        if not version:
+            return []
+        
+        # Conseguimos el concept_id desde el dataset
+        concept_id = version.concept_id
+
+        # Ahora obtenemos todas las versiones asociadas a este DatasetConcept
+        return ["b", "c"]
+
 
     def update_download_count(self, dataset_id):
         self.download_repository.create_download_record(dataset_id=dataset_id)
@@ -255,6 +272,29 @@ class DataSetService(BaseService):
 
     def get_number_of_downloads(self, dataset_id: int) -> int:
         return self.repository.get_number_of_downloads(dataset_id)
+
+    def get_actual_version(self, dataset_id: int):
+        """Obtiene la versión actual de un dataset."""
+        dataset = DataSet.query.filter_by(id=dataset_id).first()
+        if not dataset:
+            return None
+        version = DatasetVersion.query.filter_by(dataset_id=dataset.id).first()
+        if not version:
+            return None
+        return version
+
+    def get_dataset_versions(self, dataset_id: int):
+        """Obtiene todas las versiones de un dataset."""
+        dataset = DataSet.query.filter_by(id=dataset_id).first()
+        if not dataset:
+            return []
+        version = DatasetVersion.query.filter_by(dataset_id=dataset.id).first()
+        if not version:
+            return []
+        concept_id = version.concept_id if dataset.version else None
+        if not concept_id:
+            return []
+        return DatasetVersion.query.filter_by(concept_id=concept_id).all()
     
     def get_author_id_by_user_id(self, user_id: int) -> Optional[int]:
         author = self.author_repository.model.query.filter_by(user_id=user_id).first()

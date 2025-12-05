@@ -25,7 +25,7 @@
                         {% for ds in top_datasets[:3] %}
                             <tr>
                                 <td>
-                                    <a href="{{ ds.get_rubikhub_doi() if ds.get_rubikhub_doi is defined else url_for('dataset.show_dataset', dataset_id=ds.id) }}">
+                                    <a href="/dataset/view/{{ ds.id }}" >
                                         {{ ds.ds_meta_data.title if (ds.ds_meta_data and ds.ds_meta_data.title) else (ds.title if ds.title else 'Untitled') }}
                                     </a>
                                 </td>
@@ -43,13 +43,13 @@
                                 </td>
                                 <td>
                                     {% if ds.get_rubikhub_doi is defined and ds.get_rubikhub_doi() %}
-                                        <a href="{{ ds.get_rubikhub_doi() }}" target="_blank">{{ ds.get_rubikhub_doi() }}</a>
+                                        <a href="/dataset/view/{{ ds.id }}" target="_blank">{{ ds.get_rubikhub_doi() }}</a>
                                     {% else %}
                                         <span class="text-muted">N/A</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ ds.get_rubikhub_doi() if (ds.get_rubikhub_doi is defined and ds.get_rubikhub_doi()) else url_for('dataset.show_dataset', dataset_id=ds.id) }}">
+                                    <a href="/dataset/view/{{ ds.id }}" >
                                         <i data-feather="eye"></i>
                                     </a>
                                     <a href="{{ url_for('dataset.download_dataset', dataset_id=ds.id) }}">

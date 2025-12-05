@@ -216,7 +216,7 @@ class TabularDataset(BaseDataset):
 
     def to_dict(self):
         return {
-            "title": self.ds_meta_data.title,
+            "title": self.ds_meta_data.title + f' (version {self.version.version_major}.{self.version.version_minor})',
             "id": self.id,
             "created_at": self.created_at,
             "created_at_timestamp": int(self.created_at.timestamp()),
@@ -227,7 +227,7 @@ class TabularDataset(BaseDataset):
             "publication_doi": self.ds_meta_data.publication_doi,
             "dataset_doi": self.ds_meta_data.dataset_doi,
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
-            "url": self.get_rubikhub_doi(),
+            "url": f'/dataset/view/{self.id}',
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
             # Use the dataset-level method to obtain the number of downloads (counts Download rows)
             "downloads": self.get_number_of_downloads() or 0,

@@ -11,7 +11,8 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center justify-content-between">
                             <h2 class="mb-0">
-                                <a href="{{ dataset.get_rubikhub_doi() }}">{{ dataset.ds_meta_data.title }}</a>
+                                <!-- Aquí cambiamos el href para usar dataset.id en lugar del DOI -->
+                                <a href="/dataset/view/{{ dataset.id }}">{{ dataset.ds_meta_data.title }} (Version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})</a>
                             </h2>
                             <div class="d-flex align-items-center">
                                 <span class="me-2 text-center d-none d-md-inline-flex flex-column align-items-center" style="width:48px">
@@ -48,7 +49,8 @@
                         </div>
                         <div class="row mb-2">
                             <div class="col-12">
-                                <a href="{{ dataset.get_rubikhub_doi() }}">{{ dataset.get_rubikhub_doi() }}</a>
+                                <!-- Cambiamos el enlace del DOI para que apunte al dataset.id -->
+                                <a href="/dataset/view/{{ dataset.id }}">{{ dataset.get_rubikhub_doi() }}</a>
                                  <div id="dataset_doi_rubikhub_{{ dataset.id }}" style="display: none">
                                 {{ dataset.get_rubikhub_doi() }}
                             </div>
@@ -66,7 +68,8 @@
                         </div>
                         <div class="row  mt-4">
                             <div class="col-12">
-                                <a href="{{ dataset.get_rubikhub_doi() }}" class="btn btn-outline-primary btn-sm"
+                                <!-- Cambiar el enlace del botón "View dataset" para usar dataset.id -->
+                                <a href="/dataset/view/{{ dataset.id }}" class="btn btn-outline-primary btn-sm"
                                    style="border-radius: 5px;">
                                     <i data-feather="eye" class="center-button-icon"></i>
                                     View dataset

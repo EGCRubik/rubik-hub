@@ -25,16 +25,16 @@
                         {% for dataset in datasets %}
                             <tr>
                                 <td>
-                                    <a href="{{ dataset.get_rubikhub_doi() }}">
-                                        {{ dataset.ds_meta_data.title }}
+                                    <a href="/dataset/view/{{ dataset.id }}" >
+                                        {{ dataset.ds_meta_data.title }} (version {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
                                     </a>
                                 </td>
                                 <td>{{ dataset.ds_meta_data.description }}</td>
                                 <td>{{ dataset.ds_meta_data.publication_type.name.replace('_', ' ').title() }}</td>
-                                <td><a href="{{ dataset.get_rubikhub_doi() }}"
+                                <td><a href="/dataset/view/{{ dataset.id }}" 
                                        target="_blank">{{ dataset.get_rubikhub_doi() }}</a></td>
                                 <td>
-                                    <a href="{{ dataset.get_rubikhub_doi() }}">
+                                    <a href="/dataset/view/{{ dataset.id }}">
                                         <i data-feather="eye"></i>
                                     </a>
                                     <a href="{{ url_for('dataset.download_dataset', dataset_id=dataset.id) }}">
@@ -92,7 +92,7 @@
                                     <tr>
                                         <td>
                                             <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=local_dataset.id) }}">
-                                                {{ local_dataset.ds_meta_data.title }}
+                                                {{ local_dataset.ds_meta_data.title }} (version {{ local_dataset.version.version_major }}.{{ local_dataset.version.version_minor }})
                                             </a>
                                         </td>
                                         <td>{{ local_dataset.ds_meta_data.description }}</td>

@@ -81,7 +81,7 @@ class DataSetRepository(BaseRepository):
         return (
             self.model.query.join(DSMetaData)
             .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.isnot(None))
-            .order_by(self.model.created_at.desc())
+            .order_by(DSMetaData.title.asc())
             .all()
         )
 
@@ -89,7 +89,7 @@ class DataSetRepository(BaseRepository):
         return (
             self.model.query.join(DSMetaData)
             .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.is_(None))
-            .order_by(self.model.created_at.desc())
+            .order_by(DSMetaData.title.asc())
             .all()
         )
 
