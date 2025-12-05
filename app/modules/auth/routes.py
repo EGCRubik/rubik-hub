@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, url_for, jsonify
+from flask import redirect, render_template, request, url_for, jsonify, session
 from flask_login import current_user, login_user, logout_user, login_required
 
 from app.modules.auth import auth_bp
@@ -35,13 +35,22 @@ def show_signup_form():
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    session.pop("pending_2fa_user_id", None)
     if current_user.is_authenticated:
         return redirect(url_for("public.index"))
 
     form = LoginForm()
     if request.method == "POST" and form.validate_on_submit():
         if authentication_service.login(form.email.data, form.password.data):
-            return redirect(url_for("public.index"))
+            user = authentication_service.get_user_by_email(form.email.data)
+            if user and getattr(user, "factor_enabled", True):
+                # No iniciar sesión aún: guardar usuario pendiente en sesión y redirigir a 2FA
+                session["pending_2fa_user_id"] = user.id
+                return redirect(url_for("two_factor.index"))
+            # Si no tiene 2FA, iniciar sesión normalmente
+            if user:
+                login_user(user, remember=True)
+                return redirect(url_for("public.index"))
 
         return render_template("auth/login_form.html", form=form, error="Invalid credentials")
 
