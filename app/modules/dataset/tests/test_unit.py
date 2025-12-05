@@ -6,6 +6,8 @@ import time
 from app import db
 from datetime import datetime, timezone, timedelta
 
+from unittest import mock
+
 from app.modules.dataset.services import DataSetService
 from app.modules.dataset.models import (
     TabularDataset,
@@ -13,7 +15,8 @@ from app.modules.dataset.models import (
     DSMetaData,
     Download,
     DatasetConcept,
-    DatasetVersion
+    DatasetVersion,
+    DataSet
 )
 
 from app.modules.fileModel.models import (
@@ -265,6 +268,59 @@ def test_service_create_version_via_service(ds_with_file, test_client):
         ds_ids = {v.dataset_id for v in concept.versions}
         assert original.id in ds_ids
         assert len(ds_ids) == 2
+    
+
+def test_service_get_dataset_version(clean_database, test_client):
+    dataset_service = DataSetService()
+
+    # Crear un Dataset Concept
+    concept = DatasetConcept(
+        conceptual_doi="10.1234/concept1",
+        name="Concept for dataset 1"
+    )
+    db.session.add(concept)
+    db.session.commit()  # Commit para asegurarnos de que el concepto esté persistido en la base de datos
+
+    user, meta, dataset1 = create_dataset("user1@example.com")
+    user, meta, dataset2 = create_dataset("user2@example.com")
+
+    # Crear las versiones de los datasets (en este caso con dataset1 y dataset2)
+    dataset_version_1 = DatasetVersion(
+        concept_id=concept.id,  # Asociamos la versión al concepto correcto
+        dataset_id=dataset1.id,  # Relacionamos con dataset1
+        version_major=1,
+        version_minor=0,
+        version_doi="10.1234/dataset1.v1",
+        changelog="Initial release"
+    )
+    db.session.add(dataset_version_1)
+
+    dataset_version_2 = DatasetVersion(
+        concept_id=concept.id,  # Asociamos la versión al concepto correcto
+        dataset_id=dataset2.id,  # Relacionamos con dataset2
+        version_major=1,
+        version_minor=1,
+        version_doi="10.1234/dataset2.v1",
+        changelog="Minor updates"
+    )
+    db.session.add(dataset_version_2)
+    db.session.commit()  # Commit para guardar las versiones en la base de datos
+
+    # Llamamos a la función que queremos probar
+    versions = dataset_service.get_dataset_versions(dataset1.id)  # Cambié `dataset.id` por `dataset1.id` para la prueba
+
+    # Verificamos que las versiones obtenidas son las correctas
+    assert len(versions) == 2  # Solo debe haber 2 versiones asociadas a dataset1
+    assert versions[0].version_major == 1
+    assert versions[0].version_minor == 0
+    assert versions[1].version_major == 1
+    assert versions[1].version_minor == 1
+    assert versions[0].version_doi == "10.1234/dataset1.v1"
+    assert versions[1].version_doi == "10.1234/dataset2.v1"
+
+
+
+
 
 
 # =====================================================
