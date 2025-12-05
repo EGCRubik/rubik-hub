@@ -45,6 +45,14 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
     )
+    op.create_table('two_factor',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('key', sa.String(length=255), nullable=False),
+    sa.Column('uri', sa.String(length=255), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    )
     op.create_table('webhook',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -326,6 +334,7 @@ def downgrade():
     op.drop_table('author')
     op.drop_table('zenodo')
     op.drop_table('webhook')
+    op.drop_table('two_factor')
     op.drop_table('user')
     op.drop_table('fm_metrics')
     op.drop_table('ds_metrics')
