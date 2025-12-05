@@ -63,6 +63,15 @@ class AuthenticationService(BaseService):
             return updated_instance, None
 
         return None, form.errors
+    
+    def update_factor_enabled(self, user_id: int, factor_enabled: bool) -> User:
+        user = self.get_authenticated_user()
+        if user is None:
+            raise ValueError("User not found.")
+        
+        user.factor_enabled = factor_enabled
+        self.repository.session.commit()
+        return user
 
     def get_authenticated_user(self) -> User | None:
         if current_user.is_authenticated:
