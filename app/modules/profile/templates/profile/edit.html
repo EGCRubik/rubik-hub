@@ -1,6 +1,6 @@
 {% extends "base_template.html" %}
 
-{% block title %}View dataset{% endblock %}
+{% block title %}Edit profile{% endblock %}
 
 {% block content %}
 
@@ -100,6 +100,21 @@
                 </div>
             </form>
 
+            <div class="mt-4">
+                <h5>Two-factor authentication (2FA)</h5>
+                {% set factor_enabled = (current_user.factor_enabled if current_user.is_authenticated and current_user.factor_enabled is not none else False) %}
+                <p>Estado: <strong>{{ 'Activado' if factor_enabled else 'Desactivado' }}</strong></p>
+
+                <form id="toggle-2fa-form" method="post" action="{{ url_for('auth.update_factor_enabled') }}">
+                    {{ form.csrf_token }}
+                    <input type="hidden" name="enabled" id="2fa-enabled-input" value="{{ '0' if factor_enabled else '1' }}">
+                    <button type="submit" id="toggle-2fa-button" class="btn {{ 'btn-danger' if factor_enabled else 'btn-success' }}">
+                        {{ 'Desactivar 2FA' if factor_enabled else 'Activar 2FA' }}
+                    </button>
+                </form>
+            </div>
+
+            
 
         </div>
 
