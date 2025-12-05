@@ -105,7 +105,7 @@
                 {% set factor_enabled = (current_user.factor_enabled if current_user.is_authenticated and current_user.factor_enabled is not none else False) %}
                 <p>Estado: <strong>{{ 'Activado' if factor_enabled else 'Desactivado' }}</strong></p>
 
-                <form id="toggle-2fa-form" method="post" action="{{ url_for('auth.update_factor_enabled') }}">
+                <form id="toggle-2fa-form" method="post" action="{{ url_for('two_factor.update_factor_enabled') }}">
                     {{ form.csrf_token }}
                     <input type="hidden" name="enabled" id="2fa-enabled-input" value="{{ '0' if factor_enabled else '1' }}">
                     <button type="submit" id="toggle-2fa-button" class="btn {{ 'btn-danger' if factor_enabled else 'btn-success' }}">
