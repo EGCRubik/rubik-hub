@@ -36,7 +36,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between">
-                    <h1><b>{{ dataset.ds_meta_data.title }} (Version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})</b></h1>
+                    <h1><b>{{ dataset.ds_meta_data.title }} (Version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
+                        {% set latest = dataset.version.concept.latest_version() %}
+                        {% if latest and latest.id == dataset.version.id %}
+                            <span title="Latest version" style="color: gold;">⭐</span>
+                        {% endif %}
+                    </b></h1>
                     <div>
                         <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
                     </div>
@@ -432,10 +437,21 @@
                             <li>
                                 {% set label = v.version_label() %}
                                 {% if v.data_set and v.data_set.ds_meta_data and v.data_set.ds_meta_data.dataset_doi %}
-                                    <a class="dropdown-item" href="{{ v.data_set.id }}">{{ v.data_set.ds_meta_data.title }} v{{ label }}</a>
+                                    <a class="dropdown-item" href="{{ v.data_set.id }}">{{ v.data_set.ds_meta_data.title }} v{{ label }}
+                                        {% set latest = v.concept.latest_version() %}
+                                        {% if latest and latest.id == v.id %}
+                                            <span title="Latest version" style="color: gold;">⭐</span>
+                                        {% endif %}
+                                    </a>
                                 {% else %}
                                     {% if v.data_set %}
-                                        <a class="dropdown-item" href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=v.data_set.id) }}">{{ v.data_set.ds_meta_data.title }} v{{ label }}</a>
+                                        <a class="dropdown-item" href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=v.data_set.id) }}">
+                                            {{ v.data_set.ds_meta_data.title }} v{{ label }} 
+                                            {% set latest = v.concept.latest_version() %}
+                                            {% if latest and latest.id == v.id %}
+                                                <span title="Latest version" style="color: gold;">⭐</span>
+                                            {% endif %}
+                                        </a>
                                     {% else %}
                                         <span class="dropdown-item text-muted">v{{ label }}(no dataset)</span>
                                     {% endif %}

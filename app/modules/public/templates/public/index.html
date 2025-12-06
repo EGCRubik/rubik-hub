@@ -12,7 +12,12 @@
                         <div class="d-flex align-items-center justify-content-between">
                             <h2 class="mb-0">
                                 <!-- Aquí cambiamos el href para usar dataset.id en lugar del DOI -->
-                                <a href="/dataset/view/{{ dataset.id }}">{{ dataset.ds_meta_data.title }} (Version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})</a>
+                                <a href="/dataset/view/{{ dataset.id }}">{{ dataset.ds_meta_data.title }} (Version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
+                                    {% set latest = dataset.version.concept.latest_version() %}
+                                    {% if latest and latest.id == dataset.version.id %}
+                                        <span title="Latest version" style="color: gold;">⭐</span>
+                                    {% endif %}
+                                </a>
                             </h2>
                             <div class="d-flex align-items-center">
                                 <span class="me-2 text-center d-none d-md-inline-flex flex-column align-items-center" style="width:48px">

@@ -215,8 +215,27 @@ class TabularDataset(BaseDataset):
         return None
 
     def to_dict(self):
+
+        base_title = self.ds_meta_data.title
+        v = getattr(self, "version", None)
+
+        if v is not None:
+            base_title = f'{base_title} (version {v.version_major}.{v.version_minor})'
+
+        # Añadimos estrellita si esta versión es la última del concepto
+        star = ""
+        try:
+            if v is not None and getattr(v, "concept", None) is not None:
+                latest = v.concept.latest_version()
+                if latest and latest.id == v.id:
+                    star = " ⭐"
+        except Exception:
+            # Por si acaso algo viene a None o la relación no está cargada
+            star = ""
+
+        full_title = base_title + star
         return {
-            "title": self.ds_meta_data.title + f' (version {self.version.version_major}.{self.version.version_minor})',
+            "title": full_title,
             "id": self.id,
             "created_at": self.created_at,
             "created_at_timestamp": int(self.created_at.timestamp()),

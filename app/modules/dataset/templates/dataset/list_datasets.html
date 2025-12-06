@@ -27,6 +27,10 @@
                                 <td>
                                     <a href="/dataset/view/{{ dataset.id }}" >
                                         {{ dataset.ds_meta_data.title }} (version {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
+                                        {% set latest = dataset.version.concept.latest_version() %}
+                                        {% if latest and latest.id == dataset.version.id %}
+                                            <span title="Latest version" style="color: gold;">⭐</span>
+                                        {% endif %}
                                     </a>
                                 </td>
                                 <td>{{ dataset.ds_meta_data.description }}</td>
@@ -93,6 +97,10 @@
                                         <td>
                                             <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=local_dataset.id) }}">
                                                 {{ local_dataset.ds_meta_data.title }} (version {{ local_dataset.version.version_major }}.{{ local_dataset.version.version_minor }})
+                                                {% set latest = local_dataset.version.concept.latest_version() %}
+                                                {% if latest and latest.id == local_dataset.version.id %}
+                                                    <span title="Latest version" style="color: gold;">⭐</span>
+                                                {% endif %}
                                             </a>
                                         </td>
                                         <td>{{ local_dataset.ds_meta_data.description }}</td>

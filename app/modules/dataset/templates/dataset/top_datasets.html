@@ -27,6 +27,10 @@
                                 <td>
                                     <a href="/dataset/view/{{ ds.id }}" >
                                         {{ ds.ds_meta_data.title if (ds.ds_meta_data and ds.ds_meta_data.title) else (ds.title if ds.title else 'Untitled') }} (version {{ ds.version.version_major }}.{{ ds.version.version_minor }})
+                                        {% set latest = ds.version.concept.latest_version() %}
+                                        {% if latest and latest.id == ds.version.id %}
+                                            <span title="Latest version" style="color: gold;">⭐</span>
+                                        {% endif %}
                                     </a>
                                 </td>
                                 <td>
