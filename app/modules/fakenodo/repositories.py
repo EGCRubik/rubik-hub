@@ -85,11 +85,27 @@ class FakenodoRepository:
             "created_at": datetime.utcnow().isoformat() + "Z",
         })
         meta_data["versions"] = versions
+        meta_data["dataset_version"] = version_label
         deposition.meta_data = meta_data
 
         db.session.commit()
 
         logger.info(f"FakenodoRepository: Added version '{version_label}' to deposition ID {deposition_id}")
+        return meta_data
+
+    def update_dataset_version(self, deposition_id: int, version_label: str) -> dict:
+        """Update only the dataset_version field in meta_data without adding a new entry to versions."""
+        deposition = Fakenodo.query.get(deposition_id)
+        if not deposition:
+            raise Exception(f"Deposition with ID {deposition_id} not found.")
+
+        meta_data = deposition.meta_data or {}
+        meta_data["dataset_version"] = version_label
+        deposition.meta_data = meta_data
+
+        db.session.commit()
+
+        logger.info(f"FakenodoRepository: Updated dataset_version to '{version_label}' for deposition ID {deposition_id}")
         return meta_data
 
     def get_deposition(self, deposition_id: int) -> Fakenodo:

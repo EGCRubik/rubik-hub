@@ -12,6 +12,7 @@ from venv import logger
 
 from flask import Response, jsonify
 
+from app.modules.dataset.models import DatasetVersion
 from app.modules.fakenodo.models import Fakenodo
 from app.modules.fakenodo.repositories import FakenodoRepository
 from core.services.BaseService import BaseService
@@ -105,21 +106,31 @@ class FakenodoService(BaseService):
         title = getattr(getattr(dataset, "ds_meta_data", None), "title", None)
         description = getattr(getattr(dataset, "ds_meta_data", None), "description", None)
         tags = getattr(getattr(dataset, "ds_meta_data", None), "tags", None)
+        # Determine dataset current version label (major.minor)
+        current_version_label = None
+        try:
+            dv = (
+                DatasetVersion.query.filter_by(dataset_id=dataset.id)
+                .order_by(DatasetVersion.version_major.desc(), DatasetVersion.version_minor.desc())
+                .first()
+            )
+            if dv:
+                current_version_label = f"{dv.version_major}.{dv.version_minor}"
+        except Exception:
+            current_version_label = None
         meta = {
             "title": title,
             "description": description,
             "tags": tags,
+            "dataset_version": current_version_label,
+            "dataset_id": getattr(dataset, "id", None),
         }
-        # Pre-reserve DOI style
-        concept_rec_id = random.randint(100000, 999999)
-        meta["prereserve_doi"] = {"doi": f"10.5072/fakenodo.{concept_rec_id}"}
 
         dep = self.repository.create_new_deposition(meta_data=meta)
         logger.info("FakenodoService: created deposition in DB id=%s", dep.id)
         return {
-            "conceptrecid": concept_rec_id,
             "id": dep.id,
-            "metadata": {"prereserve_doi": {"doi": meta["prereserve_doi"]["doi"]}},
+            "metadata": {},
             "links": {"bucket": f"/api/files/{dep.id}"},
         }
 
@@ -146,6 +157,11 @@ class FakenodoService(BaseService):
         """Append a version entry to the deposition meta_data in DB."""
         label = f"{version_major}.{version_minor}"
         return self.repository.add_version(deposition_id=deposition_id, version_label=label, doi=doi)
+
+    def set_dataset_version(self, deposition_id: int, version_major: int, version_minor: int) -> dict:
+        """Update the deposition's dataset_version without appending into versions list."""
+        label = f"{version_major}.{version_minor}"
+        return self.repository.update_dataset_version(deposition_id=deposition_id, version_label=label)
     
     def test_full_connection(self) -> Response:
         """
