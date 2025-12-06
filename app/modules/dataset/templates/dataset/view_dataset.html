@@ -142,26 +142,6 @@
 
                 </div>
 
-                <!-- Agregado: Desplegable para las versiones del dataset -->
-                <div class="row mb-2">
-                    <div class="col-md-4 col-12">
-                        <span class="text-secondary">Dataset Versions</span>
-                    </div>
-                    <div class="col-md-8 col-12">
-                        <select class="form-select" id="datasetVersionSelect">
-                            <option value="" disabled selected>Select a version</option>
-                            {% if versions is not defined %}
-                                <option value=""> a</option>
-                            {% endif %}
-                            {% for version in versions %}
-                                <option value="{{ version.id }}">Version {{ version.version_label() }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-
-
             </div>
             {% if dataset.ds_meta_data.dataset_doi %}
             <div class="card-body" style="padding-top: 0px">
@@ -484,12 +464,12 @@
                             <li>
                                 {% set label = v.version_label() %}
                                 {% if v.data_set and v.data_set.ds_meta_data and v.data_set.ds_meta_data.dataset_doi %}
-                                    <a class="dropdown-item" href="{{ v.data_set.get_rubikhub_doi() }}">v{{ label }}{% if v.version_doi %} — {{ v.version_doi }}{% endif %}</a>
+                                    <a class="dropdown-item" href="{{ v.data_set.id }}">{{ v.data_set.ds_meta_data.title }} v{{ label }}</a>
                                 {% else %}
                                     {% if v.data_set %}
-                                        <a class="dropdown-item" href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=v.data_set.id) }}">v{{ label }}{% if v.version_doi %} — {{ v.version_doi }}{% endif %}</a>
+                                        <a class="dropdown-item" href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=v.data_set.id) }}">{{ v.data_set.ds_meta_data.title }} v{{ label }}</a>
                                     {% else %}
-                                        <span class="dropdown-item text-muted">v{{ label }}{% if v.version_doi %} — {{ v.version_doi }}{% endif %} (no dataset)</span>
+                                        <span class="dropdown-item text-muted">v{{ label }}(no dataset)</span>
                                     {% endif %}
                                 {% endif %}
                             </li>
