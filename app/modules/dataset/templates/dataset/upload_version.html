@@ -1,0 +1,232 @@
+{% extends "base_template.html" %}
+
+{% block title %}Upload New Version{% endblock %}
+
+{% block content %}
+
+<form method="post" action="{{ url_for('dataset.upload_new_version', dataset_id=dataset.id) }}" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id) }}" 
+               class="btn btn-secondary btn-sm">
+                <i data-feather="arrow-left"></i> Back to Dataset
+            </a>
+        </div>
+    </div>
+
+    <h1 class="h2 mb-3"><b>Upload New Version</b></h1>
+    <p class="text-muted">Current version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }}</p>
+
+    <div class="row">
+        <div class="col-12 mb-3">
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading"><i class="align-middle" data-feather="info"></i> Version Upload</h4>
+                <p class="mb-0">
+                    You can optionally update metadata fields and upload a new CSV file to replace the older one and create a new version of this dataset.
+                    Fields left empty will keep their current values from the previous version.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+            {% if messages is mapping %}
+                {% for field, errs in messages.items() %}
+                    {% for err in errs %}
+                        <li><strong>{{ field }}:</strong> {{ err }}</li>
+                    {% endfor %}
+                {% endfor %}
+            {% else %}
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            {% endif %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-xl-8 col-lg-12 col-md-12 col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="mb-3">Current file</h3>
+                    <p class="mb-3"><strong>Current file:</strong> {{ dataset.file_models[0].files[0].name if dataset.file_models and dataset.file_models[0].files else 'No file' }}</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-check-label">
+                            {{ form.modify_file(class="form-check-input", id="modify_file_checkbox") }}
+                            Do you want to modify your file?
+                        </label>
+                    </div>
+
+                    <div id="file_upload_section" style="display: none;">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label class="form-label" for="csv_file">CSV file</label>
+                                <input type="file"
+                                       class="form-control"
+                                       id="csv_file"
+                                       name="csv_file"
+                                       accept=".csv">
+                                <small class="form-text text-muted">Upload the updated CSV file for this new version.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h3 class="mb-3">Version Information *</h3>
+                    
+                    <div class="row">
+                        <div class="col-lg-6 col-12 mb-3">
+                            {{ form.is_major.label(class="form-label") }} *
+                            {{ form.is_major(class="form-control") }}
+                            <small class="form-text text-muted">
+                                Choose "Minor" for small updates/fixes or "Major" for significant changes.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            {{ form.version_comment.label(class="form-label") }} *
+                            {{ form.version_comment(rows=4, class="form-control", placeholder="Describe what changed in this version...") }}
+                            {% for error in form.version_comment.errors %}
+                                <span style="color: red;">{{ error }}</span>
+                            {% endfor %}
+                            <small class="form-text text-muted">Provide a changelog or description of updates.</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h3 class="mb-3">Metadata Updates (Optional)</h3>
+                    <p class="text-muted small">Leave fields empty to keep current values from version {{ dataset.version.version_major }}.{{ dataset.version.version_minor }}</p>
+
+                    <div class="row">
+                        <div class="col-lg-6 col-12 mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control", placeholder=dataset.ds_meta_data.title) }}
+                            {% for error in form.title.errors %}
+                                <span style="color: red;">{{ error }}</span>
+                            {% endfor %}
+                            <small class="form-text text-muted">Current: {{ dataset.ds_meta_data.title }}</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            {{ form.desc.label(class="form-label") }}
+                            {{ form.desc(rows=4, class="form-control", placeholder=dataset.ds_meta_data.description) }}
+                            {% for error in form.desc.errors %}
+                                <span style="color: red;">{{ error }}</span>
+                            {% endfor %}
+                            <small class="form-text text-muted">Current: {{ dataset.ds_meta_data.description }}</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-6 col-12 mb-3">
+                            {{ form.publication_doi.label(class="form-label") }}
+                            {{ form.publication_doi(class="form-control", placeholder=dataset.ds_meta_data.publication_doi or "None") }}
+                            {% for error in form.publication_doi.errors %}
+                                <span style="color: red;">{{ error }}</span>
+                            {% endfor %}
+                            <small class="form-text text-muted">Current: {{ dataset.ds_meta_data.publication_doi or "None" }}</small>
+                        </div>
+
+                        <div class="col-lg-6 col-12 mb-3">
+                            {{ form.tags.label(class="form-label") }}
+                            {{ form.tags(class="form-control", placeholder=dataset.ds_meta_data.tags or "None") }}
+                            {% for error in form.tags.errors %}
+                                <span style="color: red;">{{ error }}</span>
+                            {% endfor %}
+                            <small class="form-text text-muted">Current: {{ dataset.ds_meta_data.tags or "None" }}</small>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i data-feather="upload"></i> Create New Version
+                            </button>
+                            <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset.id) }}" 
+                               class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Current Dataset Info</h4>
+                    <hr>
+                    <p><strong>Title:</strong> {{ dataset.ds_meta_data.title }}</p>
+                    <p><strong>Current Version:</strong> {{ dataset.version.version_major }}.{{ dataset.version.version_minor }}</p>
+                    <p><strong>Files:</strong> {{ dataset.get_files_count() }}</p>
+                    <p><strong>Total Size:</strong> {{ dataset.get_file_total_size_for_human() }}</p>
+                    {% if dataset.version.changelog %}
+                    <p><strong>Last Changelog:</strong><br>
+                        <small class="text-muted">{{ dataset.version.changelog }}</small>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5>Version History</h5>
+                    <hr>
+                    {% set versions = dataset.version.concept.versions if dataset.version and dataset.version.concept else [] %}
+                    {% if versions %}
+                        <ul class="list-unstyled">
+                        {% for v in versions|sort(attribute='version_major,version_minor', reverse=True) %}
+                            <li class="mb-2">
+                                <span class="badge bg-{{ 'primary' if v.id == dataset.version.id else 'secondary' }}">
+                                    v{{ v.version_major }}.{{ v.version_minor }}
+                                </span>
+                                {% if v.changelog %}
+                                <br><small class="text-muted">{{ v.changelog[:50] }}{% if v.changelog|length > 50 %}...{% endif %}</small>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No version history available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        feather.replace();
+        
+        const modifyCheckbox = document.getElementById('modify_file_checkbox');
+        const fileUploadSection = document.getElementById('file_upload_section');
+        const csvFileInput = document.getElementById('csv_file');
+        
+        // Show/hide file upload section based on checkbox
+        modifyCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                fileUploadSection.style.display = 'block';
+                csvFileInput.required = true;
+            } else {
+                fileUploadSection.style.display = 'none';
+                csvFileInput.required = false;
+            }
+        });
+    });
+</script>
+{% endblock %}

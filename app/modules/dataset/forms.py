@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
+from wtforms import BooleanField, FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import URL, DataRequired, Optional
 
 from app.modules.dataset.models import PublicationType
@@ -105,3 +105,29 @@ class DataSetForm(FlaskForm):
 
     def get_file_models(self):
         return [fm.get_file_model() for fm in self.file_models]
+
+
+class VersionUploadForm(FlaskForm):
+    """Form for uploading a new version of an existing dataset.
+    
+    Allows updating the CSV file, optionally updating metadata, and providing
+    a changelog/version comment.
+    """
+    # Optional metadata updates
+    title = StringField("Title", validators=[Optional()])
+    desc = TextAreaField("Description", validators=[Optional()])
+    publication_doi = StringField("Publication DOI", validators=[Optional()])
+    tags = StringField("Tags (separated by commas)", validators=[Optional()])
+    
+    # Version-specific fields
+    version_comment = TextAreaField("Version changelog/comment", validators=[DataRequired()])
+    is_major = SelectField(
+        "Version type",
+        choices=[("minor", "Minor update (x.Y)"), ("major", "Major release (X.0)")],
+        default="minor",
+        validators=[DataRequired()]
+    )
+    
+    modify_file = BooleanField("¿Deseas modificar tu archivo?", validators=[Optional()])
+    
+    submit = SubmitField("Create New Version")
