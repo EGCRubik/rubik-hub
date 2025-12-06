@@ -13,8 +13,9 @@ from flask import abort, flash, jsonify, make_response, redirect, render_templat
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 
+from app import db
 from app.modules.dataset import dataset_bp
-from app.modules.dataset.forms import DataSetForm
+from app.modules.dataset.forms import DataSetForm, VersionUploadForm
 from app.modules.dataset.models import DSDownloadRecord
 from app.modules.dataset.services import (
     AuthorService,
@@ -23,6 +24,7 @@ from app.modules.dataset.services import (
     DSDownloadRecordService,
     DSMetaDataService,
     DSViewRecordService,
+    calculate_checksum_and_size,
 )
 from app.utils import notifications
 from app.utils.notifications import notify_followers_of_author
@@ -482,8 +484,7 @@ def subdomain_index(dataset_id):
 
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
     downloads = DataSetService().get_number_of_downloads(dataset.id)
-    versions = DataSetService().get_dataset_versions(dataset.id)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset, versions=versions, downloads=downloads))
+    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -498,9 +499,8 @@ def get_unsynchronized_dataset(dataset_id):
     if not dataset:
         abort(404)
 
-    versions = DataSetService().get_dataset_versions(dataset.id)
     downloads = DataSetService().get_number_of_downloads(dataset.id)
-    return render_template("dataset/view_dataset.html", dataset=dataset, versions=versions, downloads=downloads)
+    return render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads)
 
 
 @dataset_bp.route("/dataset/<int:dataset_id>/sync", methods=["POST"])
@@ -578,6 +578,139 @@ def sync_dataset(dataset_id):
         logger.exception("Error sincronizando dataset %s: %s", dataset_id, exc)
         flash(f"Error sincronizando dataset: {exc}", "danger")
         return redirect(url_for("dataset.get_unsynchronized_dataset", dataset_id=dataset_id))
+
+
+@dataset_bp.route("/dataset/view/<int:dataset_id>/newversion", methods=["GET", "POST"])
+@login_required
+def upload_new_version(dataset_id):
+    """Create a new version of an existing dataset."""
+    dataset = dataset_service.get_or_404(dataset_id)
+    
+    # Permission check: only owner
+    if dataset.user_id != current_user.id:
+        flash("No tienes permiso para crear una nueva versión.", "danger")
+        return redirect(url_for("dataset.list_dataset"))
+    
+    form = VersionUploadForm()
+    
+    if request.method == "GET":
+        # Pre-fill form with current dataset data
+        form.title.data = dataset.ds_meta_data.title
+        form.desc.data = dataset.ds_meta_data.description
+        form.publication_doi.data = dataset.ds_meta_data.publication_doi
+        form.tags.data = dataset.ds_meta_data.tags
+        return render_template("dataset/upload_version.html", form=form, dataset=dataset)
+    
+    # POST: create new version
+    if not form.validate_on_submit():
+        return render_template("dataset/upload_version.html", form=form, dataset=dataset)
+    
+    # Get CSV file (optional)
+    csv_file = None
+    filename = None
+    dest_path = None
+    
+    if form.modify_file.data:
+        csv_file = request.files.get("csv_file")
+        if not csv_file or csv_file.filename == "":
+            flash("Debes subir un archivo CSV si seleccionas modificar el archivo.", "danger")
+            return render_template("dataset/upload_version.html", form=form, dataset=dataset)
+        
+        filename = secure_filename(csv_file.filename)
+        if not filename.lower().endswith(".csv"):
+            flash("El archivo debe ser .csv", "danger")
+            return render_template("dataset/upload_version.html", form=form, dataset=dataset)
+        
+        # Save to temp
+        temp_folder = current_user.temp_folder()
+        os.makedirs(temp_folder, exist_ok=True)
+        dest_path = os.path.join(temp_folder, filename)
+        
+        if os.path.exists(dest_path):
+            base, ext = os.path.splitext(filename)
+            i = 1
+            while os.path.exists(os.path.join(temp_folder, f"{base} ({i}){ext}")):
+                i += 1
+            filename = f"{base} ({i}){ext}"
+            dest_path = os.path.join(temp_folder, filename)
+        
+        csv_file.save(dest_path)
+    
+    # Update metadata on original dataset
+    dataset_service.update_dsmetadata(
+        dataset.ds_meta_data_id,
+        title=form.title.data,
+        description=form.desc.data,
+        publication_doi=form.publication_doi.data,
+        tags=form.tags.data
+    )
+    
+    # Determine version numbers
+    current_version = dataset.version
+    concept_versions = current_version.concept.versions if current_version and current_version.concept else []
+    
+    if concept_versions:
+        latest_version = max(concept_versions, key=lambda v: (v.version_major, v.version_minor))
+        highest_major = latest_version.version_major
+        highest_minor = latest_version.version_minor
+    else:
+        highest_major = current_version.version_major
+        highest_minor = current_version.version_minor
+    
+    is_major = form.is_major.data == "major"
+    
+    if is_major:
+        new_major = highest_major + 1
+        new_minor = 0
+    else:
+        new_major = highest_major
+        new_minor = highest_minor + 1
+    
+    # Create new version
+    version = dataset_service.create_version(
+        dataset=dataset,
+        major=new_major,
+        minor=new_minor,
+        changelog=form.version_comment.data
+    )
+    new_dataset = version.data_set
+    
+    # Replace CSV in new dataset (only if file was modified)
+    if form.modify_file.data and dest_path and filename:
+        working_dir = os.getenv("WORKING_DIR", "")
+        new_dataset_dir = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{new_dataset.id}")
+        
+        # Remove old CSV
+        for file in os.listdir(new_dataset_dir):
+            if file.lower().endswith(".csv"):
+                os.remove(os.path.join(new_dataset_dir, file))
+        
+        # Move new CSV
+        shutil.move(dest_path, new_dataset_dir)
+        
+        # Update metadata
+        if new_dataset.file_models:
+            fm = new_dataset.file_models[0]
+            if fm.fm_meta_data:
+                fm.fm_meta_data.csv_filename = filename
+                db.session.add(fm.fm_meta_data)
+            if fm.files:
+                hubfile = fm.files[0]
+                hubfile.name = filename
+                new_path = os.path.join(new_dataset_dir, filename)
+                checksum, size = calculate_checksum_and_size(new_path)
+                hubfile.checksum = checksum
+                hubfile.size = size
+                db.session.add(hubfile)
+        
+        db.session.commit()
+    else:
+        # If file was not modified, ensure the cloned hubfiles are committed
+        db.session.commit()
+    
+    flash(f"Nueva versión {new_major}.{new_minor} creada correctamente!", "success")
+    return redirect(url_for("dataset.list_dataset"))
+
 
 @dataset_bp.route("/dataset/top", methods=["GET"])
 def get_top_datasets():

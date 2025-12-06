@@ -240,25 +240,11 @@ class TabularDataset(BaseDataset):
     def clone(self):
         # Import local to avoid circular imports with fileModel.models
         from app.modules.fileModel.models import FMMetaData, FileModel
-
-        # Clonar DSMetaData
-        new_meta = DSMetaData(
-            title=self.ds_meta_data.title,
-            description=self.ds_meta_data.description,
-            publication_type=self.ds_meta_data.publication_type,
-            publication_doi=self.ds_meta_data.publication_doi,
-            dataset_doi=self.ds_meta_data.dataset_doi,
-            tags=self.ds_meta_data.tags,
-            ds_metrics_id=self.ds_meta_data.ds_metrics_id,
-            author_id=self.ds_meta_data.author_id
-        )
-        db.session.add(new_meta)
-        db.session.flush()
-
+        
         # Crear nuevo dataset
         new_ds = TabularDataset(
             user_id=self.user_id,
-            ds_meta_data_id=new_meta.id,
+            ds_meta_data_id=self.ds_meta_data.id,
             rows_count=self.rows_count,
             schema_json=self.schema_json
         )
@@ -286,8 +272,10 @@ class TabularDataset(BaseDataset):
             db.session.add(new_fm)
             db.session.flush()
 
-            # Copiar archivos físicos
+            # Copiar archivos físicos + crear Hubfile para cada archivo
             import shutil, os
+            from app.modules.hubfile.models import Hubfile
+            
             user_folder = f"user_{self.user_id}/dataset_{self.id}"
             new_folder = f"user_{self.user_id}/dataset_{new_ds.id}"
 
@@ -317,7 +305,18 @@ class TabularDataset(BaseDataset):
 
                 # Only copy if the source exists
                 if src and os.path.exists(src):
-                    shutil.copy(src, new_path)
+                    dest_file = os.path.join(new_path, os.path.basename(src))
+                    shutil.copy(src, dest_file)
+                    
+                    # Create a new Hubfile entry for the cloned file
+                    new_hubfile = Hubfile(
+                        name=f.name,
+                        checksum=f.checksum,
+                        size=f.size,
+                        file_model_id=new_fm.id
+                    )
+                    db.session.add(new_hubfile)
+                    new_fm.files.append(new_hubfile)
 
         db.session.flush()
         return new_ds

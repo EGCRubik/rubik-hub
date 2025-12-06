@@ -200,6 +200,7 @@
         {% if current_user.is_authenticated and current_user.id == dataset.user_id %}
         <div class="card mt-3">
             <div class="card-body">
+                <!-- Buttons for FakeNODO operations -->
                 {% if not dataset.ds_meta_data.deposition_id %}
                 <form method="POST" action="/fakenodo/dataset/{{ dataset.id }}/create" onsubmit="return confirm('Crear un registro preliminar en FakeNODO para este dataset?');">
                     <button type="submit" class="btn btn-outline-primary btn-sm">
@@ -215,7 +216,16 @@
                         Publicar en FakeNODO
                     </button>
                 </form>
+                {% else %}
+                
+                <!-- Upload new version button (only for published datasets with DOI) -->
+                <a href="{{ url_for('dataset.upload_new_version', dataset_id=dataset.id) }}" class="btn btn-primary btn-sm mb-2">
+                    <i data-feather="upload-cloud"></i>
+                    Crear nueva versión
+                </a>
                 {% endif %}
+                {% endif %}
+                
                 <hr class="my-2"/>
                 <h6 class="mb-2">Editar metadata</h6>
                 <form id="metadataForm" onsubmit="return updateMetadata(event);" class="mb-2">
@@ -258,7 +268,6 @@
                     <h6 class="mt-3 mb-1">Archivos en el registro</h6>
                     <ul id="filesList" class="list-unstyled mb-0" style="max-height:140px; overflow:auto;"></ul>
                 </div>
-                {% endif %}
             </div>
         </div>
         {% endif %}
