@@ -18,12 +18,6 @@ This project was developed as part of the EGC course (Evolución y Gestión de l
 
 - Documentation: https://docs.uvlhub.io/
 
-## Contributing and development
-
-If you want to run or contribute to the project locally, check the repository for `requirements.txt` / `pyproject.toml` and the `app` package. Tests and development utilities are included under the `tests` and `app/modules/*/tests` folders.
-
-If you are running Selenium-based tests or the local FakeNODO service, prefer using the testing configuration and an isolated test database. The project includes helper routes and utilities to reset the test database when running automated UI tests.
-
 ## Contributors
 
 This project was developed and is maintained by:
