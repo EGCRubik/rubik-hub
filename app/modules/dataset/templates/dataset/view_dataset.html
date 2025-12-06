@@ -121,9 +121,7 @@
                         </span>
                     </div>
                     <div class="col-md-8 col-12">
-                        <a href="{{ url_for('fakenodo.get_deposition', deposition_id=dataset.ds_meta_data.deposition_id) }}" target="_blank">
-                            {{ url_for('fakenodo.get_deposition', deposition_id=dataset.ds_meta_data.deposition_id, _external=True) }}
-                        </a>
+                        <span class="text-monospace">ID: {{ dataset.ds_meta_data.deposition_id }}</span>
                         {% if not dataset.ds_meta_data.dataset_doi %}
                         <span class="badge bg-warning text-dark">Draft (not published)</span>
                         {% else %}
@@ -181,30 +179,32 @@
             {% if current_user.is_authenticated and current_user.id == dataset.user_id %}
         <div class="card mt-3">
             <div class="card-body">
-                <!-- Buttons for FakeNODO operations -->
-                {% if not dataset.ds_meta_data.deposition_id %}
-                <form method="POST" action="/fakenodo/dataset/{{ dataset.id }}/create" onsubmit="return confirm('Crear un registro preliminar en FakeNODO para este dataset?');">
-                    <button type="submit" class="btn btn-outline-primary btn-sm">
-                        <i data-feather="file-plus"></i>
-                        Crear registro en FakeNODO
-                    </button>
-                </form>
-                {% else %}
-                {% if not dataset.ds_meta_data.dataset_doi %}
-                <form method="POST" action="/fakenodo/dataset/{{ dataset.id }}/publish" onsubmit="return confirm('¿Publicar el dataset en FakeNODO? Esto generará el DOI y notificará a tus seguidores.');">
-                    <button type="submit" id="publishBtn" class="btn btn-success btn-sm">
-                        <i data-feather="upload"></i>
-                        Publicar en FakeNODO
-                    </button>
-                </form>
-                {% else %}
-                
-                <!-- Upload new version button (only for published datasets with DOI) -->
-                <a href="{{ url_for('dataset.upload_new_version', dataset_id=dataset.id) }}" class="btn btn-primary btn-sm mb-2">
-                    <i data-feather="upload-cloud"></i>
-                    Crear nueva versión
-                </a>
-                {% endif %}
+                {% if current_user.is_authenticated and current_user.id == dataset.user_id %}
+                    {% if not dataset.ds_meta_data.deposition_id %}
+                        <!-- Crear registro preliminar en el repositorio -->
+                        <form method="POST" action="{{ url_for('dataset.sync_dataset', dataset_id=dataset.id) }}" onsubmit="return confirm('Crear un registro preliminar en el repositorio para este dataset?');">
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                <i data-feather="file-plus"></i>
+                                Crear registro preliminar
+                            </button>
+                        </form>
+                    {% else %}
+                        {% if not dataset.ds_meta_data.dataset_doi %}
+                        <!-- Publicar en el repositorio (generar DOI) -->
+                        <form method="POST" action="{{ url_for('dataset.sync_dataset', dataset_id=dataset.id) }}" onsubmit="return confirm('¿Publicar el dataset en el repositorio? Esto generará el DOI.');">
+                            <button type="submit" id="publishBtn" class="btn btn-success btn-sm">
+                                <i data-feather="upload"></i>
+                                Publicar
+                            </button>
+                        </form>
+                        {% else %}
+                        <!-- Crear nueva versión (solo si ya hay DOI) -->
+                        <a href="{{ url_for('dataset.upload_new_version', dataset_id=dataset.id) }}" class="btn btn-primary btn-sm mb-2">
+                            <i data-feather="upload-cloud"></i>
+                            Crear nueva versión
+                        </a>
+                        {% endif %}
+                    {% endif %}
                 {% endif %}
                 
                 <hr class="my-2"/>

@@ -3,164 +3,169 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import threading
 from datetime import datetime
 from typing import Dict, List, Optional
 from uuid import uuid4
+from venv import logger
 
+from flask import Response, jsonify
+
+from app.modules.dataset.models import DatasetVersion
+from app.modules.fakenodo.models import Fakenodo
+from app.modules.fakenodo.repositories import FakenodoRepository
 from core.services.BaseService import BaseService
-
-DB_FILENAME = "fakenodo_db.json"
-
-
-def _current_iso() -> str:
-    return datetime.utcnow().isoformat() + "Z"
 
 
 class FakenodoService(BaseService):
-    def __init__(self, working_dir: Optional[str] = None):
-
+    def __init__(self):
         super().__init__(None)
-        self.working_dir = working_dir or os.getenv("WORKING_DIR", ".")
-        self.db_path = os.path.join(self.working_dir, DB_FILENAME)
-        self._lock = threading.Lock()
-        self._load()
-
-    def _load(self) -> None:
-        if os.path.exists(self.db_path):
-            try:
-                with open(self.db_path, "r") as fh:
-                    self._db: Dict = json.load(fh)
-            except Exception:
-                self._db = {"records": {}, "next_id": 1}
-        else:
-            self._db = {"records": {}, "next_id": 1}
-
-    def _save(self) -> None:
-        os.makedirs(os.path.dirname(self.db_path) or ".", exist_ok=True)
-        with open(self.db_path, "w") as fh:
-            json.dump(self._db, fh, indent=2, default=str)
-
-    def _next_id(self) -> int:
-        nid = self._db.get("next_id", 1)
-        self._db["next_id"] = nid + 1
-        return nid
-
-    def create_deposition(self, metadata: Optional[Dict] = None) -> Dict:
-        with self._lock:
-            rid = self._next_id()
-            record = {
-                "id": rid,
-                "metadata": metadata or {},
-                "files": [],
-                "versions": [],
-                "published": False,
-                "dirty": False,
-                "created_at": _current_iso(),
-                "updated_at": _current_iso(),
-            }
-            self._db.setdefault("records", {})[str(rid)] = record
-            self._save()
-            return record
+        self.repository = FakenodoRepository()
 
     def list_depositions(self) -> List[Dict]:
-        with self._lock:
-            return list(self._db.get("records", {}).values())
+        """Return all depositions from DB as dicts."""
+        # Simple list conversion; for larger models add schema/serialiser
+        depositions = Fakenodo.query.all()
+        result: List[Dict] = []
+        for d in depositions:
+            result.append({
+                "id": d.id,
+                "metadata": d.meta_data or {},
+                "status": d.status,
+                "doi": d.doi,
+            })
+        return result
 
     def get_deposition(self, deposition_id: int) -> Optional[Dict]:
-        with self._lock:
-            return self._db.get("records", {}).get(str(deposition_id))
-
-    def delete_deposition(self, deposition_id: int) -> bool:
-        with self._lock:
-            key = str(deposition_id)
-            if key in self._db.get("records", {}):
-                del self._db["records"][key]
-                self._save()
-                return True
-            return False
-
-    def upload_file(self, deposition_id: int, filename: str, content_bytes: Optional[bytes] = None) -> Optional[Dict]:
-        with self._lock:
-            rec = self._db.get("records", {}).get(str(deposition_id))
-            if not rec:
-                return None
-            file_rec = {
-                "id": str(uuid4()),
-                "name": filename,
-                "size": len(content_bytes) if content_bytes is not None else 0,
-                "created_at": _current_iso(),
+        """Get a single deposition from DB as dict."""
+        try:
+            d = self.repository.get_deposition(deposition_id)
+            return {
+                "id": d.id,
+                "metadata": d.meta_data or {},
+                "status": d.status,
+                "doi": d.doi,
             }
-            rec["files"].append(file_rec)
-            rec["dirty"] = True
-            rec["updated_at"] = _current_iso()
-            self._save()
-            return file_rec
+        except Exception:
+            logger.exception("FakenodoService: deposition not found: %s", deposition_id)
+            return None
 
-    def publish_deposition(self, deposition_id: int) -> Optional[Dict]:
-        with self._lock:
-            rec = self._db.get("records", {}).get(str(deposition_id))
-            if not rec:
-                return None
-            last_version = rec["versions"][-1] if rec["versions"] else None
-            need_new = last_version is None or rec.get("dirty")
-            if not need_new:
-                return last_version
+    def upload_file(self, dataset, deposition_id: int, fits_model) -> dict:
+        """Persist a file record into deposition meta_data.files in DB."""
+        # Determine file info: for feature_models or file_models
+        file_name = None
+        file_path = None
+        try:
+            # file_models: fits_model.files[0].path/name
+            if hasattr(fits_model, "files") and fits_model.files:
+                hf = fits_model.files[0]
+                file_name = getattr(hf, "name", None)
+                file_path = getattr(hf, "path", None)
+            # feature_models: fm_meta_data.csv_filename or similar
+            if not file_name and hasattr(fits_model, "fm_meta_data") and getattr(fits_model.fm_meta_data, "csv_filename", None):
+                file_name = fits_model.fm_meta_data.csv_filename
+                # best-effort path under uploads
+                file_path = getattr(getattr(dataset, "working_path", None), "path", None)
+        except Exception:
+            logger.exception("FakenodoService: error extracting file info from model")
 
-            new_version = (last_version.get("version", 0) + 1) if last_version else 1
-            doi = f"10.1234/fakenodo.{deposition_id}.v{new_version}"
-            version = {
-                "version": new_version,
-                "doi": doi,
-                "metadata": rec.get("metadata"),
-                "files": rec.get("files", []).copy(),
-                "created_at": _current_iso(),
-            }
-            rec["versions"].append(version)
-            rec["published"] = True
-            rec["dirty"] = False
-            rec["doi"] = doi
-            rec["updated_at"] = _current_iso()
-            self._save()
-            return version
+        file_name = file_name or "unknown.csv"
+        file_path = file_path or ""
 
-    def update_metadata(self, deposition_id: int, metadata: Dict) -> Optional[Dict]:
-        """Update metadata WITHOUT marking record dirty.
-        """
-        with self._lock:
-            rec = self._db.get("records", {}).get(str(deposition_id))
-            if not rec:
-                return None
-            rec["metadata"] = metadata or {}
-            rec["updated_at"] = _current_iso()
-            self._save()
-            return rec
+        logger.info(f"FakenodoService: attaching file '{file_name}' to deposition '{deposition_id}'")
+        meta = self.repository.add_csv_file(deposition_id=deposition_id, file_name=file_name, file_path=file_path)
+        return {"status": "completed", "meta_data": meta}
+
+    def publish_deposition(self, deposition_id: int) -> dict:
+        """Mark deposition as published and assign DOI in DB."""
+        dep = self.repository.get_deposition(deposition_id)
+        if not dep:
+            raise Exception("Deposition not found")
+        # Assign a fresh fake DOI on every publish to reflect a new version
+        # Keep a history inside meta_data.versions; the current dep.doi is the latest
+        dep.status = "published"
+        dep.doi = f"10.5281/fakenodo.{random.randint(1000000, 9999999)}"
+        from app import db
+        db.session.add(dep)
+        db.session.commit()
+        logger.info("FakenodoService: published deposition %s with DOI %s", deposition_id, dep.doi)
+        return {"state": "done", "submitted": True, "doi": dep.doi}
 
     def list_versions(self, deposition_id: int) -> Optional[List[Dict]]:
-        with self._lock:
-            rec = self._db.get("records", {}).get(str(deposition_id))
-            if not rec:
-                return None
-            return rec.get("versions", [])
-
-    def create_new_deposition(self, metadata: Optional[Dict] = None) -> Dict:
-        """Backward-compatible alias for older code that called create_new_deposition.
-
-        Keeps the same semantics as create_deposition.
-        """
-        return self.create_deposition(metadata=metadata)
-
-    def get_doi(self, deposition_id: int) -> Optional[str]:
-        """Return DOI for a deposition (compatibility with adapter).
-
-        Looks for a top-level 'doi' key on the record or the last version's doi.
-        """
-        rec = self._db.get("records", {}).get(str(deposition_id))
-        if not rec:
+        """Return versions stored in meta_data (if any)."""
+        dep = self.repository.get_deposition(deposition_id)
+        if not dep:
             return None
-        if rec.get("doi"):
-            return rec.get("doi")
-        versions = rec.get("versions", [])
-        if versions:
-            return versions[-1].get("doi")
-        return None
+        meta = dep.meta_data or {}
+        return meta.get("versions", [])
+
+    def create_new_deposition(self, dataset) -> dict:
+        """Create a new deposition row in DB and return an API-like dict."""
+        # Build minimal metadata from dataset
+        title = getattr(getattr(dataset, "ds_meta_data", None), "title", None)
+        description = getattr(getattr(dataset, "ds_meta_data", None), "description", None)
+        tags = getattr(getattr(dataset, "ds_meta_data", None), "tags", None)
+        # Determine dataset current version label (major.minor)
+        current_version_label = None
+        try:
+            dv = (
+                DatasetVersion.query.filter_by(dataset_id=dataset.id)
+                .order_by(DatasetVersion.version_major.desc(), DatasetVersion.version_minor.desc())
+                .first()
+            )
+            if dv:
+                current_version_label = f"{dv.version_major}.{dv.version_minor}"
+        except Exception:
+            current_version_label = None
+        meta = {
+            "title": title,
+            "description": description,
+            "tags": tags,
+            "dataset_version": current_version_label,
+            "dataset_id": getattr(dataset, "id", None),
+        }
+
+        dep = self.repository.create_new_deposition(meta_data=meta)
+        logger.info("FakenodoService: created deposition in DB id=%s", dep.id)
+        return {
+            "id": dep.id,
+            "metadata": {},
+            "links": {"bucket": f"/api/files/{dep.id}"},
+        }
+
+    def get_doi(self, deposition_id: int) -> str:
+        """Return stored DOI from DB."""
+        dep = self.repository.get_deposition(deposition_id)
+        if not dep:
+            raise Exception("Deposition not found")
+        return dep.doi or ""
+
+    def get_by_doi(self, doi: str) -> Optional[Dict]:
+        """Return a deposition dict looked up by DOI."""
+        dep = self.repository.get_by_doi(doi)
+        if not dep:
+            return None
+        return {
+            "id": dep.id,
+            "metadata": dep.meta_data or {},
+            "status": dep.status,
+            "doi": dep.doi,
+        }
+
+    def append_version(self, deposition_id: int, version_major: int, version_minor: int, doi: Optional[str] = None) -> dict:
+        """Append a version entry to the deposition meta_data in DB."""
+        label = f"{version_major}.{version_minor}"
+        return self.repository.add_version(deposition_id=deposition_id, version_label=label, doi=doi)
+
+    def set_dataset_version(self, deposition_id: int, version_major: int, version_minor: int) -> dict:
+        """Update the deposition's dataset_version without appending into versions list."""
+        label = f"{version_major}.{version_minor}"
+        return self.repository.update_dataset_version(deposition_id=deposition_id, version_label=label)
+    
+    def test_full_connection(self) -> Response:
+        """
+        Simulate testing connection with FakeNodo.
+        """
+        logger.info("Simulating connection to FakeNodo...")
+        return jsonify({"success": True, "message": "FakeNodo connection test successful."})

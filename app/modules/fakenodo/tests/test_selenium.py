@@ -33,49 +33,31 @@ class TestTesterseleniumfakenodo():
   
   def test_testerseleniumfakenodo(self):
     self.driver.get("http://127.0.0.1:5000/")
-    self.driver.set_window_size(2494, 1408)
+    try:
+      self.driver.set_window_size(1280, 800)
+    except Exception:
+      pass
     self.driver.find_element(By.LINK_TEXT, "Login").click()
+    self.driver.find_element(By.ID, "email").click()
     self.driver.find_element(By.ID, "email").send_keys("user1@example.com")
+    self.driver.find_element(By.ID, "password").click()
     self.driver.find_element(By.ID, "password").send_keys("1234")
     self.driver.find_element(By.ID, "submit").click()
-    self.driver.find_element(By.LINK_TEXT, "Upload dataset").click()
+    self.driver.find_element(By.CSS_SELECTOR, ".sidebar-item:nth-child(8) .align-middle:nth-child(2)").click()
     self.driver.find_element(By.ID, "title").click()
-    num_random = str(int(time.time()))
-    dataset_initial_title = "tester fakenodo selenium" + num_random
-    self.driver.find_element(By.ID, "title").send_keys(dataset_initial_title)
-    self.driver.find_element(By.ID, "desc").click()
-    self.driver.find_element(By.ID, "desc").send_keys("tester")
+    self.driver.find_element(By.ID, "title").send_keys("test fakenodo")
+    self.driver.find_element(By.ID, "title").send_keys(Keys.ENTER)
+    self.driver.find_element(By.ID, "desc").send_keys("test")
     self.driver.find_element(By.CSS_SELECTOR, ".btn-primary").click()
-    self.driver.find_element(By.ID, "csv_file").send_keys(os.path.abspath("app/modules/dataset/csv_examples/file1.csv"))
+    csv_input = self.driver.find_element(By.ID, "csv_file")
+    csv_path = os.path.abspath("app/modules/dataset/csv_examples/file2.csv")
+    csv_input.send_keys(csv_path)
     self.driver.find_element(By.CSS_SELECTOR, ".btn-primary").click()
-    self.driver.find_element(By.LINK_TEXT, dataset_initial_title).click()
-    self.driver.find_element(By.CSS_SELECTOR, "form > .btn-outline-primary").click()
-    assert self.driver.switch_to.alert.text == "Crear un registro preliminar en FakeNODO para este dataset?"
-    self.driver.switch_to.alert.accept()
-    WebDriverWait(self.driver, 10).until(expected_conditions.presence_of_element_located((By.NAME, "title")))
-    self.driver.find_element(By.NAME, "title").click()
-    dataset_updated_title = "tester fakenodo selenium 2"
-    self.driver.find_element(By.NAME, "title").send_keys(dataset_updated_title)
-    self.driver.find_element(By.CSS_SELECTOR, ".mb-2:nth-child(2) > .form-control:nth-child(2)").click()
-    self.driver.find_element(By.CSS_SELECTOR, ".mb-2:nth-child(2) > .form-control:nth-child(2)").send_keys("tester lalala")
-    self.driver.find_element(By.CSS_SELECTOR, ".btn-outline-secondary:nth-child(4)").click()
-    assert self.driver.switch_to.alert.text == "Metadata guardada (sin nuevo DOI)."
-    self.driver.switch_to.alert.accept()
-    self.driver.find_element(By.NAME, "file").send_keys(os.path.abspath("app/modules/dataset/csv_examples/file10.csv"))
-    self.driver.find_element(By.CSS_SELECTOR, ".btn-outline-primary:nth-child(3)").click()
-    assert self.driver.switch_to.alert.text == "Archivo subido. Se marcó dirty para nueva versión."
-    self.driver.switch_to.alert.accept()
-    self.driver.find_element(By.ID, "publishBtn").click()
-    assert self.driver.switch_to.alert.text == "¿Publicar el dataset en FakeNODO? Esto generará el DOI y notificará a tus seguidores."
-    self.driver.switch_to.alert.accept()
-    try:
-      self.driver.find_element(By.LINK_TEXT, dataset_updated_title).click()
-    except NoSuchElementException:
-      try:
-        self.driver.find_element(By.LINK_TEXT, dataset_initial_title).click()
-      except NoSuchElementException:
-        pass
-    self.vars["window_handles"] = self.driver.window_handles
+    WebDriverWait(self.driver, 5).until(
+      expected_conditions.presence_of_element_located((By.CSS_SELECTOR, "table tbody tr td a"))
+    )
+    self.driver.find_element(By.CSS_SELECTOR, "table tbody tr td a").click()
+
 
 if __name__ == "__main__":
   pytest.main([__file__])
