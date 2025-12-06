@@ -81,21 +81,19 @@ def verify_two_factor():
     key = session.get("two_factor_setup_key")
     if not code:
         return jsonify({"message": "'two_factor_code' is required"}), 400
+    print(f"Verifying 2FA setup code: {code} for user ID: {current_user.id}")
 
-    record = two_factor_service.get_by_user_id(current_user.id)
-    if not record:
-        return jsonify({"message": "2FA not set up for user"}), 400
-
-    totp = pyotp.TOTP(record.key)
+ 
+    totp = pyotp.TOTP(key)
     if totp.verify(code):
         try:
             two_factor_service.create_two_factor_entry(current_user.id, key, uri)
-            user = two_factor_service.update_factor_enabled(True)
+            two_factor_service.update_factor_enabled(True)
             db.session.commit()
             # Clear setup session data
             session.pop("two_factor_setup_uri", None)
             session.pop("two_factor_setup_key", None)
-            return redirect(url_for("profile.summary"))
+            return redirect(url_for("profile.my_profile"))
         except Exception as exc:
             db.session.rollback()
             return jsonify({"message": f"Error updating 2FA: {exc}"}), 400

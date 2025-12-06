@@ -33,7 +33,10 @@
 						<p class="text-muted mt-2" style="font-size: 0.9rem;">If the QR does not load, ensure 2FA is enabled and a provisioning URI exists for your account.</p>
 					</div>
 					<div class="col-md-6 col-12">
-						<form id="twoFactorVerifyForm" class="needs-validation" novalidate>
+						<form id="twoFactorVerifyForm" class="needs-validation" novalidate method="post" action="{{ url_for('two_factor.verify_two_factor') }}">
+							{% if csrf_token %}
+							<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+							{% endif %}
 							<div class="mb-3">
 								<label class="form-label" for="two_factor_code">Verification code</label>
 								<input type="text" class="form-control" id="two_factor_code" name="two_factor_code" placeholder="e.g. 123456" required>
@@ -76,15 +79,15 @@
 		const msg = document.getElementById('twofactor-msg');
 		if (form) {
 			form.addEventListener('submit', function (e) {
-				e.preventDefault();
-				// UI-only feedback; no POST route wiring yet
 				if (!form.checkValidity()) {
+					e.preventDefault();
 					form.classList.add('was-validated');
 					return;
 				}
+				// Allow normal POST to backend; show minimal feedback
 				msg.style.display = 'block';
-				msg.className = 'mt-2 text-success';
-				msg.textContent = 'Code captured. Verification will be processed on submit when backend is wired.';
+				msg.className = 'mt-2 text-muted';
+				msg.textContent = 'Verifying code...';
 			});
 		}
 	});
