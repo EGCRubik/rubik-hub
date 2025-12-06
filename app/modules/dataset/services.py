@@ -254,7 +254,30 @@ class DataSetService(BaseService):
                 )
                 fm.files.append(file)
 
-            # 5) Confirmar todo
+            # 5) Crear DatasetConcept y DatasetVersion 1.0
+            from app.modules.dataset.models import DatasetConcept, DatasetVersion
+            
+            # Generar DOI conceptual único
+            concept_doi = f"concept-{dataset.id}-{uuid.uuid4().hex[:8]}"
+            
+            concept = DatasetConcept(
+                conceptual_doi=concept_doi,
+                name=dsmetadata.title
+            )
+            self.repository.session.add(concept)
+            self.repository.session.flush()
+            
+            # Crear versión inicial 1.0
+            version = DatasetVersion(
+                concept_id=concept.id,
+                dataset_id=dataset.id,
+                version_major=1,
+                version_minor=0,
+                changelog="Initial version"
+            )
+            self.repository.session.add(version)
+
+            # 6) Confirmar todo
             self.repository.session.commit()
             notifications.notify_followers_of_author(current_user.id, dataset)
         except Exception as exc:
