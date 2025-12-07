@@ -21,7 +21,7 @@ def test_comments_index():
         time.sleep(2)  # ensure page loads
 
         # Click on dataset link
-        wait.until(EC.element_to_be_clickable((By.LINK_TEXT, "Sample dataset 10"))).click()
+        wait.until(EC.element_to_be_clickable((By.LINK_TEXT, "Sample dataset 10 (Version: 2.0) ⭐"))).click()
 
         # Enter first comment
         comment_input = wait.until(EC.presence_of_element_located((By.NAME, "content")))
@@ -46,7 +46,7 @@ def test_comments_index():
         time.sleep(2)
 
         # Click dataset again
-        wait.until(EC.element_to_be_clickable((By.LINK_TEXT, "Sample dataset 10"))).click()
+        wait.until(EC.element_to_be_clickable((By.LINK_TEXT, "Sample dataset 10 (Version: 2.0) ⭐"))).click()
 
         # Enter second comment
         comment_input = wait.until(EC.presence_of_element_located((By.NAME, "content")))
