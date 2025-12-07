@@ -9,15 +9,15 @@ from flask import request
 
 from app import db
 from app.modules.auth.services import AuthenticationService
-from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord, DatasetVersion
+from app.modules.dataset.models import DataSet, DatasetVersion, DSMetaData, DSViewRecord
 from app.modules.dataset.repositories import (
     AuthorRepository,
     DataSetRepository,
     DOIMappingRepository,
+    DownloadRepository,
     DSDownloadRecordRepository,
     DSMetaDataRepository,
     DSViewRecordRepository,
-    DownloadRepository,
 )
 from app.modules.fileModel.repositories import FileModelRepository, FMMetaDataRepository
 from app.modules.hubfile.repositories import (
@@ -85,7 +85,37 @@ class DataSetService(BaseService):
 
         for file_model in dataset.file_models:
             csv_filename = file_model.fm_meta_data.csv_filename
-            shutil.move(os.path.join(source_dir, csv_filename), dest_dir)
+            src_path = os.path.join(source_dir, csv_filename)
+            if not os.path.exists(src_path):
+                logger.warning("Source CSV not found for move: %s", src_path)
+                continue
+
+            # If destination file exists, create a unique filename to avoid shutil.Error
+            dest_path = os.path.join(dest_dir, csv_filename)
+            if os.path.exists(dest_path):
+                base, ext = os.path.splitext(csv_filename)
+                i = 1
+                new_name = f"{base} ({i}){ext}"
+                new_dest = os.path.join(dest_dir, new_name)
+                while os.path.exists(new_dest):
+                    i += 1
+                    new_name = f"{base} ({i}){ext}"
+                    new_dest = os.path.join(dest_dir, new_name)
+                # Update fm_meta_data and hubfile name to the unique filename
+                try:
+                    file_model.fm_meta_data.csv_filename = new_name
+                except Exception:
+                    pass
+                # If there is an associated hubfile created, update its name as well
+                try:
+                    if getattr(file_model, "files", None):
+                        hf = file_model.files[0]
+                        hf.name = new_name
+                except Exception:
+                    pass
+                shutil.move(src_path, new_dest)
+            else:
+                shutil.move(src_path, dest_dir)
 
     def get_synchronized(self, current_user_id: int) -> DataSet:
         return self.repository.get_synchronized(current_user_id)
@@ -256,7 +286,7 @@ class DataSetService(BaseService):
 
             # 5) Crear DatasetConcept y DatasetVersion 1.0
             from app.modules.dataset.models import DatasetConcept, DatasetVersion
-            
+
             # Generar DOI conceptual único
             concept_doi = f"concept-{dataset.id}-{uuid.uuid4().hex[:8]}"
             
@@ -359,6 +389,12 @@ class DataSetService(BaseService):
         )
         db.session.add(version)
         db.session.commit()
+
+        # Do NOT touch FakeNODO here. Zenodo logic: editing metadata only should not
+        # generate a new DOI/version. Publishing after changing files will handle
+        # DOI and versioning in the route.
+
+        # Return the created DatasetVersion object for further processing
         return version
 
 
