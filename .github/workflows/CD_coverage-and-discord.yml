@@ -21,19 +21,14 @@ jobs:
       - name: Install Firefox and geckodriver
         run: |
           sudo snap install firefox
-
           sudo apt-get update
           sudo apt-get install -y jq
-
           GECKO_JSON=$(curl -s -H "User-Agent: Mozilla/5.0" https://api.github.com/repos/mozilla/geckodriver/releases/latest)
           GECKODRIVER_VERSION=$(echo "$GECKO_JSON" | jq -r '.tag_name')
-
           echo "Latest geckodriver version: $GECKODRIVER_VERSION"
-
           wget https://github.com/mozilla/geckodriver/releases/download/$GECKODRIVER_VERSION/geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz
           tar -xzf geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz
           sudo mv geckodriver /usr/local/bin/
-
           firefox --version
           geckodriver --version
 
@@ -54,13 +49,15 @@ jobs:
         env:
           MOZ_HEADLESS: 1
         run: |
-          # Ejecutar pytest aunque falle
           pytest || true
-
-          # Ejecutar coverage manualmente
           coverage run -m pytest || true
           coverage html
 
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
 
   notify-discord:
     needs: test-and-coverage
@@ -76,7 +73,6 @@ jobs:
           JSON_PAYLOAD='{
             "content": "🧪 Cobertura generada tras merge a trunk\nRepositorio: '"$REPO"'\nVer artifact de cobertura: '"$RUN_URL"'"
           }'
-
           curl -H "Content-Type: application/json" \
                -X POST \
                -d "$JSON_PAYLOAD" \
