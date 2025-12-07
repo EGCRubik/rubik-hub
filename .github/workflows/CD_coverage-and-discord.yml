@@ -22,6 +22,21 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytest pytest-cov
+      - name: Install Firefox and geckodriver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox-esr jq libgtk-3-0 libdbus-glib-1-2 libxt6 libx11-xcb1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libasound2 libpangocairo-1.0-0 libpango-1.0-0 libcairo2
+
+          GECKO_JSON=$(curl -s -H "User-Agent: Mozilla/5.0" https://api.github.com/repos/mozilla/geckodriver/releases/latest)
+          GECKODRIVER_VERSION=$(echo "$GECKO_JSON" | jq -r '.tag_name')
+
+          wget https://github.com/mozilla/geckodriver/releases/download/$GECKODRIVER_VERSION/geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz
+          tar -xzf geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz
+          sudo mv geckodriver /usr/local/bin/
+
+          firefox --version
+          geckodriver --version
+
 
       - name: Run tests with coverage
         continue-on-error: true
