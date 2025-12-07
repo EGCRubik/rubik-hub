@@ -1,9 +1,15 @@
-from flask import current_app, flash, jsonify, redirect, request, url_for
+from flask import current_app, flash, jsonify, redirect, render_template, request, url_for
 
 from app.modules.fakenodo import fakenodo_bp
 from app.modules.fakenodo.services import FakenodoService
 
 service = FakenodoService()
+
+
+@fakenodo_bp.route('/fakenodo', methods=['GET'], endpoint='index')
+def fakenodo_index():
+    """Render the Fakenodo index page with API documentation."""
+    return render_template('fakenodo/index.html')
 
 
 @fakenodo_bp.route('/fakenodo/deposit/depositions', methods=['POST'], endpoint='create_deposition')
@@ -98,8 +104,12 @@ def actualizar_metadata(deposition_id):
 
 @fakenodo_bp.route('/fakenodo/deposit/depositions/<int:deposition_id>/versions', methods=['GET'], endpoint='list_versions')
 def listar_versiones(deposition_id):
+    dep = service.get_deposition(deposition_id)
+    if not dep:
+        return jsonify({'message': 'Depósito no encontrado', 'versions': []}), 404
+    
     versions = service.list_versions(deposition_id)
-    return jsonify({'versions': versions}), 200
+    return jsonify({'versions': versions or []}), 200
 
 
 @fakenodo_bp.route('/fakenodo/test', methods=['GET'], endpoint='test_endpoint')
