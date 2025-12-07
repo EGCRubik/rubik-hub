@@ -22,20 +22,33 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytest pytest-cov
-      - name: Install Firefox and geckodriver
+
+      - name: Install Firefox ESR and geckodriver (manual, non-snap)
         run: |
-          sudo add-apt-repository ppa:mozillateam/ppa -y
+          # Remove snap Firefox if present
+          sudo snap remove firefox || true
+
+          # Install dependencies
           sudo apt-get update
+          sudo apt-get install -y wget tar \
+            libgtk-3-0 libdbus-glib-1-2 libxt6 libx11-xcb1 \
+            libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
+            libpangocairo-1.0-0 libpango-1.0-0 libcairo2 libasound2t64
 
-          # Firefox .deb (no snap)
-          sudo apt-get install -y firefox
+          # Install Firefox ESR manually
+          wget -O firefox-esr.tar.bz2 "https://download.mozilla.org/?product=firefox-esr-latest&os=linux64&lang=en-US"
+          tar -xjf firefox-esr.tar.bz2
+          sudo mv firefox /opt/firefox-esr
+          sudo ln -sf /opt/firefox-esr/firefox /usr/bin/firefox
 
-          # Geckodriver desde apt (compatible con Firefox)
-          sudo apt-get install -y geckodriver
+          # Install geckodriver manually
+          GECKO_VERSION=$(curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest | grep tag_name | cut -d '"' -f 4)
+          wget https://github.com/mozilla/geckodriver/releases/download/$GECKO_VERSION/geckodriver-$GECKO_VERSION-linux64.tar.gz
+          tar -xzf geckodriver-$GECKO_VERSION-linux64.tar.gz
+          sudo mv geckodriver /usr/local/bin/
 
           firefox --version
           geckodriver --version
-
 
       - name: Run tests with coverage
         continue-on-error: true
