@@ -39,13 +39,13 @@ class TestTestDownloadDataset:
         self.driver.set_window_size(602, 819)
         
         # Hacer clic en "Sample dataset 9"
-        self.driver.find_element(By.LINK_TEXT, "Sample dataset 9").click()
+        self.driver.find_element(By.LINK_TEXT, "Sample dataset 10 (Version: 2.0) ⭐").click()
 
         # Recuperar el texto del número de descargas antes de hacer clic en "Download all"
         numero_descargas_inicio = self.recuperar_texto_descargas()
 
         # Hacer clic en "Download all (1.58 KB)"
-        self.driver.find_element(By.LINK_TEXT, "Download all (1.58 KB)").click()
+        self.driver.find_element(By.LINK_TEXT, "Download all (1.56 KB)").click()
         
         self.driver.find_element(By.CSS_SELECTOR, ".col-xl-8").click()
         self.driver.find_element(By.CSS_SELECTOR, ".sidebar-toggle").click()
@@ -57,7 +57,7 @@ class TestTestDownloadDataset:
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
         element.click()
 
-        self.driver.find_element(By.LINK_TEXT, "Sample dataset 9").click()
+        self.driver.find_element(By.LINK_TEXT, "Sample dataset 10 (Version: 2.0) ⭐").click()
 
         numero_descargas_final = self.recuperar_texto_descargas()
 

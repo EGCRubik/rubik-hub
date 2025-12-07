@@ -31,9 +31,9 @@ class TestTopdatasets():
     # 3 | click | linkText=Top Datasets | 
     self.driver.find_element(By.LINK_TEXT, "Top Datasets").click()
     # 4 | click | linkText=Sample dataset 9 | 
-    self.driver.find_element(By.LINK_TEXT, "Sample dataset 9").click()
+    self.driver.find_element(By.LINK_TEXT, "Sample dataset 9 (version 1.0) ⭐").click()
     # 5 | click | linkText=Top Datasets | 
     self.driver.find_element(By.LINK_TEXT, "Top Datasets").click()
     # 6 | click | linkText=Sample dataset 8 | 
-    self.driver.find_element(By.LINK_TEXT, "Sample dataset 8").click()
+    self.driver.find_element(By.LINK_TEXT, "Sample dataset 8 (version 1.0) ⭐").click()
   

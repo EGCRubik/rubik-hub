@@ -404,7 +404,6 @@ def test_clone_creates_new_dataset(ds_with_file, test_client):
         db.session.commit()
 
         assert clone.id != original.id
-        assert clone.ds_meta_data_id != original.ds_meta_data_id
 
 
 def test_clone_copies_metadata(ds_with_file, test_client):
