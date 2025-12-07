@@ -25,7 +25,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
 
-          GECKODRIVER_VERSION=$(curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest | jq -r '.tag_name')
+          GECKO_JSON=$(curl -s -H "User-Agent: Mozilla/5.0" https://api.github.com/repos/mozilla/geckodriver/releases/latest)
+          GECKODRIVER_VERSION=$(echo "$GECKO_JSON" | jq -r '.tag_name')
+
+          echo "Latest geckodriver version: $GECKODRIVER_VERSION"
 
           wget https://github.com/mozilla/geckodriver/releases/download/$GECKODRIVER_VERSION/geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz
           tar -xzf geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz
@@ -47,7 +50,7 @@ jobs:
           sleep 5
 
       - name: Run tests with coverage
-        continue-on-error: true   # ✅ ESTA ES LA OPCIÓN 1
+        continue-on-error: true   # ✅ Permite que falle pero sigue el workflow
         env:
           MOZ_HEADLESS: 1
         run: |
