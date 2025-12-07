@@ -1,0 +1,55 @@
+name: Coverage and Discord Notify
+
+on:
+  push:
+    branches:
+      - trunk
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=app --cov-report=html
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+
+  notify-discord:
+    needs: test-and-coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send notification to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REPO: ${{ github.repository }}
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          JSON_PAYLOAD='{
+            "content": "🧪 Cobertura generada tras merge a trunk\nRepositorio: '"$REPO"'\nVer artifact de cobertura: '"$RUN_URL"'"
+          }'
+
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "$JSON_PAYLOAD" \
+               "$DISCORD_WEBHOOK"
+
