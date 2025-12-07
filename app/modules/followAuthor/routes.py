@@ -1,10 +1,10 @@
-from flask import render_template, redirect, url_for, flash
-from flask_login import login_required, current_user
-from app.modules.followAuthor import followAuthor_bp
-from app import db
+from flask import flash, redirect, render_template, url_for
+from flask_login import current_user, login_required
 
-from app.modules.followAuthor.models import Followauthor
+from app import db
 from app.modules.dataset.models import Author
+from app.modules.followAuthor import followAuthor_bp
+from app.modules.followAuthor.models import Followauthor
 
 
 @followAuthor_bp.route("/authors/<int:author_id>/follow", methods=["POST"])
@@ -29,7 +29,7 @@ def follow(author_id):
         flash("Ya sigues este autor.", "info")
 
 
-    return redirect(url_for("authorsCommunities.index"))
+    return redirect(url_for("public.authors_and_communities"))
 
 
 @followAuthor_bp.route("/authors/<int:author_id>/unfollow", methods=["POST"])
@@ -45,4 +45,4 @@ def unfollow(author_id):
         db.session.commit()
         flash("Has dejado de seguir al autor.", "warning")
 
-    return redirect(url_for("authorsCommunities.index"))
+    return redirect(url_for("public.authors_and_communities"))
