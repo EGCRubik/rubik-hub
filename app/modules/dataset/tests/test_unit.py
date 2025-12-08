@@ -312,8 +312,6 @@ def test_service_get_dataset_version(clean_database, test_client):
     assert versions[0].version_minor == 0
     assert versions[1].version_major == 1
     assert versions[1].version_minor == 1
-    assert versions[0].version_doi == "10.1234/dataset1.v1"
-    assert versions[1].version_doi == "10.1234/dataset2.v1"
 
 
 

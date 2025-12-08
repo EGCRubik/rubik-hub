@@ -39,7 +39,7 @@ class TestTestDownloadDataset:
         self.driver.set_window_size(602, 819)
         
         # Hacer clic en "Sample dataset 9"
-        self.driver.find_element(By.LINK_TEXT, "Sample dataset 10 (Version: 2.0) ⭐").click()
+        self.driver.find_element(By.LINK_TEXT, "http://localhost:5000/doi/10.1234/dataset10").click()
 
         # Recuperar el texto del número de descargas antes de hacer clic en "Download all"
         numero_descargas_inicio = self.recuperar_texto_descargas()
@@ -57,7 +57,7 @@ class TestTestDownloadDataset:
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
         element.click()
 
-        self.driver.find_element(By.LINK_TEXT, "Sample dataset 10 (Version: 2.0) ⭐").click()
+        self.driver.find_element(By.LINK_TEXT, "http://localhost:5000/doi/10.1234/dataset10").click()
 
         numero_descargas_final = self.recuperar_texto_descargas()
 
