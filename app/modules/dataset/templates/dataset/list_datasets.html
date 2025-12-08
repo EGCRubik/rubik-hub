@@ -25,7 +25,7 @@
                         {% for dataset in datasets %}
                             <tr>
                                 <td>
-                                    <a href="/dataset/view/{{ dataset.id }}" >
+                                    <a href="/dataset/doi/{{ dataset.version_doi }}" >
                                         {{ dataset.ds_meta_data.title }} (version {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
                                         {% set latest = dataset.version.concept.latest_version() %}
                                         {% if latest and latest.id == dataset.version.id %}
@@ -35,10 +35,10 @@
                                 </td>
                                 <td>{{ dataset.ds_meta_data.description }}</td>
                                 <td>{{ dataset.ds_meta_data.publication_type.name.replace('_', ' ').title() }}</td>
-                                <td><a href="/dataset/view/{{ dataset.id }}" 
+                                <td><a href="/dataset/doi/{{ dataset.version_doi }}" 
                                        target="_blank">{{ dataset.get_rubikhub_doi() }}</a></td>
                                 <td>
-                                    <a href="/dataset/view/{{ dataset.id }}">
+                                    <a href="/dataset/doi/{{ dataset.version_doi }}">
                                         <i data-feather="eye"></i>
                                     </a>
                                     <a href="{{ url_for('dataset.download_dataset', dataset_id=dataset.id) }}">

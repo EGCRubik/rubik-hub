@@ -72,6 +72,7 @@ class BaseDataset(db.Model):
     __tablename__ = "data_set"
 
     id = db.Column(db.Integer, primary_key=True)
+    version_doi = db.Column(db.String(120))
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"), nullable=False)
@@ -246,7 +247,7 @@ class TabularDataset(BaseDataset):
             "publication_doi": self.ds_meta_data.publication_doi,
             "dataset_doi": self.ds_meta_data.dataset_doi,
             "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
-            "url": f'/dataset/view/{self.id}',
+            "url": f'/dataset/doi/{self.version_doi}' if self.version_doi else None,
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
             # Use the dataset-level method to obtain the number of downloads (counts Download rows)
             "downloads": self.get_number_of_downloads() or 0,
@@ -483,9 +484,6 @@ class DatasetVersion(db.Model):
 
     version_major = db.Column(db.Integer, nullable=False)
     version_minor = db.Column(db.Integer, nullable=False, default=0)
-
-    # DOI específico (solo para versiones mayores)
-    version_doi = db.Column(db.String(255), nullable=True)
 
     release_date = db.Column(db.DateTime, default=datetime.utcnow)
     changelog = db.Column(db.Text)

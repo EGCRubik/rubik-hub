@@ -12,7 +12,7 @@
                         <div class="d-flex align-items-center justify-content-between">
                             <h2 class="mb-0">
                                 <!-- Aquí cambiamos el href para usar dataset.id en lugar del DOI -->
-                                <a href="/dataset/view/{{ dataset.id }}">{{ dataset.ds_meta_data.title }} (Version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
+                                <a href="/dataset/doi/{{ dataset.version_doi }}">{{ dataset.ds_meta_data.title }} (Version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
                                     {% set latest = dataset.version.concept.latest_version() %}
                                     {% if latest and latest.id == dataset.version.id %}
                                         <span title="Latest version" style="color: gold;">⭐</span>
@@ -55,7 +55,7 @@
                         <div class="row mb-2">
                             <div class="col-12">
                                 <!-- Cambiamos el enlace del DOI para que apunte al dataset.id -->
-                                <a href="/dataset/view/{{ dataset.id }}">{{ dataset.get_rubikhub_doi() }}</a>
+                                <a href="/dataset/doi/{{ dataset.version_doi }}">{{ dataset.get_rubikhub_doi() }}</a>
                                  <div id="dataset_doi_rubikhub_{{ dataset.id }}" style="display: none">
                                 {{ dataset.get_rubikhub_doi() }}
                             </div>
@@ -74,7 +74,7 @@
                         <div class="row  mt-4">
                             <div class="col-12">
                                 <!-- Cambiar el enlace del botón "View dataset" para usar dataset.id -->
-                                <a href="/dataset/view/{{ dataset.id }}" class="btn btn-outline-primary btn-sm"
+                                <a href="/dataset/doi/{{ dataset.version_doi }}" class="btn btn-outline-primary btn-sm"
                                    style="border-radius: 5px;">
                                     <i data-feather="eye" class="center-button-icon"></i>
                                     View dataset

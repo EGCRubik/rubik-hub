@@ -149,7 +149,6 @@ def test_create_version_1_0(clean_database, test_client):
             dataset_id=ds.id,
             version_major=1,
             version_minor=0,
-            version_doi="10.concept.1.v1",
             changelog="Initial release"
         )
         db.session.add(v1)
@@ -290,7 +289,6 @@ def test_service_get_dataset_version(clean_database, test_client):
         dataset_id=dataset1.id,  # Relacionamos con dataset1
         version_major=1,
         version_minor=0,
-        version_doi="10.1234/dataset1.v1",
         changelog="Initial release"
     )
     db.session.add(dataset_version_1)
@@ -300,7 +298,6 @@ def test_service_get_dataset_version(clean_database, test_client):
         dataset_id=dataset2.id,  # Relacionamos con dataset2
         version_major=1,
         version_minor=1,
-        version_doi="10.1234/dataset2.v1",
         changelog="Minor updates"
     )
     db.session.add(dataset_version_2)

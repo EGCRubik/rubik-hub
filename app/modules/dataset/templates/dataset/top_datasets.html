@@ -25,7 +25,7 @@
                         {% for ds in top_datasets[:3] %}
                             <tr>
                                 <td>
-                                    <a href="/dataset/view/{{ ds.id }}" >
+                                    <a href="/dataset/doi/{{ ds.version_doi }}" >
                                         {{ ds.ds_meta_data.title if (ds.ds_meta_data and ds.ds_meta_data.title) else (ds.title if ds.title else 'Untitled') }} (version {{ ds.version.version_major }}.{{ ds.version.version_minor }})
                                         {% set latest = ds.version.concept.latest_version() %}
                                         {% if latest and latest.id == ds.version.id %}
@@ -47,13 +47,13 @@
                                 </td>
                                 <td>
                                     {% if ds.get_rubikhub_doi is defined and ds.get_rubikhub_doi() %}
-                                        <a href="/dataset/view/{{ ds.id }}" target="_blank">{{ ds.get_rubikhub_doi() }}</a>
+                                        <a href="/dataset/doi/{{ ds.version_doi }}" target="_blank">{{ ds.get_rubikhub_doi() }}</a>
                                     {% else %}
                                         <span class="text-muted">N/A</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="/dataset/view/{{ ds.id }}" >
+                                    <a href="/dataset/doi/{{ ds.version_doi }}" >
                                         <i data-feather="eye"></i>
                                     </a>
                                     <a href="{{ url_for('dataset.download_dataset', dataset_id=ds.id) }}">

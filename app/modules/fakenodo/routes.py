@@ -244,6 +244,7 @@ def create_dataset_deposition(dataset_id: int):
             return redirect(url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset_id))
 
         ds_service.update_dsmetadata(ds_any.ds_meta_data_id, deposition_id=deposition_id)
+        ds_service.update_version_doi(dataset_id)
         flash('Registro preliminar creado correctamente. Ahora puedes publicarlo.', 'success')
         return redirect(url_for('dataset.get_unsynchronized_dataset', dataset_id=dataset_id))
     except Exception as exc:

@@ -156,6 +156,9 @@ class DataSetRepository(BaseRepository):
 
         return None
 
+    def filter_by_doi(self, doi: str) -> Optional[DataSet]:
+        return self.model.query.filter_by(version_doi=doi).first()
+
 
 class DOIMappingRepository(BaseRepository):
     def __init__(self):

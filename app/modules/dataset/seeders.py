@@ -80,6 +80,7 @@ class DataSetSeeder(BaseSeeder):
             DataSet(
                 user_id=user1.id if i % 2 == 0 else user2.id,
                 ds_meta_data_id=seeded_ds_meta_data[i].id,
+                version_doi = seeded_ds_meta_data[i].dataset_doi,
                 created_at=datetime.now(timezone.utc),
             )
             for i in range(10)  # 10 datasets
@@ -182,7 +183,6 @@ class DataSetSeeder(BaseSeeder):
                 dataset_id=dataset.id,
                 version_major=1,
                 version_minor=0,
-                version_doi=f"10.9999/dataset{i+1}.v1",
                 changelog="Initial release"
             )
             versions.append(v1)
@@ -193,6 +193,7 @@ class DataSetSeeder(BaseSeeder):
                 new_dataset = DataSet(
                     user_id=dataset.user_id,
                     ds_meta_data_id=dataset.ds_meta_data_id,
+                    version_doi = dataset.version_doi + ".1",
                     created_at=datetime.now(timezone.utc),
                 )
                 self.db.session.add(new_dataset)
@@ -204,7 +205,6 @@ class DataSetSeeder(BaseSeeder):
                     dataset_id=new_dataset.id,  # This version will be associated with the new dataset (1.1)
                     version_major=1,
                     version_minor=1,
-                    version_doi=f"10.9999/dataset{i+1}.v2",  # Version 1.1 for dataset1
                     changelog="Minor fixes and metadata updates"
                 )
                 versions.append(v11)
@@ -255,6 +255,7 @@ class DataSetSeeder(BaseSeeder):
                 new_dataset = DataSet(
                     user_id=dataset.user_id,
                     ds_meta_data_id=dataset.ds_meta_data_id,
+                    version_doi = dataset.version_doi + ".2",
                     created_at=datetime.now(timezone.utc),
                 )
                 self.db.session.add(new_dataset)
@@ -265,7 +266,6 @@ class DataSetSeeder(BaseSeeder):
                     dataset_id=new_dataset.id,  # This version will be associated with the new dataset (2.0)
                     version_major=2,
                     version_minor=0,
-                    version_doi=f"10.9999/dataset{i+1}.v2",  # Version 2.0 for dataset1
                     changelog="Major update with structural changes"
                 )
                 versions.append(v2)

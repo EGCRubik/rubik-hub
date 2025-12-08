@@ -122,6 +122,7 @@ def upgrade():
     )
     op.create_table('data_set',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('version_doi', sa.String(length=120), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('type', sa.String(length=50), server_default='csv', nullable=False),
     sa.Column('schema_json', sa.Text(), nullable=True),
@@ -307,7 +308,6 @@ def upgrade():
         sa.Column("dataset_id", sa.Integer(), sa.ForeignKey("data_set.id"), nullable=False),
         sa.Column("version_major", sa.Integer(), nullable=False),
         sa.Column("version_minor", sa.Integer(), nullable=False, default=0),
-        sa.Column("version_doi", sa.String(255)),
         sa.Column("release_date", sa.DateTime(), default=datetime.utcnow),
         sa.Column("changelog", sa.Text()),
         sa.UniqueConstraint("concept_id", "version_major", "version_minor", name="uq_dataset_version_number")
