@@ -9,6 +9,7 @@ omit =
     */factory.py
     */migrations/*
     */__init__.py
+    */zenodo/*
 
 [report]
 exclude_lines =
