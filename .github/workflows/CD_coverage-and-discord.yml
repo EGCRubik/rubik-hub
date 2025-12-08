@@ -1,65 +1,46 @@
-name: Coverage and Discord Notify
+name: Test & Coverage
 
 on:
   push:
-    branches:
-      - trunk
+    branches: 
+      - main
 
 jobs:
   test-and-coverage:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: "3.12"
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest pytest-cov
-
-      - name: Install Firefox ESR and geckodriver (manual, non-snap)
-        run: |
-          # Remove snap Firefox if present
-          sudo snap remove firefox || true
-
-          # Install dependencies
-          sudo apt-get update
-          sudo apt-get install -y wget tar \
-            libgtk-3-0 libdbus-glib-1-2 libxt6 libx11-xcb1 \
-            libxcomposite1 libxdamage1 libxfixes3 libxrandr2 \
-            libpangocairo-1.0-0 libpango-1.0-0 libcairo2 libasound2t64
-
-          # Install Firefox ESR manually
-          wget -O firefox-esr.tar.bz2 "https://download.mozilla.org/?product=firefox-esr-latest&os=linux64&lang=en-US"
-          tar -xjf firefox-esr.tar.bz2
-          sudo mv firefox /opt/firefox-esr
-          sudo ln -sf /opt/firefox-esr/firefox /usr/bin/firefox
-
-          # Install geckodriver manually
-          GECKO_VERSION=$(curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest | grep tag_name | cut -d '"' -f 4)
-          wget https://github.com/mozilla/geckodriver/releases/download/$GECKO_VERSION/geckodriver-$GECKO_VERSION-linux64.tar.gz
-          tar -xzf geckodriver-$GECKO_VERSION-linux64.tar.gz
-          sudo mv geckodriver /usr/local/bin/
-
-          firefox --version
-          geckodriver --version
+          pip install rosemary
 
       - name: Run tests with coverage
-        continue-on-error: true
         run: |
-          pytest --cov=app --cov-report=html || true
+          rosemary coverage --html
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: htmlcov
           path: htmlcov/
+          retention-days: 7
+
+      - name: Extract coverage percent
+        id: cov
+        run: |
+          # Rosemary genera un archivo .coverage y un HTML.
+          # El HTML contiene una línea con: "coverage: XX%"
+          COV=$(grep -oP 'coverage[^0-9]*\K[0-9]+' htmlcov/index.html | head -1)
+          echo "coverage=$COV" >> $GITHUB_OUTPUT
 
   notify-discord:
     needs: test-and-coverage
@@ -71,10 +52,12 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
           REPO: ${{ github.repository }}
           RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COVERAGE: ${{ needs.test-and-coverage.outputs.coverage }}
         run: |
           JSON_PAYLOAD='{
-            "content": "🧪 Cobertura generada tras merge a trunk\nRepositorio: '"$REPO"'\nVer artifact de cobertura: '"$RUN_URL"'"
+            "content": "🧪 **Cobertura generada tras push a main**\nRepositorio: '"$REPO"'\nCobertura: '"$COVERAGE"'%\nArtifact: '"$RUN_URL"'"
           }'
+
           curl -H "Content-Type: application/json" \
                -X POST \
                -d "$JSON_PAYLOAD" \
