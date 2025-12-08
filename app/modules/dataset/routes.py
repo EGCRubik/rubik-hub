@@ -224,8 +224,10 @@ def upload_csv():
                 domain = os.getenv("DOMAIN", "localhost")
                 publication_url = f"http://{domain}/doi/{deposition_doi}"
                 dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi, publication_doi=publication_url)
+                dataset_service.update_version_doi(dataset.id)
             else:
                 dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
+                dataset_service.update_version_doi(dataset.id)
         except Exception as e:
             msg = f"it has not been possible upload feature models in Fakenodo and update the DOI: {e}"
             return jsonify({"message": msg}), 200
@@ -391,14 +393,27 @@ def download_dataset(dataset_id):
     return resp
 
 
-@dataset_bp.route("/dataset/view/<int:dataset_id>", methods=["GET"])
-def subdomain_index(dataset_id):
+@dataset_bp.route("/dataset/doi/<path:doi>/", methods=["GET"])
+def subdomain_index(doi):
 
-    dataset = DataSetService().get_or_404(dataset_id)
+    # Check if the DOI is an old DOI
+    new_doi = doi_mapping_service.get_new_doi(doi)
+    if new_doi:
+        # Redirect to the same path with the new DOI
+        return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
+
+    # Try to search the dataset by the provided DOI (which should already be the new one)
+    dataset = dataset_service.filter_by_doi(doi)
+
+    if not dataset:
+        abort(404)
+    
+    domain = os.getenv("DOMAIN", "localhost")
+    version_url = f"http://{domain}/dataset/doi/{doi}"
 
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
     downloads = DataSetService().get_number_of_downloads(dataset.id)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads))
+    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset, downloads=downloads, version_url=version_url))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -418,21 +433,16 @@ def resolve_doi(doi):
     - Look up DSMetaData by dataset_doi to find the dataset for context.
     - Look up Fakenodo record by DOI to display repository data stored in DB.
     """
-    try:
-        # Dataset context
-        dsmd = dsmetadata_service.filter_by_doi(doi)
-        dataset = None
-        if dsmd and getattr(dsmd, "id", None):
-            dataset = dataset_service.repository.model.query.filter_by(ds_meta_data_id=dsmd.id).first()
+    # Dataset context
+    dsmd = dsmetadata_service.filter_by_doi(doi)
+    dataset = None
+    if dsmd and getattr(dsmd, "id", None):
+        dataset = dataset_service.repository.model.query.filter_by(ds_meta_data_id=dsmd.id).first()
 
-        # Fakenodo record by DOI
-        record = fakenodo_service.get_by_doi(doi)
+    # Fakenodo record by DOI
+    record = fakenodo_service.get_by_doi(doi)
 
-        return render_template("dataset/fakenodo_record.html", dataset=dataset, record=record)
-    except Exception as exc:
-        logger.exception("Error resolviendo DOI %s: %s", doi, exc)
-        flash("Error resolviendo DOI.", "danger")
-        return redirect(url_for("dataset.list_dataset"))
+    return render_template("dataset/fakenodo_record.html", dataset=dataset, record=record)
 
 @dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/", methods=["GET"])
 @login_required
@@ -517,10 +527,12 @@ def sync_dataset(dataset_id):
         current_pub_doi = getattr(dataset.ds_meta_data, "publication_doi", None)
         if not current_pub_doi:
             domain = os.getenv("DOMAIN", "localhost")
-            publication_url = f"http://{domain}/doi/{doi}"
+            publication_url = f"http://{domain}/dataset/doi/{doi}"
             dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=doi, publication_doi=publication_url)
+            dataset_service.update_version_doi(dataset.id)
         else:
             dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=doi)
+            dataset_service.update_version_doi(dataset.id)
 
         flash(f"Dataset publicado correctamente. DOI: {doi}", "success")
         return redirect(url_for("dataset.list_dataset"))
@@ -665,8 +677,10 @@ def upload_new_version(dataset_id):
                     domain = os.getenv("DOMAIN", "localhost")
                     publication_url = f"http://{domain}/doi/{new_doi}"
                     dataset_service.update_dsmetadata(new_dataset.ds_meta_data_id, dataset_doi=new_doi, publication_doi=publication_url)
+                    dataset_service.update_version_doi(version.id)
                 else:
                     dataset_service.update_dsmetadata(new_dataset.ds_meta_data_id, dataset_doi=new_doi)
+                    dataset_service.update_version_doi(version.id)
         except Exception as exc:
             logger.exception("Error publishing new version to FakeNODO: %s", exc)
             flash("Se creó la nueva versión, pero falló la publicación en el repositorio.", "warning")
@@ -676,13 +690,29 @@ def upload_new_version(dataset_id):
         try:
             dep_id = getattr(dataset.ds_meta_data, "deposition_id", None)
             if dep_id:
-                fakenodo_service.set_dataset_version(deposition_id=dep_id, version_major=new_major, version_minor=new_minor)
+                fakenodo_service.set_dataset_version(
+                    deposition_id=dep_id, 
+                    version_major=new_major, 
+                    version_minor=new_minor,
+                    append_to_versions=False
+                )
+                fakenodo_service.publish_deposition(dep_id)
+                new_doi = fakenodo_service.get_doi(dep_id)
+                current_pub_doi_new = getattr(new_dataset.ds_meta_data, "publication_doi", None)
+                if not current_pub_doi_new:
+                    domain = os.getenv("DOMAIN", "localhost")
+                    publication_url = f"http://{domain}/doi/{new_doi}"
+                    dataset_service.update_dsmetadata(new_dataset.ds_meta_data_id, dataset_doi=new_doi, publication_doi=publication_url)
+                    dataset_service.update_version_doi(version.id)
+                else:
+                    dataset_service.update_dsmetadata(new_dataset.ds_meta_data_id, dataset_doi=new_doi)
+                    dataset_service.update_version_doi(version.id)
         except Exception as exc:
-            logger.exception("Error updating deposition dataset_version without publishing: %s", exc)
+            logger.exception("Error publishing new version to FakeNODO: %s", exc)
+            flash("Se creó la nueva versión, pero falló la publicación en el repositorio.", "warning")
 
     flash(
-        f"Nueva versión {new_major}.{new_minor} creada correctamente!"
-        + (" Se ha publicado y generado un nuevo DOI." if form.modify_file.data else " (edición de metadatos, DOI sin cambios)."),
+        f"Nueva versión {new_major}.{new_minor} creada correctamente! Se ha publicado y generado un nuevo DOI.",
         "success",
     )
     return redirect(url_for("dataset.list_dataset"))

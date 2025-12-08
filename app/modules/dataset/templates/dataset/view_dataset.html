@@ -113,6 +113,21 @@
                 </div>
                 {% endif %}
 
+                {% if dataset.version_doi %}
+                <div class="row mb-2">
+                    <div class="col-md-4 col-12">
+                        <span class="text-secondary">
+                            Version DOI
+                        </span>
+                    </div>
+                    <div class="col-md-8 col-12">
+                        <a href="{{ version_url }}">
+                            {{ version_url }}
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
                 {% if dataset.ds_meta_data.deposition_id %}
                 <div class="row mb-2">
                     <div class="col-md-4 col-12">
@@ -172,6 +187,23 @@
                                 {% endif %}
                             </small>
                     </div>
+                </div>
+
+                <!-- Texto explicativo sobre los DOIs -->
+                <div class="mt-3 p-3 bg-light rounded" style="font-size: 0.85rem;">
+                    <p class="mb-2"><strong><i data-feather="info" style="width:16px; height:16px;"></i> Guía de citación:</strong></p>
+                    <ul class="mb-0" style="padding-left: 1.2rem;">
+                        <li><strong>DOI de publicación</strong>: Apunta a la <em>versión inicial</em> del dataset.</li>
+                        {% if dataset.version_doi %}
+                        <li><strong>DOI de esta versión</strong>: Apunta a la <em>versión que estás viendo actualmente</em>.</li>
+                        {% endif %}
+                        <li><strong>DOI copiable (azul)</strong>: Corresponde a la <em>versión más reciente</em> del dataset.</li>
+                    </ul>
+                    <p class="mt-2 mb-0 text-muted">
+                        <i data-feather="bookmark" style="width:14px; height:14px;"></i>
+                        Para citar el dataset completo, usa el <strong>DOI de la versión más reciente</strong>. 
+                        Para citar una versión específica, usa el <strong>DOI de esa versión concreta</strong>.
+                    </p>
                 </div>
             </div>
             {% endif %}
@@ -437,7 +469,7 @@
                             <li>
                                 {% set label = v.version_label() %}
                                 {% if v.data_set and v.data_set.ds_meta_data and v.data_set.ds_meta_data.dataset_doi %}
-                                    <a class="dropdown-item" href="{{ v.data_set.id }}">{{ v.data_set.ds_meta_data.title }} v{{ label }}
+                                    <a class="dropdown-item" href="/dataset/doi/{{ v.data_set.version_doi }}">{{ v.data_set.ds_meta_data.title }} v{{ label }}
                                         {% set latest = v.concept.latest_version() %}
                                         {% if latest and latest.id == v.id %}
                                             <span title="Latest version" style="color: gold;">⭐</span>

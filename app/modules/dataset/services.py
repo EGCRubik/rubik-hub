@@ -54,6 +54,9 @@ class DataSetService(BaseService):
         self.hubfileviewrecord_repository = HubfileViewRecordRepository()
         self.download_repository = DownloadRepository()
     
+    def filter_by_doi(self, doi: str) -> Optional[DataSet]:
+        return self.repository.filter_by_doi(doi)
+    
     def get_dataset_versions(self, dataset_id):
         # Primero buscamos el dataset por su ID
         dataset = DataSet.query.filter_by(id=dataset_id).first()
@@ -318,6 +321,18 @@ class DataSetService(BaseService):
 
     def update_dsmetadata(self, id, **kwargs):
         return self.dsmetadata_repository.update(id, **kwargs)
+
+    def update_version_doi(self, dataset_id: int):
+        dataset = self.repository.get_by_id(dataset_id)
+        if not dataset:
+            return None
+        
+        new_doi = dataset.ds_meta_data.dataset_doi
+
+        dataset.version_doi = new_doi
+        self.repository.session.add(dataset)
+        self.repository.session.commit()
+        return dataset
 
     def get_rubikhub_doi(self, dataset: DataSet) -> str:
         domain = os.getenv("DOMAIN", "localhost")
