@@ -24,8 +24,8 @@ jobs:
           pip install rosemary
 
       - name: Run tests with coverage
-        run: python -m rosemary coverage --html
-
+        run: |
+          python -m rosemary coverage --html
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
