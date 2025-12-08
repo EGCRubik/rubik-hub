@@ -230,11 +230,26 @@
                             </button>
                         </form>
                         {% else %}
-                        <!-- Crear nueva versión (solo si ya hay DOI) -->
+                        <!-- Crear nueva versión (solo si ya hay DOI Y es la versión más reciente) -->
+                        {% set is_latest_version = false %}
+                        {% if dataset.version and dataset.version.concept %}
+                            {% set latest = dataset.version.concept.latest_version() %}
+                            {% if latest and latest.dataset_id == dataset.id %}
+                                {% set is_latest_version = true %}
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if is_latest_version %}
                         <a href="{{ url_for('dataset.upload_new_version', dataset_id=dataset.id) }}" class="btn btn-primary btn-sm mb-2">
                             <i data-feather="upload-cloud"></i>
                             Crear nueva versión
                         </a>
+                        {% else %}
+                        <p class="text-muted small mb-2">
+                            <i data-feather="info" style="width:14px; height:14px;"></i>
+                            Solo puedes crear una nueva versión desde la versión más reciente del dataset.
+                        </p>
+                        {% endif %}
                         {% endif %}
                     {% endif %}
                 {% endif %}
