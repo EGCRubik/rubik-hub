@@ -2,9 +2,8 @@ name: Test & Coverage
 
 on:
   push:
-    branches: [trunk]
-  pull_request:
-    branches: [trunk]
+    branches: 
+      - main
 
 jobs:
   test-and-coverage:
