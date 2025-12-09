@@ -20,6 +20,7 @@ class TestTesterseleniumcommunity():
   def setup_method(self, method):
     self.driver = initialize_driver()
     self.vars = {}
+    self.wait = WebDriverWait(self.driver, 10)
   
   def teardown_method(self, method):
     self.driver.quit()
@@ -34,14 +35,14 @@ class TestTesterseleniumcommunity():
   def test_testerseleniumcommunity(self):
     self.driver.get("http://127.0.0.1:5000/")
     self.driver.set_window_size(2494, 1408)
-    self.driver.find_element(By.CSS_SELECTOR, ".sidebar-item:nth-child(8) .align-middle:nth-child(2)").click()
+    self.driver.find_element(By.LINK_TEXT, "Login").click()
     self.driver.find_element(By.ID, "email").click()
     self.driver.find_element(By.ID, "email").send_keys("user1@example.com")
     self.driver.find_element(By.ID, "password").click()
     self.driver.find_element(By.ID, "password").send_keys("1234")
     self.driver.find_element(By.ID, "submit").click()
-    self.driver.find_element(By.CSS_SELECTOR, ".sidebar-item:nth-child(11) .align-middle:nth-child(2)").click()
-    self.driver.find_element(By.CSS_SELECTOR, ".feather-plus-circle").click()
+    self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "My communities"))).click()
+    self.wait.until(expected_conditions.element_to_be_clickable((By.CSS_SELECTOR, ".feather-plus-circle"))).click()
     self.driver.find_element(By.ID, "name").click()
     self.driver.find_element(By.ID, "name").send_keys("test selenium")
     self.driver.find_element(By.ID, "slug").click()
@@ -54,12 +55,12 @@ class TestTesterseleniumcommunity():
     self.driver.find_element(By.NAME, "dataset_id").click()
     self.driver.find_element(By.NAME, "dataset_id").send_keys("1")
     self.driver.find_element(By.CSS_SELECTOR, ".btn-outline-primary").click()
-    self.driver.find_element(By.CSS_SELECTOR, ".sidebar-item:nth-child(9) .align-middle:nth-child(2)").click()
-    self.driver.find_element(By.CSS_SELECTOR, ".sidebar-item:nth-child(11) .align-middle:nth-child(2)").click()
-    self.driver.find_element(By.LINK_TEXT, "View").click()
+    self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "My datasets"))).click()
+    self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "My communities"))).click()
+    self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "View"))).click()
     self.driver.find_element(By.CSS_SELECTOR, ".btn-success").click()
-    self.driver.find_element(By.CSS_SELECTOR, ".sidebar-item:nth-child(11) .align-middle:nth-child(2)").click()
-    self.driver.find_element(By.LINK_TEXT, "View").click()
+    self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "My communities"))).click()
+    self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "View"))).click()
 
     
 
