@@ -40,14 +40,13 @@ jobs:
         run: |
           # Ajusta las rutas a analizar si añades más módulos
           bandit -r app \
-            -s HIGH,MEDIUM \
             -lll \
             -x tests,migrations \
             -f txt \
             -o bandit-report.txt
 
-      - name: Upload Bandit report (only on failure)
-        if: failure()
+      - name: Upload Bandit report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bandit-security-report
