@@ -1,10 +1,10 @@
 from typing import Type
 
 from app import db
-from app.modules.dataset.models import BaseDataset, TabularDataset, UVLDataset
+from app.modules.dataset.models import BaseDataset, TabularDataset
 
 _TYPE_MAP: dict[str, Type[BaseDataset]] = {
-    "tabular": UVLDataset,
+    "tabular": TabularDataset,
 }
 
 
