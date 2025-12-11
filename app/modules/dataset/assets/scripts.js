@@ -94,7 +94,7 @@ var currentId = 0;
 
 
         document.addEventListener('click', function (event) {
-            if (event.target && event.target.classList.contains('add_author_to_uvl')) {
+            if (event.target && event.target.classList.contains('add_author_to_csv')) {
 
                 let authorsButtonId = event.target.id;
                 let authorsId = authorsButtonId.replace("_button", "");
@@ -229,7 +229,7 @@ var currentId = 0;
 
 
                     if (checked_orcid && checked_name) {
-                        fetch('/dataset/upload/uvl', {
+                        fetch('/dataset/upload/csv', {
                             method: 'POST',
                             body: formUploadData
                         })
