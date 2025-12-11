@@ -34,14 +34,12 @@ jobs:
       - name: Install Bandit
         run: |
           python -m pip install --upgrade pip
-          pip install "bandit>=1.7,<1.8"
+          pip install bandit
 
       - name: Run Bandit on source code
         run: |
-          # Ajusta las rutas a analizar si añades más módulos
           bandit -r app \
-            -lll \
-            -x tests,migrations \
+            --severity-level high \
             -f txt \
             -o bandit-report.txt
 
