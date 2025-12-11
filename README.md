@@ -16,7 +16,8 @@ This project was developed as part of the EGC course (Evolución y Gestión de l
 
 ## Quick links
 
-- Documentation: https://docs.uvlhub.io/
+- Templates: https://github.com/EGCRubik/rubik-hub/tree/trunk/.github/ISSUE_TEMPLATE
+- Team documentation: https://github.com/EGCRubik/rubik-hub/tree/trunk/team/documents
 
 ## Contributors
 
