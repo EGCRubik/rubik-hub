@@ -65,7 +65,7 @@ def view_file(file_id):
     )
 
     # 🔹 2. Ruta alternativa para los archivos de ejemplo
-    examples_path = os.path.join(parent_directory_path, "app", "modules", "dataset", "uvl_examples", filename)
+    examples_path = os.path.join(parent_directory_path, "app", "modules", "dataset", "csv_examples", filename)
 
     # 🔍 Mostrar ambas rutas para depuración
     print(f"🟡 [DEBUG] Checking paths:\n  -> {uploads_path}\n  -> {examples_path}")

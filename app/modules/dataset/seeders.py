@@ -149,13 +149,13 @@ class DataSetSeeder(BaseSeeder):
             file_path = os.path.join(dest_folder, file_name)
 
             # Create Hubfile for each file
-            uvl_file = Hubfile(
+            csv_file = Hubfile(
                 name=file_name,
                 checksum=f"checksum{i+1}",
                 size=os.path.getsize(file_path),
                 file_model_id=file_model.id,
             )
-            self.seed([uvl_file])
+            self.seed([csv_file])
             
         concepts = []
         versions = []

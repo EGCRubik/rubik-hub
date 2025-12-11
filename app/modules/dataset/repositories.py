@@ -72,8 +72,8 @@ class DSViewRecordRepository(BaseRepository):
 class DataSetRepository(BaseRepository):
     def __init__(self):
         # Use BaseDataset as the repository model so that all dataset polymorphic
-        # types (uvl, tabular, etc.) are returned by queries. Previously the
-        # module exported `DataSet = UVLDataset` which caused tabular datasets
+        # types (csv) are returned by queries. Previously the
+        # module exported `DataSet = TabularDataset` which caused tabular datasets
         # to be excluded from listings.
         super().__init__(BaseDataset)
 

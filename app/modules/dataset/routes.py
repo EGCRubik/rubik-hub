@@ -63,62 +63,6 @@ def create_dataset():
     return render_template("dataset/upload_dataset.html", form=form)
 
 
-@dataset_bp.route("/dataset/upload/uvl", methods=["GET", "POST"])
-@login_required
-def create_uvl_dataset():
-    form = DataSetForm()
-
-    if request.method == "GET":
-        return render_template("dataset/upload_uvl.html", form=form)
-
-    if not form.validate_on_submit():
-        return jsonify({"message": form.errors}), 400
-
-    dataset = None
-
-    try:
-        logger.info("Creating dataset...")
-        dataset = dataset_service.create_from_form(form=form, current_user=current_user)
-        logger.info(f"Created dataset: {dataset}")
-        dataset_service.move_feature_models(dataset)
-    except Exception as exc:
-        logger.exception(f"Exception while create dataset data in local {exc}")
-        return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
-
-    data = {}
-    try:
-        zenodo_response_json = fakenodo_service.create_new_deposition(dataset)
-        response_data = json.dumps(zenodo_response_json)
-        data = json.loads(response_data)
-    except Exception as exc:
-        data = {}
-        zenodo_response_json = {}
-        logger.exception(f"Exception while create dataset data in Zenodo {exc}")
-
-    if data.get("conceptrecid"):
-        deposition_id = data.get("id")
-
-        dataset_service.update_dsmetadata(dataset.ds_meta_data_id, deposition_id=deposition_id)
-
-        try:
-            for feature_model in dataset.feature_models:
-                fakenodo_service.upload_file(dataset, deposition_id, feature_model)
-
-            fakenodo_service.publish_deposition(deposition_id)
-            deposition_doi = fakenodo_service.get_doi(deposition_id)
-            dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
-        except Exception as e:
-            msg = f"it has not been possible upload feature models in Zenodo and update the DOI: {e}"
-            return jsonify({"message": msg}), 200
-
-    file_path = current_user.temp_folder()
-    if os.path.exists(file_path) and os.path.isdir(file_path):
-        shutil.rmtree(file_path)
-
-    msg = "Everything works!"
-    return jsonify({"message": msg}), 200
-
-
 @dataset_bp.route("/dataset/upload/csv", methods=["GET", "POST"])
 @login_required
 def upload_csv():
