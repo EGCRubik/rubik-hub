@@ -3,10 +3,12 @@ name: Bandit Security Scan
 on:
   push:
     branches:
-      - [main, trunk]
+      - main
+      - trunk
   pull_request:
     branches:
-      - [main, trunk]
+      - main
+      - trunk
   workflow_dispatch: {}
 
 permissions:
