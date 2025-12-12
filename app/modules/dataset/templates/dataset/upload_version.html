@@ -132,10 +132,7 @@
                     <div class="row">
                         <div class="col-lg-6 col-12 mb-3">
                             {{ form.publication_doi.label(class="form-label") }}
-                            {{ form.publication_doi(class="form-control", placeholder=dataset.ds_meta_data.publication_doi or "None") }}
-                            {% for error in form.publication_doi.errors %}
-                                <span style="color: red;">{{ error }}</span>
-                            {% endfor %}
+                            <input class="form-control" value="{{ dataset.ds_meta_data.publication_doi or 'DOI assigned automatically' }}" disabled>
                             <small class="form-text text-muted">Current: {{ dataset.ds_meta_data.publication_doi or "None" }}</small>
                         </div>
 
