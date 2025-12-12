@@ -131,7 +131,7 @@
       Back to datasets
     </a>
     {% if dataset %}
-    <a href="{{ url_for('dataset.subdomain_index', doi=dataset.version_doi) }}" class="btn btn-outline-primary">
+    <a href="{{ url_for('dataset.subdomain_index', doi=dataset.ds_meta_data.dataset_doi) }}" class="btn btn-outline-primary">
       View Dataset
     </a>
     {% endif %}

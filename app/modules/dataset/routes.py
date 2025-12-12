@@ -545,7 +545,6 @@ def upload_new_version(dataset_id):
         dataset.ds_meta_data_id,
         title=form.title.data,
         description=form.desc.data,
-        publication_doi=form.publication_doi.data,
         tags=form.tags.data
     )
     
