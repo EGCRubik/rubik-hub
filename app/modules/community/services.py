@@ -36,6 +36,10 @@ class CommunityService(BaseService):
         db.session.commit()
         return community
     
+    def delete(self, community):
+        db.session.delete(community)
+        db.session.commit()
+    
     def list_all(self):
         return Community.query.order_by(Community.created_at.desc()).all()
     

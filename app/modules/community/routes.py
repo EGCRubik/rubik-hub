@@ -51,6 +51,14 @@ def community_detail(slug):
         is_following=is_following
     )
 
+@community_bp.route("/community/<slug>/delete", methods=["POST"])
+@login_required
+def delete_community(slug):
+    c = community_service.get_by_slug(slug)
+    _ensure_curator(c)
+    community_service.delete(c)
+    return jsonify({"message": "Community deleted"})
+
 # Proponer un dataset para una comunidad
 @community_bp.route("/community/<slug>/propose", methods=["POST"])
 @login_required
