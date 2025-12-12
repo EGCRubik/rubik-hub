@@ -80,10 +80,7 @@
                             <div class="col-lg-6 col-6">
                                 <div class="mb-3">
                                     {{ form.publication_doi.label(class="form-label") }}
-                                    {{ form.publication_doi(class="form-control") }}
-                                    {% for error in form.publication_doi.errors %}
-                                        <span style="color: red;">{{ error }}</span>
-                                    {% endfor %}
+                                    <span class="form-control-plaintext text-muted" style="white-space: normal; word-break: break-word;">DOI assigned automatically</span>
                                 </div>
                             </div>
 
@@ -183,8 +180,6 @@
                                         </div>
                                         {% endfor %}
                                     </div>
-                                    <button type="button" class="btn btn-secondary" id="add_author">Add author
-                                    </button>
 
                                 </div>
 
