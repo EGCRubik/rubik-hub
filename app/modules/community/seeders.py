@@ -54,6 +54,10 @@ class CommunitySeeder(BaseSeeder):
             CommunityCurator(
                 community_id=3,
                 user_id=1
+            ),
+            CommunityCurator(
+                community_id=3,
+                user_id=2
             )
         ]   
         
