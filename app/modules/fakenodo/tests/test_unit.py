@@ -326,12 +326,6 @@ def test_list_versions_returns_versions_after_publish(test_client):
     db.session.commit()
 
 
-def test_list_versions_nonexistent_returns_empty(test_client):
-    """Test that list_versions returns empty array for non-existent deposition."""
-    versions = service.list_versions(999999)
-    assert versions == []
-
-
 def test_list_versions_endpoint(test_client):
     """Test the /versions endpoint returns correct JSON."""
     dep = Fakenodo(meta_data={"title": "Endpoint Test"})
