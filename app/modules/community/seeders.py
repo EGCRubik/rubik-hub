@@ -45,15 +45,15 @@ class CommunitySeeder(BaseSeeder):
         curators_data = [
             CommunityCurator(
                 community_id=1,
-                user_id=user.id
+                user_id=1
             ),
             CommunityCurator(
                 community_id=2,
-                user_id=user.id
+                user_id=2
             ),
             CommunityCurator(
                 community_id=3,
-                user_id=user.id
+                user_id=1
             )
         ]   
         

@@ -78,11 +78,29 @@
           <div class="row">
             <div class="col-lg-6 col-12">
               <div class="mb-3">
-                <label class="form-label">Dataset ID</label>
-                <input type="number" min="1" class="form-control" name="dataset_id" placeholder="e.g. 123">
+                <label class="form-label">Select a dataset</label>
+                {% if user_datasets %}
+                <select class="form-control" name="dataset_id" required>
+                  <option value="">-- Choose a dataset --</option>
+                  {% for ds in user_datasets %}
+                  {% set version_str = '' %}
+                  {% if ds.version %}
+                    {% set version_str = ' (version ' ~ ds.version.version_major ~ '.' ~ ds.version.version_minor ~ ')' %}
+                  {% endif %}
+                  <option value="{{ ds.id }}">
+                    {{ ds.ds_meta_data.title if ds.ds_meta_data else ('Dataset #' ~ ds.id) }}{{ version_str }}
+                  </option>
+                  {% endfor %}
+                </select>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                  You don't have any datasets yet. <a href="/dataset/create">Create one</a>
+                </div>
+                {% endif %}
               </div>
             </div>
           </div>
+          {% if user_datasets %}
           <div id="proposeMsg" class="text-danger mb-2" style="display:none"></div>
           <button type="submit" class="btn btn-outline-primary btn-sm" style="border-radius:5px">
             <i data-feather="plus-circle"></i> Propose
@@ -91,6 +109,7 @@
             <img width="24" src="{{ url_for('static', filename='gifs/loading.svg') }}" />
             Sending proposal...
           </div>
+          {% endif %}
         </form>
       </div>
     </div>
@@ -107,13 +126,16 @@
           <ul class="list-group">
             {% for link in pending %}
             {% if link.dataset and link.dataset.ds_meta_data %}
-            <a href="/doi/{{ link.dataset.ds_meta_data.dataset_doi }}"
+            {% set version_str = '' %}
+            {% if link.dataset.version %}
+              {% set version_str = ' (version ' ~ link.dataset.version.version_major ~ '.' ~ link.dataset.version.version_minor ~ ')' %}
+            {% endif %}
+            <span
               class="list-group-item d-flex justify-content-between align-items-center">
-              <span>
-                Dataset #{{ link.dataset_id }}
-                — {{ link.dataset.ds_meta_data.title }}
+              <a href="/dataset/doi/{{ link.dataset.version_doi }}">
+                {{ link.dataset.ds_meta_data.title }}{{ version_str }}
                 <small class="text-muted"> (by user #{{ link.proposed_by_id }})</small>
-              </span>
+              </a>
               <span>
                 <button data-link="{{ link.id }}" class="btn btn-success btn-sm approve-btn"
                   style="border-radius:5px;margin-right:6px">
@@ -124,7 +146,7 @@
                   <i data-feather="x"></i> Reject
                 </button>
               </span>
-            </a>
+            </span>
             {% endif %}
             {% endfor %}
           </ul>
@@ -150,31 +172,6 @@
   </div>
 
   <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
-
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <h4 style="margin-bottom: 0px">Add curator</h4>
-        </div>
-        <p class="text-secondary small">Only existing curators can add new curators to this community.</p>
-
-        {% if current_user.is_authenticated and community.curators.filter_by(id=current_user.id).first() %}
-        <form method="POST" action="{{ url_for('community.add_curator', slug=community.slug) }}">
-          <div class="mb-3">
-            <label class="form-label">User ID</label>
-            <input type="number" min="1" class="form-control" name="user_id" placeholder="e.g. 123" required>
-          </div>
-          <button type="submit" class="btn btn-outline-primary btn-sm" style="border-radius:5px">
-            <i data-feather="user-plus"></i> Add curator
-          </button>
-        </form>
-        {% else %}
-        <div class="text-muted">You must be a curator to add another curator.</div>
-        {% endif %}
-
-      </div>
-    </div>
-
     <!-- existing curators quick list -->
     <div class="card mt-3">
       <div class="card-body">

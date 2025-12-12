@@ -40,15 +40,19 @@ def community_detail(slug):
         abort(404)
 
     is_following = False
+    user_datasets = []
     if current_user.is_authenticated:
         # Verifica si el usuario aparece en los seguidores de la comunidad
         is_following = c.followers.filter_by(follower_id=current_user.id).first() is not None
+        # Get all user's datasets with version info
+        user_datasets = DataSet.query.filter(DataSet.user_id == current_user.id).all()
 
     return render_template(
         "community/detail.html",
         community=c,
         CommunityDatasetStatus=CommunityDatasetStatus,
-        is_following=is_following
+        is_following=is_following,
+        user_datasets=user_datasets
     )
 
 @community_bp.route("/community/<slug>/delete", methods=["POST"])
