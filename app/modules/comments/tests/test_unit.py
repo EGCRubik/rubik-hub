@@ -36,19 +36,22 @@ def test_client(test_client):
         ds_meta = DSMetaData(
             title="Test Dataset",
             description="Descripción de prueba",
-            publication_type=PublicationType.REPORT
+            publication_type=PublicationType.SALES
         )
         db.session.add(ds_meta)
         db.session.commit()
 
-        # Crear autor válido
+        # Crear autor válido y asociarlo al DSMetaData
         author = Author(
             name="Pepe",
             affiliation="Rubik Hub",
             orcid="0000-0001-2345-6789",
-            ds_meta_data_id=ds_meta.id
         )
         db.session.add(author)
+        db.session.commit()
+
+        ds_meta.author_id = author.id
+        db.session.add(ds_meta)
         db.session.commit()
 
         # Crear dataset

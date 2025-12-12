@@ -1,15 +1,27 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord, BaseDataset
+from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord, BaseDataset, Download
 from core.repositories.BaseRepository import BaseRepository
+
+from app import db
 
 logger = logging.getLogger(__name__)
 
+
+class DownloadRepository(BaseRepository):
+    def __init__(self):
+        super().__init__(Download)
+
+    def create_download_record(self, dataset_id: int) -> Download:
+        return self.create(
+            dataset_id=dataset_id,
+            download_date=datetime.now(timezone.utc),
+        )
 
 class AuthorRepository(BaseRepository):
     def __init__(self):
@@ -60,8 +72,8 @@ class DSViewRecordRepository(BaseRepository):
 class DataSetRepository(BaseRepository):
     def __init__(self):
         # Use BaseDataset as the repository model so that all dataset polymorphic
-        # types (uvl, tabular, etc.) are returned by queries. Previously the
-        # module exported `DataSet = UVLDataset` which caused tabular datasets
+        # types (csv) are returned by queries. Previously the
+        # module exported `DataSet = TabularDataset` which caused tabular datasets
         # to be excluded from listings.
         super().__init__(BaseDataset)
 
@@ -69,7 +81,7 @@ class DataSetRepository(BaseRepository):
         return (
             self.model.query.join(DSMetaData)
             .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.isnot(None))
-            .order_by(self.model.created_at.desc())
+            .order_by(DSMetaData.title.asc())
             .all()
         )
 
@@ -77,7 +89,7 @@ class DataSetRepository(BaseRepository):
         return (
             self.model.query.join(DSMetaData)
             .filter(DataSet.user_id == current_user_id, DSMetaData.dataset_doi.is_(None))
-            .order_by(self.model.created_at.desc())
+            .order_by(DSMetaData.title.asc())
             .all()
         )
 
@@ -102,23 +114,50 @@ class DataSetRepository(BaseRepository):
             .limit(5)
             .all()
         )
+
+    def top_downloaded_last_week(self, limit: int = 3):
+        cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        rows = (
+            db.session.query(Download.dataset_id, func.count(Download.id).label("cnt"))
+            .filter(Download.download_date >= cutoff)
+            .group_by(Download.dataset_id)
+            .order_by(func.count(Download.id).desc())
+            .limit(limit)
+            .all()
+        )
+        dataset_ids = [r.dataset_id for r in rows]
+        if not dataset_ids:
+            return []
+        datasets = self.model.query.filter(self.model.id.in_(dataset_ids)).all()
+
+        ds_map = {d.id: d for d in datasets}
+        return [ds_map[i] for i in dataset_ids if i in ds_map]
     
     def get_number_of_downloads(self, dataset_id: int) -> int:
         dataset = self.model.query.filter_by(id=dataset_id).first()
         if not dataset:
             return 0
 
-        # If dataset types (e.g. tabular) expose a `metrics` relationship, prefer it
-        if hasattr(dataset, "metrics") and dataset.metrics:
-            # defensive: only return if the metrics object has the expected attribute
-            if hasattr(dataset.metrics, "number_of_downloads"):
-                return dataset.metrics.number_of_downloads or 0
+        return dataset.downloads.count()
 
-        # Fallback: DSMetaData may have a related DSMetrics instance
-        if hasattr(dataset, "ds_meta_data") and dataset.ds_meta_data and getattr(dataset.ds_meta_data, "ds_metrics", None):
-            return dataset.ds_meta_data.ds_metrics.number_of_downloads or 0
+    def get_by_id(self, dataset_id: int) -> Optional[DataSet]:
+        return DataSet.query.get(dataset_id)
 
-        return 0
+    def update_download_count(self, dataset, new_count):
+        if not dataset:
+            return None
+
+        fm_metrics = dataset.file_models[0].fm_meta_data.fm_metrics  # Assuming one FileModel per DataSet
+        if fm_metrics:
+            fm_metrics.number_of_downloads = new_count
+            db.session.add(fm_metrics)
+            db.session.commit()
+            return fm_metrics
+
+        return None
+
+    def filter_by_doi(self, doi: str) -> Optional[DataSet]:
+        return self.model.query.filter_by(version_doi=doi).first()
 
 
 class DOIMappingRepository(BaseRepository):

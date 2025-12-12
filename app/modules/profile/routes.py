@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, url_for
+from flask import redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 
 from app import db
@@ -53,3 +53,13 @@ def my_profile():
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
     )
+
+@profile_bp.route("/profile/twofactor-setup")
+@login_required
+def twofactor_setup():
+    uri = session.get("two_factor_setup_uri")
+    print('URI in twofactor_setup:', uri)
+    if not uri:
+        return redirect(url_for("profile.edit_profile"))
+
+    return render_template("profile/twofactor.html")

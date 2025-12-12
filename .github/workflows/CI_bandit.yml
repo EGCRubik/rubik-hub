@@ -1,0 +1,51 @@
+name: Bandit Security Scan
+
+on:
+  push:
+    branches:
+      - main
+      - trunk
+  pull_request:
+    branches:
+      - main
+      - trunk
+  workflow_dispatch: {}
+
+permissions:
+  issues: read
+  contents: read
+
+jobs:
+  bandit:
+    name: Run Bandit security scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Run Bandit on source code
+        run: |
+          bandit -r app \
+            --severity-level high \
+            -f txt \
+            -o bandit-report.txt
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.txt

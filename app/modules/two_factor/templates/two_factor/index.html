@@ -1,0 +1,44 @@
+{% extends "base_template.html" %}
+
+{% block title %}View two_factor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-xl-8 col-lg-12 col-md-12 col-sm-12">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="h3 mb-3">Two-factor authentication</h1>
+                <p class="text-secondary">Introduce el código de verificación de 2FA para continuar.</p>
+
+                <form id="twoFactorCodeForm" action="{{ url_for('two_factor.index') }}" method="POST" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-lg-6 col-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="two_factor_code">Código 2FA</label>
+                                <input type="text" class="form-control" id="two_factor_code" name="two_factor_code" placeholder="e.g. 123456" required>
+                                <div class="invalid-feedback">Por favor, introduce el código de 6 dígitos.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm" style="border-radius:5px">
+                        <i data-feather="shield"></i> Verificar código
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4 col-lg-12 col-md-12 col-sm-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="mb-2">Ayuda</h5>
+                <p class="text-muted mb-0">Abre tu aplicación de autenticación (Google Authenticator, Authy, etc.) y copia el código temporal mostrado.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('two_factor.scripts') }}"></script>
+{% endblock %}

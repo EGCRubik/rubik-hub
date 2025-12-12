@@ -30,6 +30,57 @@ jobs:
               NF>=3 {add=$1; if(add=="-") add=0; adds[author]+=add}
               END {for (a in adds) print adds[a] "\t" a}' | sort -nr >> contributor_stats.txt
           echo "" >> contributor_stats.txt
+          echo "# Commits per author" >> contributor_stats.txt
+          git log --no-merges --pretty=format:"%aN" | awk '{commits[$0]++} END {for (a in commits) print commits[a] "\t" a}' | sort -nr >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+          echo "# Lines removed per author (deletions)" >> contributor_stats.txt
+          git log --no-merges --numstat --pretty=format:"==%aN" | \
+            awk -F"\t" '
+              /^==/ {author=substr($0,3); next}
+              NF>=3 {del=$2; if(del=="-") del=0; dels[author]+=del}
+              END {for (a in dels) print dels[a] "\t" a}' | sort -nr >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+
+          echo "# Net lines per author (additions - deletions)" >> contributor_stats.txt
+          git log --no-merges --numstat --pretty=format:"==%aN" | \
+            awk -F"\t" '
+              /^==/ {author=substr($0,3); next}
+              NF>=3 {
+                add=$1; del=$2;
+                if(add=="-") add=0; if(del=="-") del=0;
+                net[author]+=add-del
+              }
+              END {for (a in net) print net[a] "\t" a}' | sort -nr >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+
+          echo "# Commits per author (last 30 days)" >> contributor_stats.txt
+          git log --no-merges --since="30 days ago" --pretty=format:"%aN" | \
+            awk '{c[$0]++} END {for (a in c) print c[a] "\t" a}' | sort -nr >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+
+          echo "# Active days per author" >> contributor_stats.txt
+          git log --no-merges --pretty=format:"%aN|%ad" --date=short | \
+            awk -F"|" '{key=$1 "|" $2; uniq[key]=1} END {for (k in uniq) {split(k,a,"|"); days[a[1]]++}} END {for (a in days) print days[a] "\t" a}' | sort -nr >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+
+          echo "# Commits by weekday (overall)" >> contributor_stats.txt
+          git log --no-merges --pretty=tformat:'%ad' --date=format:'%w' | \
+            awk '{w[$1]++} END {for (i=0;i<7;i++) printf "%d\t%s\n", w[i], (i==0?"Sun":i==1?"Mon":i==2?"Tue":i==3?"Wed":i==4?"Thu":i==5?"Fri":"Sat")}' >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+
+          echo "# Top commit message keywords" >> contributor_stats.txt
+          git log --no-merges --pretty=format:"%s" | tr '[:upper:]' '[:lower:]' | \
+            tr -c 'a-z' '\n' | awk 'length($0)>3 {w[$0]++} END {for (k in w) print w[k] "\t" k}' | sort -nr | head -n 50 >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
+
+          echo "# Days since last commit per author" >> contributor_stats.txt
+          git log --no-merges --pretty=format:"%aN|%ad" --date=short | \
+            awk -F"|" '!seen[$1]++ {last[$1]=$2} END {cmd="date +%s"; cmd | getline now; close(cmd);
+              for (a in last) {
+                cmd="date -d " last[a] " +%s"; cmd | getline ts; close(cmd);
+                printf "%d\t%s\n", int((now-ts)/86400), a
+              }}' | sort -n >> contributor_stats.txt
+          echo "" >> contributor_stats.txt
 
       - name: Upload stats artifact
         uses: actions/upload-artifact@v4

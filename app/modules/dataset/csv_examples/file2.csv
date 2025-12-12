@@ -1,0 +1,16 @@
+distributor,country,products_supplied,partnership_since,active_contract
+CubeStore_1,Germany,58,2023,No
+CubeStore_2,UK,47,2021,No
+CubeStore_3,Canada,106,2023,No
+CubeStore_4,Spain,99,2021,Yes
+CubeStore_5,Canada,50,2021,Yes
+CubeStore_6,UK,15,2018,Yes
+CubeStore_7,UK,15,2020,No
+CubeStore_8,Spain,99,2020,Yes
+CubeStore_9,UK,26,2018,Yes
+CubeStore_10,Spain,65,2023,Yes
+CubeStore_11,Germany,18,2022,Yes
+CubeStore_12,Canada,118,2023,Yes
+CubeStore_13,UK,37,2020,No
+CubeStore_14,Germany,103,2018,No
+CubeStore_15,Canada,10,2022,Yes

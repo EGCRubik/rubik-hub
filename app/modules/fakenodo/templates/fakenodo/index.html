@@ -1,11 +1,84 @@
 {% extends "base_template.html" %}
 
-{% block title %}View fakenodo{% endblock %}
+{% block title %}Fakenodo - Test Repository{% endblock %}
 
 {% block content %}
+<div class="container mt-4">
+  <h1 class="h3 mb-4">Fakenodo Test Repository</h1>
+  
+  <div class="alert alert-info">
+    <strong>Info:</strong> Fakenodo is a simulated repository service for development and testing purposes.
+    It mimics the basic functionality of Zenodo without relying on the actual API.
+  </div>
 
-{% endblock %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h2 class="h5 mb-0">API Endpoints</h2>
+    </div>
+    <div class="card-body">
+      <table class="table table-sm">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge bg-success">POST</span></td>
+            <td><code>/fakenodo/deposit/depositions</code></td>
+            <td>Create new record</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-primary">GET</span></td>
+            <td><code>/fakenodo/deposit/depositions</code></td>
+            <td>List all depositions</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-primary">GET</span></td>
+            <td><code>/fakenodo/deposit/depositions/{id}</code></td>
+            <td>Get deposition details</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-warning">PATCH</span></td>
+            <td><code>/fakenodo/deposit/depositions/{id}/metadata</code></td>
+            <td>Update metadata (no new DOI)</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-success">POST</span></td>
+            <td><code>/fakenodo/deposit/depositions/{id}/files</code></td>
+            <td>Upload file</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-success">POST</span></td>
+            <td><code>/fakenodo/deposit/depositions/{id}/actions/publish</code></td>
+            <td>Publish (generates new DOI)</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-primary">GET</span></td>
+            <td><code>/fakenodo/deposit/depositions/{id}/versions</code></td>
+            <td>List versions</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-danger">DELETE</span></td>
+            <td><code>/fakenodo/deposit/depositions/{id}</code></td>
+            <td>Delete deposition</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-{% block scripts %}
-    <script src="{{ url_for('fakenodo.scripts') }}"></script>
+  <div class="card">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Test Connection</h2>
+    </div>
+    <div class="card-body">
+      <a href="{{ url_for('fakenodo.test_endpoint') }}" class="btn btn-outline-primary">
+        Test Fakenodo Connection
+      </a>
+    </div>
+  </div>
+</div>
 {% endblock %}

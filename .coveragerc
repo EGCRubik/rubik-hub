@@ -1,0 +1,17 @@
+[run]
+source = app/modules
+omit =
+    */tests/locustfile.py
+    */tests/test_selenium*.py
+    */tests/test_selenium_*.py
+    */tests/test_selenium*.py
+    */seeders.py
+    */factory.py
+    */migrations/*
+    */__init__.py
+    */zenodo/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:

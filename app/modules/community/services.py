@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 
 from app import db
 from app.modules.community.repositories import CommunityRepository
+from app.utils.notifications import notify_followers_of_community
 from core.services.BaseService import BaseService
 
 from .models import Community, CommunityCurator, CommunityDataset, CommunityDatasetStatus
@@ -67,4 +68,12 @@ class CommunityDatasetService:
         if link:
             link.status = status
             db.session.commit()
+            # If the dataset was approved, notify community followers (non-blocking)
+            try:
+                if status == CommunityDatasetStatus.APPROVED:
+                    notify_followers_of_community(link.community, link.dataset)
+            except Exception:
+                logger = __import__("logging").getLogger(__name__)
+                logger.exception("Failed to notify followers after community dataset approval")
+
         return link
