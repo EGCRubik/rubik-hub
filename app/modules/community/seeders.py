@@ -1,5 +1,6 @@
 from core.seeders.BaseSeeder import BaseSeeder
 from app.modules.community.models import Community
+from app.modules.community.models import CommunityCurator
 from app.modules.auth.models import User  # Ajusta ruta según tu organización
 
 
@@ -40,3 +41,24 @@ class CommunitySeeder(BaseSeeder):
         ]
 
         self.seed(data)
+
+        curators_data = [
+            CommunityCurator(
+                community_id=1,
+                user_id=1
+            ),
+            CommunityCurator(
+                community_id=2,
+                user_id=2
+            ),
+            CommunityCurator(
+                community_id=3,
+                user_id=1
+            ),
+            CommunityCurator(
+                community_id=3,
+                user_id=2
+            )
+        ]   
+        
+        self.seed(curators_data)
