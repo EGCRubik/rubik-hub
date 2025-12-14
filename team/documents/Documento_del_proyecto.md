@@ -5,7 +5,7 @@
 |---------------------------|-------|---------|-----|------|--------|----------------------|------------|
 | Benítez Galván, Mario        | HH    | 66      | 1.293  | ZZ   | 10     | Creación de comentarios en Datasets     | L      |
 | Mantecón Rodríguez, Alejandro        | HH    | 22      | 534  | 9   | II     | Descripción breve     | H/M/L      |
-| Moreno Ríos, Juan        | HH    | 82      | 2.781  | 20   | 13     | Seguidores en autores y comunidades     | M     |
+| Moreno Ríos, Juan        | 60    | 82      | 2.781  | 20   | 13     | Seguidores en autores y comunidades     | M     |
 | Nuño García, Manuel        | HH    | 44      | 14.696  | ZZ   | 12     | Doble factor de autenticación     | H      |
 | Ruíz López, Juan Antonio        | HH    | 37      | 1.072  | ZZ   | 18     | Descripción breve     | H/M/L      |
 | Ruíz Martín, Alejandro        | HH    | 28      | 756  | ZZ   | 11     | Descripción breve     | H/M/L      |
