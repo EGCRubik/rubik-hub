@@ -45,11 +45,17 @@ Se explicará el sistema desarrollado desde un punto de vista funcional y arquit
 
 ---
 
-# Visión Global del Proceso de Desarrollo (1.500 palabras aproximadamente)
+# Visión Global del Proceso de Desarrollo
 
-Debe dar una visión general del proceso que ha seguido enlazándolo con las herramientas que ha utilizado. Ponga un ejemplo de un cambio que se proponga al sistema y cómo abordaría todo el ciclo hasta tener ese cambio en producción. Los detalles de cómo hacer el cambio vendrán en el apartado correspondiente.
+El desarrollo de software en nuestro proyecto sigue un proceso estructurado y metódico que busca garantizar la calidad del código, la trazabilidad de los cambios y la eficiencia en la integración y despliegue de nuevas funcionalidades. Este proceso se apoya fuertemente en herramientas modernas de control de versiones, gestión de tareas y automatización de integración y despliegue continuo, asegurando que cada cambio se realice de manera controlada y con cobertura de pruebas adecuada.
 
----
+## Gestión de Tareas y Planificación
+
+El primer paso en nuestro ciclo de desarrollo consiste en la **creación de tareas en GitHub** utilizando una plantilla predefinida que estandariza la información mínima requerida para iniciar el trabajo. Esta plantilla permite registrar de manera clara el objetivo de la tarea, los criterios de aceptación, dependencias y posibles riesgos asociados. Una vez creada la tarea, se identifican y crean **subtareas** si la complejidad de la implementación lo requiere, permitiendo desglosar la funcionalidad en componentes más manejables. Esto asegura que incluso tareas grandes puedan gestionarse de manera incremental, reduciendo el riesgo de errores y facilitando la revisión por pares.
+
+Posteriormente, la tarea es **asignada a un desarrollador**, quien será responsable de su implementación y seguimiento. Este enfoque permite distribuir la carga de trabajo de manera equitativa, además de asignar responsabilidades claras para cada cambio en el sistema.
+
+
 
 # Entorno de Desarrollo (800 palabras aproximadamente)
 
