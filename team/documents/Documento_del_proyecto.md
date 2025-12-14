@@ -55,6 +55,18 @@ El primer paso en nuestro ciclo de desarrollo consiste en la **creación de tare
 
 Posteriormente, la tarea es **asignada a un desarrollador**, quien será responsable de su implementación y seguimiento. Este enfoque permite distribuir la carga de trabajo de manera equitativa, además de asignar responsabilidades claras para cada cambio en el sistema.
 
+## Flujo de Desarrollo con Git
+
+Una vez asignada la tarea, el desarrollador procede a crear una **rama específica para la implementación**, siguiendo la convención de nomenclatura `"Issue" + nº de la Issue`, a partir de la rama `trunk`. Este enfoque asegura que cada cambio se aísle del código principal, evitando que errores en desarrollo afecten la estabilidad de la versión en producción. El uso de ramas dedicadas permite además un historial limpio y ordenado de los commits relacionados con cada tarea específica.
+
+Con la rama creada, la **issue se mueve del estado "DONE" a "IN PROGRESS"**, reflejando visualmente en GitHub que el trabajo ha comenzado. Durante esta fase, el desarrollador realiza la implementación siguiendo las especificaciones de la tarea. Los **commits se realizan de manera unitarias y siguiendo la convención de Conventional Commits**, garantizando que cada cambio quede documentado y pueda rastrearse fácilmente. Esto no solo mejora la trazabilidad, sino que también facilita la generación automática de changelogs y la identificación de errores en revisiones futuras.
+
+## Pruebas y Cobertura
+
+El desarrollo incluye de manera obligatoria la creación de **tests que validen la funcionalidad implementada**. Estos tests permiten detectar errores antes de que los cambios se integren a la rama principal, minimizando riesgos y asegurando que la nueva funcionalidad cumpla con los criterios de aceptación definidos inicialmente. Además, se verifica que la **cobertura de tests** se mantenga o mejore, promoviendo una base de código más robusta y confiable.
+
+Una vez que se han completado avances parciales significativos (incluyendo los tests), se realiza un **merge a la rama trunk**, integrando los cambios de manera incremental. Finalmente, al terminar la tarea por completo, se efectúa un **merge final a trunk**, consolidando la implementación.
+
 
 
 # Entorno de Desarrollo (800 palabras aproximadamente)
