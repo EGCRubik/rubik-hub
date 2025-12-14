@@ -67,6 +67,67 @@ El desarrollo incluye de manera obligatoria la creación de **tests que validen 
 
 Una vez que se han completado avances parciales significativos (incluyendo los tests), se realiza un **merge a la rama trunk**, integrando los cambios de manera incremental. Finalmente, al terminar la tarea por completo, se efectúa un **merge final a trunk**, consolidando la implementación.
 
+## Integración y Despliegue Continuo
+
+Tras la integración de los cambios, se verifica que los **workflows de GitHub Actions** funcionen correctamente, asegurando que los pipelines de CI (Integración Continua) validen la compilación, ejecución de tests y demás pasos automatizados. Esto se complementa con la comprobación del **despliegue en Render**, confirmando que la nueva versión del software se despliegue correctamente en un entorno controlado de pruebas o preproducción.
+
+Una vez validados estos pasos, la **issue se marca como DONE** y la **rama temporal se elimina**, manteniendo el repositorio limpio y organizado. Posteriormente, se realiza un **merge de trunk a main localmente**, asegurando que la rama principal refleje todos los cambios recientes. Todos los tests se ejecutan nuevamente para confirmar la estabilidad antes de generar una **nueva versión del software**.
+
+Finalmente, se sube el merge asociado a esta nueva versión al repositorio remoto y se verifica que los **workflows de CD (Despliegue Continuo)** se ejecuten correctamente. Como parte de este proceso, existe un **workflow de notificación en Discord** que informa del **estado del despliegue en Render**, indicando cuándo el servicio ha terminado de cargarse y se encuentra accesible. Esta notificación permite al desarrollador conocer el momento exacto en el que puede acceder a la aplicación desplegada para realizar las comprobaciones manuales necesarias, sin necesidad de supervisar continuamente el proceso de despliegue.
+
+Adicionalmente, junto con el mensaje de despliegue, se ejecuta **otro workflow que genera y publica un artifact en GitHub**, el cual incluye información detallada sobre la **cobertura de tests** del proyecto. Este artifact proporciona un acceso rápido y centralizado a los resultados de cobertura, permitiendo comprobar que los estándares de calidad se mantienen tras cada despliegue y facilitando el seguimiento de la evolución del proyecto a lo largo del tiempo.
+
+Más allá de los pipelines principales de integración y despliegue, el proyecto cuenta con varios **workflows de CI adicionales**, los cuales pueden **consultarse en cualquier momento para evaluar tanto el estado del proyecto como la progresión del equipo de desarrollo**. Entre ellos se incluyen:
+- Un workflow encargado de generar un **informe de seguridad mediante Bandit**, permitiendo detectar posibles vulnerabilidades o malas prácticas en el código.
+- Un workflow integrado con **Codacy**, que analiza la calidad del código, el cumplimiento de estándares y la presencia de problemas técnicos.
+- Un workflow que **mide diferentes estadísticas relacionadas con la actividad de los miembros del equipo**, proporcionando una visión objetiva sobre la participación y evolución del desarrollo.
+- Un workflow dedicado exclusivamente a **comprobar de forma continua que todos los tests del proyecto funcionan correctamente**, actuando como una salvaguarda constante frente a regresiones.
+
+Estos workflows refuerzan la transparencia, la calidad y la trazabilidad del desarrollo, permitiendo realizar un seguimiento continuo del estado del proyecto y facilitando la toma de decisiones basadas en métricas objetivas.
+
+Esto garantiza que la versión lista para producción cumpla con todos los estándares de calidad y que la transición a los usuarios finales se realice de manera controlada, eficiente y verificable.
+
+
+
+## Ejemplo de Ciclo de Desarrollo de un Cambio
+
+Para ilustrar cómo este proceso se aplica en la práctica, consideremos un ejemplo en el que se propone agregar una **funcionalidad de notificación por correo electrónico** cuando un usuario completa una tarea.
+
+1. **Creación de la tarea**: Se genera un Issue en GitHub titulado "Notificación por correo al completar tareas", incluyendo la descripción, criterios de aceptación, posibles dependencias (por ejemplo, integración con un servicio de correo externo) y subtareas relacionadas: 
+   - Configuración del servicio de correo
+   - Implementación de la lógica de envío
+   - Creación de tests unitarios y de integración
+
+2. **Asignación y rama**: La tarea se asigna a un desarrollador y se crea la rama `Issue-42` a partir de `trunk`. La issue se marca como `IN PROGRESS`.
+
+3. **Implementación y commits**: El desarrollador implementa la funcionalidad paso a paso, realizando commits unitarios siguiendo la convención de Conventional Commits. Por ejemplo:
+   - `feat: add email service configuration`
+   - `test: add unit test for email sending`
+
+4. **Pruebas y cobertura**: Se crean y ejecutan tests que comprueban que la notificación se envía correctamente, que los mensajes se formatean adecuadamente y que no se envían correos en condiciones no permitidas. Se verifica que la cobertura no disminuya y se corrigen posibles fallos.
+
+5. **Merge a trunk y validación**: Una vez completadas todas las subtareas, se realiza un merge a `trunk`. Se ejecutan los workflows de CI y se comprueba que el despliegue en Render de preproducción funciona correctamente.
+
+6. **Finalización y despliegue**: La issue se marca como `DONE`, la rama temporal se elimina, y se mergea `trunk` a `main` localmente. Se crean los tags de versión correspondientes y se confirma que los pipelines de CD desplieguen correctamente la nueva versión a producción.
+
+Este ejemplo demuestra cómo el flujo de trabajo asegura **control, calidad y trazabilidad** en cada etapa, desde la concepción de la tarea hasta la entrega en producción.
+
+## Herramientas Clave Utilizadas
+
+En nuestro proceso se utilizan varias herramientas que facilitan y aseguran cada etapa del desarrollo:
+
+- **GitHub**: Para gestión de tareas, creación de issues, control de versiones y seguimiento del progreso.
+- **Ramas Git**: Para aislar cambios y mantener un historial organizado.
+- **GitHub Actions**: Para automatizar la Integración y el Despliegue Continuo (CI/CD).
+- **Render**: Como plataforma de despliegue, asegurando que las versiones generadas sean consistentes y estables.
+- **Pruebas automatizadas**: Para garantizar la calidad y estabilidad del software en cada cambio.
+
+## Conclusión
+
+El proceso de desarrollo adoptado proporciona una **visión global integral**, cubriendo desde la planificación inicial hasta la entrega de la funcionalidad en producción. Cada cambio sigue un ciclo estructurado que incluye: planificación, desarrollo aislado, pruebas rigurosas, integración controlada y despliegue seguro. La combinación de herramientas modernas, buenas prácticas de control de versiones y cobertura de tests asegura que el software se mantenga robusto, confiable y fácil de mantener.
+
+Al seguir este proceso, el equipo puede introducir cambios de manera incremental y segura, minimizando riesgos, optimizando la colaboración y garantizando la trazabilidad de cada modificación realizada en el sistema.
+
 
 
 # Entorno de Desarrollo (800 palabras aproximadamente)
