@@ -3,8 +3,8 @@
 
 | Miembro del equipo        | Horas | Commits | LoC | Test | Issues | Work Item            | Dificultad |
 |---------------------------|-------|---------|-----|------|--------|----------------------|------------|
-| Benítez Galván, Mario        | 60    | 66      | 1.293  | 19   | 10     | Creación de comentarios en Datasets     | L      |
-| Mantecón Rodríguez, Alejandro        | HH    | 22      | 534  | 9   | II     | Descripción breve     | H/M/L      |
+| Benítez Galván, Mario        | HH    | 66      | 1.293  | 19   | 10     | Creación de comentarios en Datasets     | L      |
+| Mantecón Rodríguez, Alejandro        | 50    | 22      | 534  | 9   | 10     | Trending Datasets     | M      |
 | Moreno Ríos, Juan        | HH    | 82      | 2.781  | 20   | 13     | Seguidores en autores y comunidades     | M     |
 | Nuño García, Manuel        | HH    | 44      | 14.696  | ZZ   | 12     | Doble factor de autenticación     | H      |
 | Ruíz López, Juan Antonio        | 50    | 37      | 1.072  | 4   | 18     | Gestionar versionado de los datasets     | H      |
@@ -243,4 +243,6 @@ Se presentará un ejercicio con una propuesta concreta de cambio en la que a par
 
 # Conclusiones y Trabajo Futuro
 
-Se enunciarán algunas conclusiones y se presentará un apartado sobre las mejoras que se proponen para el futuro (curso siguiente) y que no han sido desarrolladas en el sistema que se entrega.
+RubikHub ha propiciado la elaboración de una plataforma robusta y funcional en la gestión, versionado y publicación de datasets asociados al cubo de Rubik, en la que se ha ido dotando de seguridad, mecanismo de colaboración y seguimiento respecto de las formas de uso de los datos. El sistema representa, pues, algo más un repositorio que un entorno colaborativo que ayuda a aumentar la interacción por parte de los usuarios mediante comentarios, seguidores y comunidades, de modo que se aumenta la reusabilidad y el valor que pudieran tener los datasets.
+
+La incorporación de autenticación de doble factor permite tener un sistema más seguro que si solo se hubiera utilizado usuario y contraseña, y en cuanto al proceso de desarrollo estructurado, mediante control de versiones, pruebas automatizadas y un entorno de pipelines CI/CD, ha hecho posible garantizar la calidad y la trazabilidad, así como la estabilidad del software. Por tanto, el proyecto en conjunto responde a los objetivos que se había planteado, y demuestra las ventajas de aplicar buenas prácticas de ingeniería del software en el desarrollo de sistemas reales.
