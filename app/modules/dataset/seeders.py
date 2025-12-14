@@ -1,12 +1,23 @@
 import os
 import shutil
-from datetime import datetime, timezone, timedelta
 import uuid
-from dotenv import load_dotenv
+from datetime import datetime, timedelta, timezone
 from random import choice
 
+from dotenv import load_dotenv
+
 from app.modules.auth.models import User
-from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType, Download, DatasetConcept, DatasetVersion
+from app.modules.dataset.models import (
+    Author,
+    DataSet,
+    DatasetConcept,
+    DatasetVersion,
+    Download,
+    DSMetaData,
+    DSMetrics,
+    PublicationType,
+)
+from app.modules.fakenodo.models import Fakenodo
 from app.modules.fileModel.models import FileModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 from core.seeders.BaseSeeder import BaseSeeder
@@ -38,6 +49,22 @@ class DataSetSeeder(BaseSeeder):
         if not user1 or not user2:
             raise Exception("Users not found. Please seed users first.")
 
+        fakenodo_records = []
+        for i in range(10):
+            fakenodo_doi = f"10.5281/fakenodo.{1000000 + i}"
+            fakenodo = Fakenodo(
+                meta_data={
+                    "title": f"Sample dataset {i+1}",
+                    "description": f"Description for dataset {i+1}",
+                    "tags": "tag1, tag2",
+                    "dataset_version": "1.0"
+                },
+                status="published",
+                doi=fakenodo_doi
+            )
+            fakenodo_records.append(fakenodo)
+        seeded_fakenodo = self.seed(fakenodo_records)
+
         # Create DSMetrics instance
         ds_metrics = DSMetrics(number_of_models="5", number_of_files="50")
         seeded_ds_metrics = self.seed([ds_metrics])[0]
@@ -45,12 +72,12 @@ class DataSetSeeder(BaseSeeder):
         # Create DSMetaData instances
         ds_meta_data_list = [
             DSMetaData(
-                deposition_id=1 + i,
+                deposition_id=seeded_fakenodo[i].id,
                 title=f"Sample dataset {i+1}",
                 description=f"Description for dataset {i+1}",
                 publication_type=publication_types[i],
-                publication_doi=f"10.1234/dataset{i+1}",
-                dataset_doi=f"10.1234/dataset{i+1}",
+                publication_doi=f"http://localhost:5000/dataset/doi/10.5281/fakenodo.{1000000 + i}",
+                dataset_doi=f"10.5281/fakenodo.{1000000 + i}",
                 tags="tag1, tag2",
                 ds_metrics_id=seeded_ds_metrics.id,
             )
@@ -109,7 +136,7 @@ class DataSetSeeder(BaseSeeder):
                 csv_filename=f"file{i+1}.csv",  # Corresponding to 10 CSV files
                 title=f"File Model {i+1}",
                 description=f"Description for file model {i+1}",
-                publication_doi=f"10.1234/fm{i+1}",
+                publication_doi=f"http://localhost:5000/dataset/doi/10.5281/fakenodo.{1000000 + i}",
                 tags="tag1, tag2",
                 csv_version="1.0",
             )
