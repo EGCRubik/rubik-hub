@@ -1488,3 +1488,7 @@ def test_move_file_models_preserves_content(dataset_with_file_model, test_client
         assert moved_content == original_content
     finally:
         shutil.rmtree(temp_folder, ignore_errors=True)
+
+
+#He utilizado parcialmente la inteligencia artificial (IA) como herramienta de apoyo durante el desarrollo y modificación de este archivo de código.
+#La IA me ha ayudado a entender, optimizar y automatizar ciertas tareas, pero la implementación final y las decisiones clave han sido realizadas por mí.

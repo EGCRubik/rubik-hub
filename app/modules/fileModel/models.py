@@ -75,3 +75,7 @@ class FMMetrics(db.Model):
 
     def __repr__(self):
         return f"FMMetrics<solver={self.solver}, not_solver={self.not_solver}>"
+
+
+#He utilizado parcialmente la inteligencia artificial (IA) como herramienta de apoyo durante el desarrollo y modificación de este archivo de código.
+#La IA me ha ayudado a entender, optimizar y automatizar ciertas tareas, pero la implementación final y las decisiones clave han sido realizadas por mí.

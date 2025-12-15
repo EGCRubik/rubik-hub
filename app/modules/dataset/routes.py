@@ -680,3 +680,7 @@ def get_top_datasets():
     except Exception:
         logger.exception("Error loading top datasets")
         return render_template("dataset/top_datasets.html", top_datasets=[])
+
+
+#He utilizado parcialmente la inteligencia artificial (IA) como herramienta de apoyo durante el desarrollo y modificación de este archivo de código.
+#La IA me ha ayudado a entender, optimizar y automatizar ciertas tareas, pero la implementación final y las decisiones clave han sido realizadas por mí.
