@@ -3,10 +3,10 @@
 
 | Miembro del equipo        | Horas | Commits | LoC | Test | Issues | Work Item            | Dificultad |
 |---------------------------|-------|---------|-----|------|--------|----------------------|------------|
-| Benítez Galván, Mario        | 60    | 66      | 1.293  | 19   | 10     | Creación de comentarios en Datasets     | L      |
-| Mantecón Rodríguez, Alejandro        | HH    | 22      | 534  | 9   | II     | Descripción breve     | H/M/L      |
+| Benítez Galván, Mario        | HH    | 66      | 1.293  | 19   | 10     | Creación de comentarios en Datasets     | L      |
+| Mantecón Rodríguez, Alejandro        | 50    | 22      | 534  | 9   | 10     | Trending Datasets     | M      |
 | Moreno Ríos, Juan        | 60    | 82      | 2.781  | 20   | 13     | Seguidores en autores y comunidades     | M     |
-| Nuño García, Manuel        | HH    | 44      | 14.696  | ZZ   | 12     | Doble factor de autenticación     | H      |
+| Nuño García, Manuel        | 55    | 48      | 14.696  | 7   | 12     | Doble factor de autenticación, creación de comunidades y petición de agregación de datasets a comunidades    | H/ (2)L      |
 | Ruíz López, Juan Antonio        | 50    | 37      | 1.072  | 4   | 18     | Gestionar versionado de los datasets     | H      |
 | Ruíz Martín, Alejandro        | HH    | 28      | 756  | ZZ   | 11     | Conntabilizar el numero de descargas de un dataset     | L      |
 | **TOTAL**                  | tHH   | 279     | 21.132 | tZZ  | 73    | Descripción breve     | H (2)/M (2)/L (5) |
@@ -231,7 +231,103 @@ Al seguir este proceso, el equipo puede introducir cambios de manera incremental
 
 # Entorno de Desarrollo (800 palabras aproximadamente)
 
-Debe explicar cuál es el entorno de desarrollo que ha usado, cuáles son las versiones usadas y qué pasos hay que seguir para instalar tanto su sistema como los subsistemas relacionados para hacer funcionar el sistema al completo. Si se han usado distintos entornos de desarrollo por parte de distintos miembros del grupo, también debe referenciarlo aquí.
+Para el desarrollo de RubikHub se ha tomado Linux (Ubuntu) como sistema base, Python 3.12+ y una base de datos realcional MariaDB. Como framework de ejecución en desarrollo se ha utilizado Flask y como CLI de soporte al desarrollo se ha utilizado Rosemary, instalada en modo editable para facilitar cambios durante el desarrollo. Otras alternativas utilizadas para el despliegue puede ser Docker Compose y Vagrant.
+
+**Instalación del entorno (instalación manual en Ubuntu)**
+
+A continuación se resumen los pasos necesarios para instalar el sistema y los subsistemas asociados de forma completa en modo desarrollo (manual):
+
+**1. Actualizar el sistema para partir de un estado coherente de paquetes:**
+
+`sudo apt update -y`
+
+`sudo apt upgrade -y` 
+
+**2. Clonar el repositorio:**
+
+Clonar el repositorio oficial o, si se trabaja con un fork (por ejemplo, en contexto docente), clonar el fork correspondiente y entrar en el directorio.
+
+**3. Instalar y configurar MariaDB (subsistema de persistencia):**
+
+- Instalar: `sudo apt install mariadb-server -y`
+
+- Arrancar servicio: `sudo systemctl start mariadb`
+
+- Ejecutar endurecimiento inicial: `sudo mysql_secure_installation`
+
+- Para conseguir una instalación correcta se añaden los siguientes valores: 
+
+      - Enter current password for root (enter for none): (enter)
+      - Switch to unix_socket authentication [Y/n]: `y`
+      - Change the root password? [Y/n]: `y`
+         - New password: `rubikhubdb_root_password`
+         - Re-enter new password: `rubikhubdb_root_password`
+      - Remove anonymous users? [Y/n]: `y`
+      - Disallow root login remotely? [Y/n]: `y` 
+      - Remove test database and access to it? [Y/n]: `y`
+      - Reload privilege tables now? [Y/n] : `y`
+
+- Para configurar la base de datos ejecutamos `sudo mysql -u root -p` usando `rubikhubdb_root_password` como la contraseña del root.
+
+- Crear bases de datos y usuario (incluye BD de test): `rubikhubdb`, `rubikhubdb_test`, usuario `rubikhubdb_user` con permisos sobre ambas y contraseña `rubikhubdb_password`.
+
+      CREATE DATABASE rubikhubdb;
+      CREATE DATABASE rubikhubdb_test;
+      CREATE USER 'rubikhubdb_user'@'localhost' IDENTIFIED BY 'rubikhubdb_password';
+      GRANT ALL PRIVILEGES ON rubikhubdb.* TO 'rubikhubdb_user'@'localhost';
+      GRANT ALL PRIVILEGES ON rubikhubdb_test.* TO 'rubikhubdb_user'@'localhost';
+      FLUSH PRIVILEGES;
+      EXIT;
+
+**4. Configurar variables de entorno de la aplicación:**
+
+- Copiar plantilla local: `cp .env.local.example .env`
+
+- Ajustar en `.env` los valores necesarios (especialmente credenciales/host de base de datos) para que la app pueda conectar correctamente.
+
+**5. Desactivar el módulo `webhook` en instalación manual:**
+
+En entorno manual, la documentación indica ignorar el módulo webhook (pensado para despliegues Docker/preproducción) para evitar problemas de carga de módulos:
+
+- `echo "webhook" > .moduleignore`
+
+**6. Crear entorno virtual e instalar dependencias (subsistema de ejecución Python):**
+
+- Instalar soporte venv: sudo apt install python3.12-venv
+
+- Crear venv: `python3.12 -m venv venv`
+
+- Activar: `source venv/bin/activate`
+
+- Actualizar pip e instalar dependencias:
+
+   - `pip install --upgrade pip`
+
+   - `pip install -r requirements.txt`
+
+**7. Instalar Rosemary en modo editable (herramienta de gestión/desarrollo):**
+
+- `pip install -e ./`
+- Verificar: ejecutar `rosemary` y comprobar que lista comandos disponibles.
+
+**8. Inicializar la base de datos y datos de prueba:**
+
+- Aplicar migraciones: `flask db upgrade`
+
+- Poblar con seeders: `rosemary db:seed` (crea datos mínimos y usuarios de prueba).
+
+**9. Ejecutar el servidor en desarrollo:**
+
+`flask run --host=0.0.0.0 --reload --debug`
+Por defecto quedará accesible en `http://localhost:5000`.
+
+**Alternativas usadas en el equipo: Docker y Vagrant (entorno de desarrollo)**
+
+Para homogeneizar el entorno o facilitar el trabajo en Windows/macOS se ofrecen dos alternativas pensadas para desarrollo:
+
+Docker (recomendado si se quiere máxima reproducibilidad sin tocar el sistema host): copiar `.env.docker.example` a `.env` y levantar con docker `compose -f docker/docker-compose.dev.yml up -d`. Si todo va bien, la instancia de desarrollo queda accesible. 
+
+Vagrant (VM gestionada con VirtualBox/Ansible): copiar `.env.vagrant.example` a `.env`, ejecutar comandos dentro de la carpeta `vagrant` y levantar con `vagrant up` (acceso típico en http://localhost:5000). Para usar Rosemary dentro de este entorno, se entra con `vagrant ssh`.
 
 ---
 
@@ -243,4 +339,6 @@ Se presentará un ejercicio con una propuesta concreta de cambio en la que a par
 
 # Conclusiones y Trabajo Futuro
 
-Se enunciarán algunas conclusiones y se presentará un apartado sobre las mejoras que se proponen para el futuro (curso siguiente) y que no han sido desarrolladas en el sistema que se entrega.
+RubikHub ha propiciado la elaboración de una plataforma robusta y funcional en la gestión, versionado y publicación de datasets asociados al cubo de Rubik, en la que se ha ido dotando de seguridad, mecanismo de colaboración y seguimiento respecto de las formas de uso de los datos. El sistema representa, pues, algo más un repositorio que un entorno colaborativo que ayuda a aumentar la interacción por parte de los usuarios mediante comentarios, seguidores y comunidades, de modo que se aumenta la reusabilidad y el valor que pudieran tener los datasets.
+
+La incorporación de autenticación de doble factor permite tener un sistema más seguro que si solo se hubiera utilizado usuario y contraseña, y en cuanto al proceso de desarrollo estructurado, mediante control de versiones, pruebas automatizadas y un entorno de pipelines CI/CD, ha hecho posible garantizar la calidad y la trazabilidad, así como la estabilidad del software. Por tanto, el proyecto en conjunto responde a los objetivos que se había planteado, y demuestra las ventajas de aplicar buenas prácticas de ingeniería del software en el desarrollo de sistemas reales.
