@@ -58,9 +58,7 @@ class TestTesterseleniumcommunity():
     self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "My datasets"))).click()
     self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "My communities"))).click()
     self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "View"))).click()
-    self.driver.find_element(By.CSS_SELECTOR, ".btn-success").click()
-    self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "My communities"))).click()
-    self.wait.until(expected_conditions.element_to_be_clickable((By.LINK_TEXT, "View"))).click()
+
 
     
 

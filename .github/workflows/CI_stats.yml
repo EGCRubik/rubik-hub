@@ -58,11 +58,6 @@ jobs:
             awk '{c[$0]++} END {for (a in c) print c[a] "\t" a}' | sort -nr >> contributor_stats.txt
           echo "" >> contributor_stats.txt
 
-          echo "# Active days per author" >> contributor_stats.txt
-          git log --no-merges --pretty=format:"%aN|%ad" --date=short | \
-            awk -F"|" '{key=$1 "|" $2; uniq[key]=1} END {for (k in uniq) {split(k,a,"|"); days[a[1]]++}} END {for (a in days) print days[a] "\t" a}' | sort -nr >> contributor_stats.txt
-          echo "" >> contributor_stats.txt
-
           echo "# Commits by weekday (overall)" >> contributor_stats.txt
           git log --no-merges --pretty=tformat:'%ad' --date=format:'%w' | \
             awk '{w[$1]++} END {for (i=0;i<7;i++) printf "%d\t%s\n", w[i], (i==0?"Sun":i==1?"Mon":i==2?"Tue":i==3?"Wed":i==4?"Thu":i==5?"Fri":"Sat")}' >> contributor_stats.txt

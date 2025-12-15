@@ -511,6 +511,16 @@ def upload_new_version(dataset_id):
     if not form.validate_on_submit():
         return render_template("dataset/upload_version.html", form=form, dataset=dataset)
     
+    # Prevent creating a version with empty title/description when provided
+    title_empty = form.title.data is not None and form.title.data.strip() == ""
+    desc_empty = form.desc.data is not None and form.desc.data.strip() == ""
+    if title_empty or desc_empty:
+        if title_empty:
+            form.title.errors.append("Rellene este campo.")
+        if desc_empty:
+            form.desc.errors.append("Rellene este campo.")
+        return render_template("dataset/upload_version.html", form=form, dataset=dataset)
+    
     # Get CSV file (optional)
     csv_file = None
     filename = None

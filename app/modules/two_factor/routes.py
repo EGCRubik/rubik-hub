@@ -60,8 +60,14 @@ def update_factor_enabled():
             uri = pyotp.totp.TOTP(key).provisioning_uri(name=current_user.email, issuer_name="RubikHub")
             session['two_factor_setup_uri'] = uri
             session['two_factor_setup_key'] = key
-            # Return JSON with redirect to allow fetch() to navigate
-            return jsonify({"message": "2FA setup initiated", "factor_enabled": True, "redirect_url": url_for('profile.twofactor_setup')})
+            # Return JSON with redirect and key for testing/client purposes
+            return jsonify({
+                "message": "2FA setup initiated",
+                "factor_enabled": True,
+                "redirect_url": url_for('profile.twofactor_setup'),
+                "key": key,
+                "uri": uri
+            })
             # two_factor_service.create_two_factor_entry(current_user.id, key, uri)
         else:
             two_factor_service.delete_by_user_id(current_user.id)

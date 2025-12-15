@@ -5,7 +5,7 @@
 |---------------------------|-------|---------|-----|------|--------|----------------------|------------|
 | Benítez Galván, Mario        | HH    | 66      | 1.293  | 19   | 10     | Creación de comentarios en Datasets     | L      |
 | Mantecón Rodríguez, Alejandro        | 50    | 22      | 534  | 9   | 10     | Trending Datasets     | M      |
-| Moreno Ríos, Juan        | HH    | 82      | 2.781  | 20   | 13     | Seguidores en autores y comunidades     | M     |
+| Moreno Ríos, Juan        | 60    | 82      | 2.781  | 20   | 13     | Seguidores en autores y comunidades     | M     |
 | Nuño García, Manuel        | HH    | 44      | 14.696  | ZZ   | 12     | Doble factor de autenticación     | H      |
 | Ruíz López, Juan Antonio        | 50    | 37      | 1.072  | 4   | 18     | Gestionar versionado de los datasets     | H      |
 | Ruíz Martín, Alejandro        | HH    | 28      | 756  | ZZ   | 11     | Conntabilizar el numero de descargas de un dataset     | L      |
