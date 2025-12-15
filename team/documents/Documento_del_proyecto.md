@@ -342,3 +342,6 @@ Se presentará un ejercicio con una propuesta concreta de cambio en la que a par
 RubikHub ha propiciado la elaboración de una plataforma robusta y funcional en la gestión, versionado y publicación de datasets asociados al cubo de Rubik, en la que se ha ido dotando de seguridad, mecanismo de colaboración y seguimiento respecto de las formas de uso de los datos. El sistema representa, pues, algo más un repositorio que un entorno colaborativo que ayuda a aumentar la interacción por parte de los usuarios mediante comentarios, seguidores y comunidades, de modo que se aumenta la reusabilidad y el valor que pudieran tener los datasets.
 
 La incorporación de autenticación de doble factor permite tener un sistema más seguro que si solo se hubiera utilizado usuario y contraseña, y en cuanto al proceso de desarrollo estructurado, mediante control de versiones, pruebas automatizadas y un entorno de pipelines CI/CD, ha hecho posible garantizar la calidad y la trazabilidad, así como la estabilidad del software. Por tanto, el proyecto en conjunto responde a los objetivos que se había planteado, y demuestra las ventajas de aplicar buenas prácticas de ingeniería del software en el desarrollo de sistemas reales.
+
+
+Se declara el uso de inteligencia artificial para la realización de este documento
