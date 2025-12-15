@@ -1,12 +1,15 @@
 from locust import HttpUser, TaskSet, task
 from core.environment.host import get_host_for_locust_testing
 from core.locust.common import get_csrf_token
+import pyotp
+import json
 
 
 class TwoFactorBehavior(TaskSet):
     def on_start(self):
         # Login to perform authenticated actions
         self.login()
+        self.totp_key = None
 
     def login(self):
         resp = self.client.get("/login")
@@ -33,14 +36,52 @@ class TwoFactorBehavior(TaskSet):
             data={"enabled": "1", "csrf_token": csrf},
             catch_response=True,
         ) as resp:
-            # Endpoint may return JSON with redirect_url or an HTTP redirect
+            # Endpoint returns JSON with key and uri
             if resp.status_code not in (200, 302):
                 resp.failure(f"Enable 2FA failed: {resp.status_code} - {resp.text[:200]}")
             else:
-                resp.success()
+                try:
+                    data = resp.json()
+                    # Extract the key from response
+                    self.totp_key = data.get("key")
+                    if self.totp_key:
+                        print(f"✓ Got 2FA key from enable response")
+                    resp.success()
+                except:
+                    resp.failure("Could not parse JSON response from enable endpoint")
 
-        # Optionally visit the setup page to simulate user flow
-        self.client.get("/profile/twofactor-setup")
+        # Visit setup page and attempt verification
+        setup_resp = self.client.get("/profile/twofactor-setup")
+        
+        # Try to get CSRF token
+        try:
+            setup_csrf = get_csrf_token(setup_resp)
+            
+            # Generate real TOTP code using the key we received
+            if self.totp_key:
+                code = pyotp.TOTP(self.totp_key).now()
+                print(f"✓ Generated TOTP code: {code}")
+            else:
+                code = "000000"
+                print("⚠ No key available, using placeholder code")
+            
+            verify_resp = self.client.post(
+                "/two_factor/verify",
+                data={"two_factor_code": code, "csrf_token": setup_csrf},
+                catch_response=True,
+            )
+
+            if verify_resp.status_code in (200, 302):
+                verify_resp.success()
+                print("✓ 2FA verification successful")
+            else:
+                verify_resp.failure(f"Verify 2FA failed: {verify_resp.status_code} - {verify_resp.text[:200]}")
+                print(f"⚠ Verify 2FA failed: {verify_resp.status_code}")
+                
+        except ValueError:
+            # CSRF token not found
+            print("⚠ CSRF token not found on twofactor-setup; skipping verify step")
+        
 
     @task(1)
     def disable_two_factor(self):
