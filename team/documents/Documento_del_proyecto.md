@@ -231,7 +231,103 @@ Al seguir este proceso, el equipo puede introducir cambios de manera incremental
 
 # Entorno de Desarrollo (800 palabras aproximadamente)
 
-Debe explicar cuál es el entorno de desarrollo que ha usado, cuáles son las versiones usadas y qué pasos hay que seguir para instalar tanto su sistema como los subsistemas relacionados para hacer funcionar el sistema al completo. Si se han usado distintos entornos de desarrollo por parte de distintos miembros del grupo, también debe referenciarlo aquí.
+Para el desarrollo de RubikHub se ha tomado Linux (Ubuntu) como sistema base, Python 3.12+ y una base de datos realcional MariaDB. Como framework de ejecución en desarrollo se ha utilizado Flask y como CLI de soporte al desarrollo se ha utilizado Rosemary, instalada en modo editable para facilitar cambios durante el desarrollo. Otras alternativas utilizadas para el despliegue puede ser Docker Compose y Vagrant.
+
+**Instalación del entorno (instalación manual en Ubuntu)**
+
+A continuación se resumen los pasos necesarios para instalar el sistema y los subsistemas asociados de forma completa en modo desarrollo (manual):
+
+**1. Actualizar el sistema para partir de un estado coherente de paquetes:**
+
+`sudo apt update -y`
+
+`sudo apt upgrade -y` 
+
+**2. Clonar el repositorio:**
+
+Clonar el repositorio oficial o, si se trabaja con un fork (por ejemplo, en contexto docente), clonar el fork correspondiente y entrar en el directorio.
+
+**3. Instalar y configurar MariaDB (subsistema de persistencia):**
+
+- Instalar: `sudo apt install mariadb-server -y`
+
+- Arrancar servicio: `sudo systemctl start mariadb`
+
+- Ejecutar endurecimiento inicial: `sudo mysql_secure_installation`
+
+- Para conseguir una instalación correcta se añaden los siguientes valores: 
+
+      - Enter current password for root (enter for none): (enter)
+      - Switch to unix_socket authentication [Y/n]: `y`
+      - Change the root password? [Y/n]: `y`
+         - New password: `rubikhubdb_root_password`
+         - Re-enter new password: `rubikhubdb_root_password`
+      - Remove anonymous users? [Y/n]: `y`
+      - Disallow root login remotely? [Y/n]: `y` 
+      - Remove test database and access to it? [Y/n]: `y`
+      - Reload privilege tables now? [Y/n] : `y`
+
+- Para configurar la base de datos ejecutamos `sudo mysql -u root -p` usando `rubikhubdb_root_password` como la contraseña del root.
+
+- Crear bases de datos y usuario (incluye BD de test): `rubikhubdb`, `rubikhubdb_test`, usuario `rubikhubdb_user` con permisos sobre ambas y contraseña `rubikhubdb_password`.
+
+      CREATE DATABASE rubikhubdb;
+      CREATE DATABASE rubikhubdb_test;
+      CREATE USER 'rubikhubdb_user'@'localhost' IDENTIFIED BY 'rubikhubdb_password';
+      GRANT ALL PRIVILEGES ON rubikhubdb.* TO 'rubikhubdb_user'@'localhost';
+      GRANT ALL PRIVILEGES ON rubikhubdb_test.* TO 'rubikhubdb_user'@'localhost';
+      FLUSH PRIVILEGES;
+      EXIT;
+
+**4. Configurar variables de entorno de la aplicación:**
+
+- Copiar plantilla local: `cp .env.local.example .env`
+
+- Ajustar en `.env` los valores necesarios (especialmente credenciales/host de base de datos) para que la app pueda conectar correctamente.
+
+**5. Desactivar el módulo `webhook` en instalación manual:**
+
+En entorno manual, la documentación indica ignorar el módulo webhook (pensado para despliegues Docker/preproducción) para evitar problemas de carga de módulos:
+
+- `echo "webhook" > .moduleignore`
+
+**6. Crear entorno virtual e instalar dependencias (subsistema de ejecución Python):**
+
+- Instalar soporte venv: sudo apt install python3.12-venv
+
+- Crear venv: `python3.12 -m venv venv`
+
+- Activar: `source venv/bin/activate`
+
+- Actualizar pip e instalar dependencias:
+
+   - `pip install --upgrade pip`
+
+   - `pip install -r requirements.txt`
+
+**7. Instalar Rosemary en modo editable (herramienta de gestión/desarrollo):**
+
+- `pip install -e ./`
+- Verificar: ejecutar `rosemary` y comprobar que lista comandos disponibles.
+
+**8. Inicializar la base de datos y datos de prueba:**
+
+- Aplicar migraciones: `flask db upgrade`
+
+- Poblar con seeders: `rosemary db:seed` (crea datos mínimos y usuarios de prueba).
+
+**9. Ejecutar el servidor en desarrollo:**
+
+`flask run --host=0.0.0.0 --reload --debug`
+Por defecto quedará accesible en `http://localhost:5000`.
+
+**Alternativas usadas en el equipo: Docker y Vagrant (entorno de desarrollo)**
+
+Para homogeneizar el entorno o facilitar el trabajo en Windows/macOS se ofrecen dos alternativas pensadas para desarrollo:
+
+Docker (recomendado si se quiere máxima reproducibilidad sin tocar el sistema host): copiar `.env.docker.example` a `.env` y levantar con docker `compose -f docker/docker-compose.dev.yml up -d`. Si todo va bien, la instancia de desarrollo queda accesible. 
+
+Vagrant (VM gestionada con VirtualBox/Ansible): copiar `.env.vagrant.example` a `.env`, ejecutar comandos dentro de la carpeta `vagrant` y levantar con `vagrant up` (acceso típico en http://localhost:5000). Para usar Rosemary dentro de este entorno, se entra con `vagrant ssh`.
 
 ---
 
