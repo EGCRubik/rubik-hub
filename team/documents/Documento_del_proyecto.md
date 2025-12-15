@@ -9,7 +9,7 @@
 | Nuño García, Manuel        | 55    | 48      | 14.696  | 7   | 12     | Doble factor de autenticación, creación de comunidades y petición de agregación de datasets a comunidades    | H/ (2)L      |
 | Ruíz López, Juan Antonio        | 50    | 37      | 1.072  | 6   | 18     | Gestionar versionado de los datasets     | H      |
 | Ruíz Martín, Alejandro        | 50    | 33      | 1.131  | 5   | 12     | Conntabilizar el numero de descargas de un dataset     | L      |
-| **TOTAL**                  | tHH   | 288     | 21.507  | 66  | 75    | Descripción breve     | H (2)/M (2)/L (5) |
+| **TOTAL**                  | 325   | 288     | 21.507  | 66  | 75    | Descripción breve     | H (2)/M (2)/L (5) |
 
 ---
 
