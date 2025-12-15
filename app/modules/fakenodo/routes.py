@@ -112,3 +112,6 @@ def publish_dataset_deposition(dataset_id: int):
         doi = service.get_doi(deposition_id)
         ds_service.update_dsmetadata(ds.ds_meta_data_id, dataset_doi=doi)
     return redirect(url_for('dataset.list_dataset'))
+
+# He utilizado parcialmente la inteligencia artificial (IA) como herramienta de apoyo durante el desarrollo y modificación de este archivo de código. 
+# La IA me ha ayudado a entender, optimizar y automatizar ciertas tareas, pero la implementación final y las decisiones clave han sido realizadas por mí.

@@ -346,3 +346,6 @@ def test_list_versions_endpoint_404_for_missing(test_client):
     """Test the /versions endpoint returns 404 for non-existent deposition."""
     resp = test_client.get("/fakenodo/deposit/depositions/999999/versions")
     assert resp.status_code == 404
+
+# He utilizado parcialmente la inteligencia artificial (IA) como herramienta de apoyo durante el desarrollo y modificación de este archivo de código. 
+# La IA me ha ayudado a entender, optimizar y automatizar ciertas tareas, pero la implementación final y las decisiones clave han sido realizadas por mí.
