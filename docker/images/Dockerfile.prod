@@ -44,5 +44,11 @@ ARG VERSION_TAG
 # Create the .version file with the content of VERSION_TAG
 RUN echo $VERSION_TAG > /app/.version
 
+# Copy the production entrypoint script and set execution permissions
+COPY --chmod=0755 docker/entrypoints/production_entrypoint.sh ./entrypoint.sh
+
 # Expose port 5000
 EXPOSE 5000
+
+# Set the entrypoint to run the production script with Gunicorn
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]

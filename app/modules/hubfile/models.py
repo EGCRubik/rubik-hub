@@ -13,7 +13,8 @@ class Hubfile(db.Model):
     name = db.Column(db.String(120), nullable=False)
     checksum = db.Column(db.String(120), nullable=False)
     size = db.Column(db.Integer, nullable=False)
-    feature_model_id = db.Column(db.Integer, db.ForeignKey("feature_model.id"), nullable=False)
+    # New column to reference FileModel (replacing legacy feature_model_id)
+    file_model_id = db.Column(db.Integer, db.ForeignKey("file_model.id"), nullable=False)
 
     def get_formatted_size(self):
         from app.modules.dataset.services import SizeService

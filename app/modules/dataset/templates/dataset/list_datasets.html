@@ -25,16 +25,20 @@
                         {% for dataset in datasets %}
                             <tr>
                                 <td>
-                                    <a href="{{ dataset.get_uvlhub_doi() }}">
-                                        {{ dataset.ds_meta_data.title }}
+                                    <a href="/dataset/doi/{{ dataset.version_doi }}" >
+                                        {{ dataset.ds_meta_data.title }} (version {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
+                                        {% set latest = dataset.version.concept.latest_version() %}
+                                        {% if latest and latest.id == dataset.version.id %}
+                                            <span title="Latest version" style="color: gold;">⭐</span>
+                                        {% endif %}
                                     </a>
                                 </td>
                                 <td>{{ dataset.ds_meta_data.description }}</td>
                                 <td>{{ dataset.ds_meta_data.publication_type.name.replace('_', ' ').title() }}</td>
-                                <td><a href="{{ dataset.get_uvlhub_doi() }}"
-                                       target="_blank">{{ dataset.get_uvlhub_doi() }}</a></td>
+                                <td><a href="/dataset/doi/{{ dataset.version_doi }}" 
+                                       target="_blank">{{ dataset.get_rubikhub_doi() }}</a></td>
                                 <td>
-                                    <a href="{{ dataset.get_uvlhub_doi() }}">
+                                    <a href="/dataset/doi/{{ dataset.version_doi }}">
                                         <i data-feather="eye"></i>
                                     </a>
                                     <a href="{{ url_for('dataset.download_dataset', dataset_id=dataset.id) }}">
@@ -58,7 +62,7 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">
-                        You have not created any dataset synchronized with the repository (FakeNODO), are you up for it?
+                        You have not created any dataset synchronized with the repository, are you up for it?
                     </p>
                     <a href="{{ url_for('dataset.create_dataset') }}" class="btn btn-primary">
                         Upload dataset</a>
@@ -92,7 +96,11 @@
                                     <tr>
                                         <td>
                                             <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=local_dataset.id) }}">
-                                                {{ local_dataset.ds_meta_data.title }}
+                                                {{ local_dataset.ds_meta_data.title }} (version {{ local_dataset.version.version_major }}.{{ local_dataset.version.version_minor }})
+                                                {% set latest = local_dataset.version.concept.latest_version() %}
+                                                {% if latest and latest.id == local_dataset.version.id %}
+                                                    <span title="Latest version" style="color: gold;">⭐</span>
+                                                {% endif %}
                                             </a>
                                         </td>
                                         <td>{{ local_dataset.ds_meta_data.description }}</td>

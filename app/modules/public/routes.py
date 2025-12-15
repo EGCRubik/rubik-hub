@@ -1,9 +1,11 @@
 import logging
 
 from flask import redirect, render_template, url_for
+from flask_login import current_user
 
-from app.modules.dataset.services import DataSetService
-from app.modules.featuremodel.services import FeatureModelService
+from app.modules.community.services import CommunityService
+from app.modules.dataset.services import AuthorService, DataSetService
+from app.modules.fileModel.services import FileModelService
 from app.modules.public import public_bp
 
 logger = logging.getLogger(__name__)
@@ -13,35 +15,46 @@ logger = logging.getLogger(__name__)
 def index():
     logger.info("Access index")
     dataset_service = DataSetService()
-    feature_model_service = FeatureModelService()
+    file_model_service = FileModelService()
 
-    # Statistics: total datasets and feature models
+    # Statistics: total datasets and file models
     datasets_counter = dataset_service.count_synchronized_datasets()
-    feature_models_counter = feature_model_service.count_feature_models()
+    file_models_counter = file_model_service.count_file_models()
 
     # Statistics: total downloads
     total_dataset_downloads = dataset_service.total_dataset_downloads()
-    total_feature_model_downloads = feature_model_service.total_feature_model_downloads()
+    total_file_model_downloads = file_model_service.total_file_model_downloads()
 
     # Statistics: total views
     total_dataset_views = dataset_service.total_dataset_views()
-    total_feature_model_views = feature_model_service.total_feature_model_views()
+    total_file_model_views = file_model_service.total_file_model_views()
 
     return render_template(
         "public/index.html",
         datasets=dataset_service.latest_synchronized(),
         datasets_counter=datasets_counter,
-        feature_models_counter=feature_models_counter,
         total_dataset_downloads=total_dataset_downloads,
-        total_feature_model_downloads=total_feature_model_downloads,
         total_dataset_views=total_dataset_views,
-        total_feature_model_views=total_feature_model_views,
     )
 
 
 @public_bp.route("/authors-and-communities")
 def authors_and_communities():
+    """Render a page listing authors and communities."""
     logger.info("Access authors and communities view")
-    # The authors view has been moved into the authorsCommunities module.
-    # Redirect to the new location to keep existing URLs working.
-    return redirect(url_for("authorsCommunities.index"))
+    
+    # Load authors
+    author_service = AuthorService()
+    author_model = author_service.repository.model
+    authors_q = author_model.query.all()
+    authors = [a.to_dict() for a in authors_q]
+    for idx, a in enumerate(authors):
+        if current_user.is_authenticated:
+            a['is_following'] = authors_q[idx].followers.filter_by(follower_id=current_user.id).first() is not None
+        a['id'] = authors_q[idx].id
+
+    # Load communities
+    community_service = CommunityService()
+    communities = community_service.list_all()
+
+    return render_template('public/authors_communities.html', authors=authors, communities=communities)

@@ -1,0 +1,78 @@
+{% extends 'base_template.html' %}
+
+{% block title %}Authors and communities{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Authors and communities</h1>
+        <p>Below is a list of authors and communities available.</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <h2>Authors</h2>
+        {% if authors %}
+        <ul class="list-group">
+            {% for a in authors %}
+            <li class="list-group-item">
+                <strong>{{ a.name }}</strong>
+                <div class="small text-muted">
+                    {% if a.affiliation %}{{ a.affiliation }}{% endif %}
+                    {% if a.orcid %} — ORCID: {{ a.orcid }}{% endif %}
+                </div>
+                {% if current_user.is_authenticated %}
+                <form method="POST"
+                    action="{{ url_for('followAuthor.unfollow' if a.is_following else 'followAuthor.follow', author_id=a.id) }}"
+                    style="display: inline;">
+                    <button type="submit" class="btn {{ 'btn-danger' if a.is_following else 'btn-primary' }}">
+                        {{ 'Dejar de seguir' if a.is_following else 'Seguir' }}
+                    </button>
+                </form>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">No authors found.</p>
+        {% endif %}
+    </div>
+
+    <div class="col-md-6">
+        <h2>Communities</h2>
+        {% if communities %}
+        <ul class="list-group">
+            {% for c in communities %}
+            <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <h4 class="mb-0">{{ c.name }}</h4>
+                        </div>
+
+                        <p class="text-muted mt-2 mb-2" style="min-height:48px">
+                            {{ c.description[:160] }}{% if c.description|length > 160 %}...{% endif %}
+                        </p>
+
+                        <a href="/community/{{ c.slug }}" class="btn btn-outline-secondary btn-sm"
+                            style="border-radius:5px">
+                            <i data-feather="eye"></i> View
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="alert alert-light">
+                    No communities yet. Create the first one!
+                </div>
+            </div>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">No communities found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

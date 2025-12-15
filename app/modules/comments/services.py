@@ -1,8 +1,10 @@
 # app/modules/comments/services.py
+from flask import flash
+
+from app import db
 from app.modules.comments.models import Comments
 from app.modules.dataset.models import DataSet
-from app import db
-from flask import flash
+
 
 class CommentsService:
     def create_comment(self, dataset_id, author_id, content):
@@ -35,3 +37,6 @@ class CommentsService:
         db.session.commit()
         flash("Comment deleted successfully!", "success")
         return comment, dataset
+    
+# He utilizado parcialmente la inteligencia artificial (IA) como herramienta de apoyo durante el desarrollo y modificación de este archivo de código. 
+# La IA me ha ayudado a entender, optimizar y automatizar ciertas tareas, pero la implementación final y las decisiones clave han sido realizadas por mí.

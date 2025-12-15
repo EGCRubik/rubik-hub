@@ -15,13 +15,13 @@ class CommentSeeder(BaseSeeder):
         comments = [
             Comments(
                 author_id=1,
-                content="Primer comentario",
+                content="Me encantan los cubos de Rubik!",
                 date_posted=datetime.now(timezone.utc),
                 dataset_id=dataset.id,
             ),
             Comments(
                 author_id=2,
-                content="Segundo comentario",
+                content="Como a mí!",
                 date_posted=datetime.now(timezone.utc),
                 dataset_id=dataset.id,
             ),

@@ -40,18 +40,29 @@ def community_detail(slug):
         abort(404)
 
     is_following = False
+    user_datasets = []
     if current_user.is_authenticated:
         # Verifica si el usuario aparece en los seguidores de la comunidad
         is_following = c.followers.filter_by(follower_id=current_user.id).first() is not None
-
-
+        # Get all user's datasets with version info
+        user_datasets = DataSet.query.filter(DataSet.user_id == current_user.id).all()
 
     return render_template(
         "community/detail.html",
         community=c,
         CommunityDatasetStatus=CommunityDatasetStatus,
-        is_following=is_following
+        is_following=is_following,
+        user_datasets=user_datasets
     )
+
+@community_bp.route("/community/<slug>/delete", methods=["POST"])
+@login_required
+def delete_community(slug):
+    c = community_service.get_by_slug(slug)
+    _ensure_curator(c)
+    community_service.delete(c)
+    return jsonify({"message": "Community deleted"})
+
 # Proponer un dataset para una comunidad
 @community_bp.route("/community/<slug>/propose", methods=["POST"])
 @login_required
@@ -85,3 +96,16 @@ def reject_dataset(slug, link_id):
     _ensure_curator(c)
     link = link_service.set_status(link_id, CommunityDatasetStatus.REJECTED, current_user)
     return jsonify({"message": "Rejected", "link_id": link.id})
+
+# Añadir un curador (solo curadores)
+@community_bp.route("/community/<slug>/curators/add", methods=["POST"])
+@login_required
+def add_curator(slug):
+    c = community_service.get_by_slug(slug)
+    _ensure_curator(c)
+    user_id = request.form.get("user_id", type=int)
+    if not user_id:
+        return jsonify({"message": "user_id is required"}), 400
+    user = User.query.get_or_404(user_id)
+    community_service.add_curator(c, user)
+    return jsonify({"message": "Curator added", "user_id": user.id})

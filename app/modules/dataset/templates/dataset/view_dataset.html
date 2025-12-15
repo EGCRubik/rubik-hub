@@ -36,7 +36,12 @@
         <div class="card">
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between">
-                    <h1><b>{{ dataset.ds_meta_data.title }}</b></h1>
+                    <h1><b>{{ dataset.ds_meta_data.title }} (Version: {{ dataset.version.version_major }}.{{ dataset.version.version_minor }})
+                        {% set latest = dataset.version.concept.latest_version() %}
+                        {% if latest and latest.id == dataset.version.id %}
+                            <span title="Latest version" style="color: gold;">⭐</span>
+                        {% endif %}
+                    </b></h1>
                     <div>
                         <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
                     </div>
@@ -77,17 +82,17 @@
                         </span>
                     </div>
                     <div class="col-md-8 col-12">
-                        {% for author in dataset.ds_meta_data.authors %}
+                        {% if dataset.ds_meta_data and dataset.ds_meta_data.author %}
                         <p class="p-0 m-0">
-                            {{ author.name }}
-                            {% if author.affiliation %}
-                            ({{ author.affiliation }})
+                            {{ dataset.ds_meta_data.author.name }}
+                            {% if dataset.ds_meta_data.author.affiliation %}
+                            ({{ dataset.ds_meta_data.author.affiliation }})
                             {% endif %}
-                            {% if author.orcid %}
-                            ({{ author.orcid }})
+                            {% if dataset.ds_meta_data.author.orcid %}
+                            ({{ dataset.ds_meta_data.author.orcid }})
                             {% endif %}
                         </p>
-                        {% endfor %}
+                        {% endif %}
                     </div>
 
 
@@ -108,7 +113,22 @@
                 </div>
                 {% endif %}
 
-                {% if dataset.ds_meta_data.dataset_doi %}
+                {% if dataset.version_doi %}
+                <div class="row mb-2">
+                    <div class="col-md-4 col-12">
+                        <span class="text-secondary">
+                            Version DOI
+                        </span>
+                    </div>
+                    <div class="col-md-8 col-12">
+                        <a href="{{ version_url }}">
+                            {{ version_url }}
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if dataset.ds_meta_data.deposition_id %}
                 <div class="row mb-2">
                     <div class="col-md-4 col-12">
                         <span class=" text-secondary">
@@ -116,9 +136,12 @@
                         </span>
                     </div>
                     <div class="col-md-8 col-12">
-                        <a href="{{ url_for('fakenodo.get_deposition', deposition_id=dataset.ds_meta_data.deposition_id) }}" target="_blank">
-                            {{ url_for('fakenodo.get_deposition', deposition_id=dataset.ds_meta_data.deposition_id, _external=True) }}
-                        </a>
+                        <span class="text-monospace">ID: {{ dataset.ds_meta_data.deposition_id }}</span>
+                        {% if not dataset.ds_meta_data.dataset_doi %}
+                        <span class="badge bg-warning text-dark">Draft (not published)</span>
+                        {% else %}
+                        <span class="badge bg-success">Published</span>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -137,22 +160,19 @@
 
                 </div>
 
-
-
             </div>
-
             {% if dataset.ds_meta_data.dataset_doi %}
             <div class="card-body" style="padding-top: 0px">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div id="dataset_doi_uvlhub" style="display: none">{{ dataset.get_uvlhub_doi() }}</div>
-                        <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_doi_uvlhub')">
+                        <div id="dataset_doi_rubikhub" style="display: none">{{ dataset.get_rubikhub_doi() }}</div>
+                        <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_doi_rubikhub')">
                             <span class="button_doi_id">
                                 <i data-feather="clipboard" class="center-button-icon" style="cursor: pointer"></i>
                                 <b>DOI</b>
                             </span>
                             <span class="doi_text">
-                                {{ dataset.get_uvlhub_doi() }}
+                                {{ dataset.get_rubikhub_doi() }}
                             </span>
                         </button>
                     </div>
@@ -163,67 +183,86 @@
                                 {% if downloads is defined %}
                                     {{ downloads }}
                                 {% else %}
-                                    {% if dataset.metrics and dataset.metrics.number_of_downloads is not none %}
-                                        {{ dataset.metrics.number_of_downloads }}
-                                    {% elif dataset.ds_meta_data and dataset.ds_meta_data.ds_metrics and dataset.ds_meta_data.ds_metrics.number_of_downloads is not none %}
-                                        {{ dataset.ds_meta_data.ds_metrics.number_of_downloads }}
-                                    {% else %}
-                                        0
-                                    {% endif %}
+                                    0
                                 {% endif %}
                             </small>
                     </div>
                 </div>
+
+                <!-- Texto explicativo sobre los DOIs -->
+                <div class="mt-3 p-3 bg-light rounded" style="font-size: 0.85rem;">
+                    <p class="mb-2"><strong><i data-feather="info" style="width:16px; height:16px;"></i> Guía de citación:</strong></p>
+                    <ul class="mb-0" style="padding-left: 1.2rem;">
+                        <li><strong>DOI de publicación</strong>: Apunta a la <em>versión inicial</em> del dataset.</li>
+                        {% if dataset.version_doi %}
+                        <li><strong>DOI de esta versión</strong>: Apunta a la <em>versión que estás viendo actualmente</em>.</li>
+                        {% endif %}
+                        <li><strong>DOI copiable (azul)</strong>: Corresponde a la <em>versión más reciente</em> del dataset.</li>
+                    </ul>
+                    <p class="mt-2 mb-0 text-muted">
+                        <i data-feather="bookmark" style="width:14px; height:14px;"></i>
+                        Para citar el dataset completo, usa el <strong>DOI de la versión más reciente</strong>. 
+                        Para citar una versión específica, usa el <strong>DOI de esa versión concreta</strong>.
+                    </p>
+                </div>
             </div>
             {% endif %}
+
+            {% if current_user.is_authenticated and current_user.id == dataset.user_id %}
+        <div class="card mt-3">
+            <div class="card-body">
+                {% if current_user.is_authenticated and current_user.id == dataset.user_id %}
+                    {% if not dataset.ds_meta_data.deposition_id %}
+                        <!-- Crear registro preliminar en el repositorio -->
+                        <form method="POST" action="{{ url_for('dataset.sync_dataset', dataset_id=dataset.id) }}" onsubmit="return confirm('Crear un registro preliminar en el repositorio para este dataset?');">
+                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                <i data-feather="file-plus"></i>
+                                Crear registro preliminar
+                            </button>
+                        </form>
+                    {% else %}
+                        {% if not dataset.ds_meta_data.dataset_doi %}
+                        <!-- Publicar en el repositorio (generar DOI) -->
+                        <form method="POST" action="{{ url_for('dataset.sync_dataset', dataset_id=dataset.id) }}" onsubmit="return confirm('¿Publicar el dataset en el repositorio? Esto generará el DOI.');">
+                            <button type="submit" id="publishBtn" class="btn btn-success btn-sm">
+                                <i data-feather="upload"></i>
+                                Publicar
+                            </button>
+                        </form>
+                        {% else %}
+                        <!-- Crear nueva versión (solo si ya hay DOI Y es la versión más reciente) -->
+                        {% set is_latest_version = false %}
+                        {% if dataset.version and dataset.version.concept %}
+                            {% set latest = dataset.version.concept.latest_version() %}
+                            {% if latest and latest.dataset_id == dataset.id %}
+                                {% set is_latest_version = true %}
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if is_latest_version %}
+                        <a href="{{ url_for('dataset.upload_new_version', dataset_id=dataset.id) }}" class="btn btn-primary btn-sm mb-2">
+                            <i data-feather="upload-cloud"></i>
+                            Crear nueva versión
+                        </a>
+                        {% else %}
+                        <p class="text-muted small mb-2">
+                            <i data-feather="info" style="width:14px; height:14px;"></i>
+                            Solo puedes crear una nueva versión desde la versión más reciente del dataset.
+                        </p>
+                        {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                
+                <hr class="my-2"/>
+            </div>
+        </div>
+        {% endif %}
 
             
 
         </div>
 
-        <div class="card">
-
-            <div class="card-body">
-
-                <h3> Related publication </h3>
-
-                David Romero-Organvidez, José A. Galindo, Chico Sundermann, Jose-Miguel Horcas, David Benavides,
-                <i>UVLHub: A feature model data repository using UVL and open science principles</i>,
-                Journal of Systems and Software,
-                2024,
-                112150,
-                ISSN 0164-1212,
-                <a href="https://doi.org/10.1016/j.jss.2024.112150"
-                    target="_blank">https://doi.org/10.1016/j.jss.2024.112150</a>
-
-            </div>
-
-            <div class="card-body mt-0 pt-0">
-
-                <button onclick="copyText('bibtex_cite')" class="btn btn-light btn-sm"
-                    style="border-radius: 5px; margin-right: 10px">
-                    <i data-feather="clipboard" class="center-button-icon"></i>
-                    Copy in BibTex
-                </button>
-
-                <button onclick="copyText('ris_cite')" class="btn btn-light btn-sm" style="border-radius: 5px;">
-                    <i data-feather="clipboard" class="center-button-icon"></i>
-                    Copy in RIS
-                </button>
-
-                <button onclick="copyText('apa_cite')" class="btn btn-light btn-sm" style="border-radius: 5px;">
-                    <i data-feather="clipboard" class="center-button-icon"></i>
-                    Copy in APA
-                </button>
-
-                <button onclick="copyText('text_cite')" class="btn btn-light btn-sm" style="border-radius: 5px;">
-                    <i data-feather="clipboard" class="center-button-icon"></i>
-                    Copy in text
-                </button>
-
-            </div>
-
-        </div>
         <div class="card">
             <div class="card-body">
                 <h3>Comments</h3>
@@ -274,7 +313,7 @@
 
                 <div class="row">
                     <div class="col-12 d-flex justify-content-between align-items-center">
-                        <h4 style="margin-bottom: 0px">UVL models</h4>
+                        <h4 style="margin-bottom: 0px">CSV models</h4>
                         <h4 style="margin-bottom: 0px;"><span class="badge bg-dark">{{ dataset.get_files_count()
                                 }}</span></h4>
                     </div>
@@ -284,22 +323,18 @@
             </div>
 
 
-            {% for feature_model in dataset.feature_models %}
-            {% for file in feature_model.files %}
+            {% for file_model in dataset.file_models %}
+            {% for file in file_model.files %}
             <div class="list-group-item">
 
                 <div class="row">
                     <div class="col-12">
 
                         <div class="row">
-                            <div class="col-8">
+                            <div class="col-10">
                                 <i data-feather="file"></i> {{ file.name }}
                                 <br>
                                 <small class="text-muted">({{ file.get_formatted_size() }})</small>
-                            </div>
-                            <div class="col-2">
-                                <div id="check_{{ file.id }}">
-                                </div>
                             </div>
                         </div>
 
@@ -313,25 +348,6 @@
                         </button>
 
                         <div class="btn-group" role="group">
-                            <button id="btnGroupDrop{{ file.id }}" type="button"
-                                class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
-                                aria-expanded="false" style=" border-radius: 5px;">
-                                <i data-feather="check"></i> Check
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="btnGroupDrop{{ file.id }}">
-                                <li>
-                                    <a class="dropdown-item" href="javascript:void(0);"
-                                        onclick="checkUVL('{{ file.id }}')">Syntax check</a>
-                                </li>
-                                <!--
-                                        <li>
-                                            <a class="dropdown-item" href="{{ url_for('flamapy.valid', file_id=file.id) }}">SAT validity check</a>
-                                        </li>
-                                        -->
-                            </ul>
-                        </div>
-
-                        <div class="btn-group" role="group">
                             <button id="btnGroupDropExport{{ file.id }}" type="button"
                                 class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
                                 aria-expanded="false" style=" border-radius: 5px;">
@@ -341,21 +357,7 @@
                                 <li>
                                     <a class="dropdown-item"
                                         href="{{ url_for('hubfile.download_file', file_id=file.id) }}">
-                                        UVL
-                                    </a>
-                                    <a class="dropdown-item"
-                                        href="{{ url_for('flamapy.to_glencoe', file_id=file.id) }}">
-                                        Glencoe
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('flamapy.to_cnf', file_id=file.id) }}">
-                                        DIMACS
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('flamapy.to_splot', file_id=file.id) }}">
-                                        SPLOT
+                                        CSV
                                     </a>
                                 </li>
                             </ul>
@@ -372,10 +374,60 @@
 
 
 
-        <a href="/dataset/download/{{ dataset.id }}" class="btn btn-primary mt-3" style="border-radius: 5px;">
-            <i data-feather="download" class="center-button-icon"></i>
-            Download all ({{ dataset.get_file_total_size_for_human() }})
-        </a>
+        <div class="d-flex align-items-center" style="gap:8px">
+            <a href="/dataset/download/{{ dataset.id }}" class="btn btn-primary mt-3" style="border-radius: 5px;">
+                <i data-feather="download" class="center-button-icon"></i>
+                Download all ({{ dataset.get_file_total_size_for_human() }})
+            </a>
+
+            {# Build a safe versions list: prefer the `versions` variable passed by the controller, otherwise
+               try to obtain it from dataset.version.concept.versions. This avoids template errors when some
+               controllers render this template without providing `versions`. #}
+            {% if versions is defined %}
+                {% set vlist = versions %}
+            {% else %}
+                {% if dataset.version and dataset.version.concept and dataset.version.concept.versions %}
+                    {% set vlist = dataset.version.concept.versions %}
+                {% else %}
+                    {% set vlist = [] %}
+                {% endif %}
+            {% endif %}
+
+            {% if vlist and vlist|length > 0 %}
+                <div class="btn-group mt-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius:5px;">
+                        Versions
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% for v in vlist|sort(attribute='version_major', reverse=true) %}
+                            <li>
+                                {% set label = v.version_label() %}
+                                {% if v.data_set and v.data_set.ds_meta_data and v.data_set.ds_meta_data.dataset_doi %}
+                                    <a class="dropdown-item" href="/dataset/doi/{{ v.data_set.version_doi }}">{{ v.data_set.ds_meta_data.title }} v{{ label }}
+                                        {% set latest = v.concept.latest_version() %}
+                                        {% if latest and latest.id == v.id %}
+                                            <span title="Latest version" style="color: gold;">⭐</span>
+                                        {% endif %}
+                                    </a>
+                                {% else %}
+                                    {% if v.data_set %}
+                                        <a class="dropdown-item" href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=v.data_set.id) }}">
+                                            {{ v.data_set.ds_meta_data.title }} v{{ label }} 
+                                            {% set latest = v.concept.latest_version() %}
+                                            {% if latest and latest.id == v.id %}
+                                                <span title="Latest version" style="color: gold;">⭐</span>
+                                            {% endif %}
+                                        </a>
+                                    {% else %}
+                                        <span class="dropdown-item text-muted">v{{ label }}(no dataset)</span>
+                                    {% endif %}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
     </div>
 
 </div>
@@ -385,7 +437,7 @@
     <div class="modal-dialog modal-lg" style="height: 80vh; display: flex; align-items: center;">
         <div class="modal-content" style="height: 80vh;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h5 class="modal-title" id="fileViewerModalLabel">Feature model view</h5>
+                <h5 class="modal-title" id="fileViewerModalLabel">File model view</h5>
                 <div>
                     <a href="#" class="btn btn-outline-primary btn-sm" id="downloadButton"
                         style="margin-right: 5px; margin-bottom: 5px; border-radius: 5px;">
@@ -438,99 +490,6 @@
     function hideLoading() {
         document.getElementById("loading").style.display = "none";
     }
-
-    function checkUVL(file_id) {
-        const outputDiv = document.getElementById('check_' + file_id);
-        outputDiv.innerHTML = ''; // Clear previous output
-
-        fetch(`/flamapy/check_uvl/${file_id}`)
-            .then(response => {
-                return response.json().then(data => ({
-                    status: response.status,
-                    data
-                }));
-            })
-            .then(({ status, data }) => {
-                if (status === 400) {
-                    // Display errors
-                    if (data.errors) {
-                        outputDiv.innerHTML = '<span class="badge badge-danger">Errors:</span>';
-                        data.errors.forEach(error => {
-                            const errorElement = document.createElement('span');
-                            errorElement.className = 'badge badge-danger';
-                            errorElement.textContent = error;
-                            outputDiv.appendChild(errorElement);
-                            outputDiv.appendChild(document.createElement('br')); // Line break for better readability
-                        });
-                    } else {
-                        outputDiv.innerHTML = `<span class="badge badge-danger">Error: ${data.error}</span>`;
-                    }
-                } else if (status === 200) {
-                    // Display success message
-                    outputDiv.innerHTML = '<span class="badge badge-success">Valid Model</span>';
-                } else {
-                    // Handle unexpected status
-                    outputDiv.innerHTML = `<span class="badge badge-warning">Unexpected response status: ${status}</span>`;
-                }
-            })
-            .catch(error => {
-                // Handle fetch errors
-                outputDiv.innerHTML = `<span class="badge badge-danger">An unexpected error occurred: ${error.message}</span>`;
-            });
-    }
-
-
-    /*
-    async function valid() {
-        showLoading()
-        let pyodide = await loadPyodide();
-        await pyodide.loadPackage("micropip");
-        const micropip = pyodide.pyimport("micropip");
-        //await micropip.install("/assets/web_assembly/antlr4_python3_runtime-4.7.2-py3-none-any.whl");
-        await micropip.install("antlr4-python3-runtime==4.13.1");
-        await micropip.install("uvlparser==2.0.1");
-        //await micropip.install("afmparser==1.0.0");
-
-        await pyodide.runPythonAsync(
-        `
-            import micropip
-            #await micropip.install("flamapy-fm-dist", deps=False)#this is to avoid problems with deps later on
-            await micropip.install("flamapy==2.0.1.dev1", deps=False);
-            await micropip.install("flamapy-fm==2.0.1.dev1", deps=False);
-            await micropip.install("flamapy-sat");
-        `
-        )
-        hideLoading()
-
-        try {
-            let output = pyodide.runPython(
-            `
-            import js
-
-            file_content = js.document.getElementById('fileContent').textContent 
-            div = js.document.createElement("result")
-
-            with open("uvlfile.uvl", "w") as text_file:
-                print(file_content, file=text_file)
-
-            from flamapy.interfaces.python.FLAMAFeatureModel import FLAMAFeatureModel
-
-            fm = FLAMAFeatureModel("uvlfile.uvl")
-            result=fm.valid()
-
-            div.innerHTML = "<div id='deleteme'>"+str(result)+"</div>"
-            exists=js.document.getElementById('deleteme')
-            if(exists):
-                exists.remove()
-
-            js.document.getElementById('result').append(div)
-            `
-        );
-        } catch (err) {
-            console.log(err);
-        }
-    }
-    */
     function copyToClipboard() {
         const text = document.getElementById('fileContent').textContent;
         navigator.clipboard.writeText(text).then(() => {
@@ -539,6 +498,99 @@
             console.error('Failed to copy text: ', err);
         });
     }
-</script>
 
-{% endblock %}
+    // --- FakeNODO versioning & metadata logic (in-block) ---
+    const depositionId = '{{ dataset.ds_meta_data.deposition_id or "" }}';
+    function updateMetadata(ev){
+        ev.preventDefault();
+        if(!depositionId){ alert('No hay depósito preliminar todavía.'); return false; }
+        const form = document.getElementById('metadataForm');
+        const fd = new FormData(form);
+        const payload = {
+            title: fd.get('title'),
+            description: fd.get('description'),
+            tags: (fd.get('tags')||'').split(',').map(t=>t.trim()).filter(t=>t)
+        };
+        fetch(`/fakenodo/deposit/depositions/${depositionId}/metadata`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(r=>r.json()).then(data=>{
+            if(data.message){ alert('Error al actualizar metadata: '+data.message); return; }
+            showDirtyStatus(data.dirty);
+            renderVersions(data.versions||[]);
+            renderFiles(data.files||[]);
+            if(data.metadata){
+                const m = data.metadata;
+                if(form.querySelector('[name="title"]')) form.querySelector('[name="title"]').value = m.title||'';
+                if(form.querySelector('[name="description"]')) form.querySelector('[name="description"]').value = m.description||'';
+                if(form.querySelector('[name="tags"]')) form.querySelector('[name="tags"]').value = m.tags||'';
+            }
+            alert('Metadata guardada (sin nuevo DOI).');
+        }).catch(e=>{ console.error(e); alert('Fallo en la petición de metadata.'); });
+        return false;
+    }
+    function uploadNewFile(ev){
+        ev.preventDefault();
+        if(!depositionId){ alert('No hay depósito preliminar todavía.'); return false; }
+        const form = document.getElementById('fileUploadForm');
+        const fd = new FormData(form);
+        if(!fd.get('file')){ alert('Selecciona un archivo.'); return false; }
+        fetch(`/fakenodo/deposit/depositions/${depositionId}/files`, { method:'POST', body: fd })
+            .then(r=>r.json()).then(data=>{
+                if(data.message){ alert('Error subiendo archivo: '+data.message); return; }
+                alert('Archivo subido. Se marcó dirty para nueva versión.');
+                form.reset();
+                forceRefreshStatus();
+            }).catch(e=>{ console.error(e); alert('Fallo subiendo archivo.'); });
+        return false;
+    }
+    function forceRefreshStatus(){
+        if(!depositionId){ return; }
+        fetch(`/fakenodo/deposit/depositions/${depositionId}`)
+            .then(r=>r.json()).then(data=>{
+                if(data.message){ console.warn(data.message); return; }
+                showDirtyStatus(data.dirty);
+                renderVersions(data.versions||[]);
+                renderFiles(data.files||[]);
+            }).catch(e=> console.error(e));
+    }
+    function showDirtyStatus(isDirty){
+        const el = document.getElementById('dirtyStatus');
+        if(!el) return;
+        if(isDirty){ el.className='badge bg-warning text-dark'; el.textContent='Cambios de archivos sin publicar (dirty)'; }
+        else { el.className='badge bg-success'; el.textContent='Sin cambios de archivos pendientes'; }
+        const publishBtn = document.getElementById('publishBtn');
+        if(publishBtn){
+            const hasDoi = '{{ dataset.ds_meta_data.dataset_doi or "" }}';
+            if(hasDoi && !isDirty){ publishBtn.disabled = true; publishBtn.title='Ya publicado. Sube/edita archivos para nueva versión.'; }
+            else { publishBtn.disabled = false; publishBtn.title=''; }
+        }
+    }
+    function renderVersions(versions){
+        const ul = document.getElementById('versionsList');
+        if(!ul) return;
+        ul.innerHTML='';
+        versions.slice().reverse().forEach(v=>{
+            const li=document.createElement('li');
+            li.className='small';
+            li.textContent=`v${v.version}: ${v.doi}`;
+            ul.appendChild(li);
+        });
+    }
+    function renderFiles(files){
+        const ul = document.getElementById('filesList');
+        if(!ul) return;
+        ul.innerHTML='';
+        files.forEach(f=>{
+            const li=document.createElement('li');
+            li.className='small';
+            li.textContent=`${f.name} (${f.size} bytes)`;
+            ul.appendChild(li);
+        });
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{ if(depositionId){ forceRefreshStatus(); } });
+    // --- end FakeNODO logic ---
+    </script>
+
+    {% endblock %}

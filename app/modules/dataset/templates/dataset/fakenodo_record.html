@@ -1,0 +1,140 @@
+{% extends "base_template.html" %}
+
+{% block title %}Repository record{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1 class="h3 mb-4">Repository Record</h1>
+
+  {% if dataset %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Dataset Information</h2>
+    </div>
+    <div class="card-body">
+      <ul class="list-unstyled mb-0">
+        <li><strong>ID:</strong> {{ dataset.id }}</li>
+        <li><strong>Title:</strong> {{ dataset.ds_meta_data.title }}</li>
+        <li><strong>Description:</strong> {{ dataset.ds_meta_data.description }}</li>
+        <li><strong>Tags:</strong> {{ dataset.ds_meta_data.tags }}</li>
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if record %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Fakenodo Record</h2>
+    </div>
+    <div class="card-body">
+      <ul class="list-unstyled">
+        <li><strong>ID:</strong> {{ record.id }}</li>
+        <li>
+          <strong>Status:</strong> 
+          <span class="badge {{ 'bg-success' if record.status == 'published' else 'bg-warning text-dark' }}">
+            {{ record.status }}
+          </span>
+        </li>
+        <li><strong>DOI:</strong> {{ record.doi or 'Not assigned' }}</li>
+      </ul>
+
+      {% set meta = record.metadata or {} %}
+      
+      <h3 class="h6 mt-4 mb-3">Metadata</h3>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered">
+          <tbody>
+            <tr>
+              <th style="width: 30%;">Title</th>
+              <td>{{ meta.title or '-' }}</td>
+            </tr>
+            <tr>
+              <th>Description</th>
+              <td>{{ meta.description or '-' }}</td>
+            </tr>
+            <tr>
+              <th>Tags</th>
+              <td>{{ meta.tags or '-' }}</td>
+            </tr>
+            <tr>
+              <th>Dataset Version</th>
+              <td>{{ meta.dataset_version or '1.0' }}</td>
+            </tr>
+            {% if meta.dirty %}
+            <tr>
+              <th>Dirty</th>
+              <td><span class="badge bg-info">Metadata edited (unpublished changes)</span></td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      {% set versions = meta.get('versions', []) if meta else [] %}
+      <h3 class="h6 mt-4 mb-3">Version History</h3>
+      {% if versions and versions|length > 0 %}
+        <ul class="list-group">
+          {% for v in versions|sort(attribute='created_at', reverse=True) %}
+          {% set label = v.version or meta.dataset_version or '1.0' %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <strong>Version {{ label }}</strong>
+                {% if v.doi %}
+                <br><small class="text-muted">DOI: {{ v.doi }}</small>
+                {% endif %}
+                {% if v.created_at %}
+                <br><small class="text-muted">Created: {{ v.created_at }}</small>
+                {% endif %}
+              </div>
+              {% if v.changes %}
+              <div class="text-end">
+                {% if v.changes.metadata_changed %}
+                <span class="badge bg-secondary">Metadata changed</span>
+                {% endif %}
+                {% if v.changes.file_changed %}
+                <span class="badge bg-primary">Files changed</span>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">No versions available.</p>
+      {% endif %}
+
+      {% set files = meta.get('files', []) if meta else [] %}
+      {% if files and files|length > 0 %}
+      <h3 class="h6 mt-4 mb-3">Files</h3>
+      <ul class="list-group">
+        {% for f in files %}
+        <li class="list-group-item">
+          {{ f.file_name or 'Unknown' }}
+          <small class="text-muted">({{ f.file_type or 'unknown' }})</small>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-warning">
+    No repository record found for this DOI.
+  </div>
+  {% endif %}
+
+  <div class="mt-4">
+    <a href="{{ url_for('dataset.list_dataset') }}" class="btn btn-outline-secondary">
+      Back to datasets
+    </a>
+    {% if dataset %}
+    <a href="{{ url_for('dataset.subdomain_index', doi=dataset.ds_meta_data.dataset_doi) }}" class="btn btn-outline-primary">
+      View Dataset
+    </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

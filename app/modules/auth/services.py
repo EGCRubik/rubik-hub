@@ -1,5 +1,6 @@
 import os
 
+from flask import redirect, url_for
 from flask_login import current_user, login_user
 
 from app.modules.auth.models import User
@@ -15,12 +16,18 @@ class AuthenticationService(BaseService):
         super().__init__(UserRepository())
         self.user_profile_repository = UserProfileRepository()
 
-    def login(self, email, password, remember=True):
+    def login(self, email, password):
         user = self.repository.get_by_email(email)
         if user is not None and user.check_password(password):
-            login_user(user, remember=remember)
+            # login_user(user, remember=remember)
             return True
         return False
+    
+    def get_user_by_email(self, email: str) -> User | None:
+        return self.repository.get_by_email(email)
+    
+    def get_by_id(self, id):
+        return super().get_by_id(id)
 
     def is_email_available(self, email: str) -> bool:
         return self.repository.get_by_email(email) is None

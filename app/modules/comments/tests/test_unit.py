@@ -1,10 +1,11 @@
 import pytest
+
 from app import db
-from app.modules.comments.services import CommentsService
-from app.modules.dataset.models import DataSet, DSMetaData, Author, PublicationType
 from app.modules.auth.models import User
-from app.modules.profile.models import UserProfile 
 from app.modules.comments.models import Comments
+from app.modules.comments.services import CommentsService
+from app.modules.dataset.models import Author, DataSet, DSMetaData, PublicationType
+from app.modules.profile.models import UserProfile
 
 comments_service = CommentsService()
 
@@ -36,19 +37,22 @@ def test_client(test_client):
         ds_meta = DSMetaData(
             title="Test Dataset",
             description="Descripción de prueba",
-            publication_type=PublicationType.REPORT
+            publication_type=PublicationType.SALES
         )
         db.session.add(ds_meta)
         db.session.commit()
 
-        # Crear autor válido
+        # Crear autor válido y asociarlo al DSMetaData
         author = Author(
             name="Pepe",
             affiliation="Rubik Hub",
             orcid="0000-0001-2345-6789",
-            ds_meta_data_id=ds_meta.id
         )
         db.session.add(author)
+        db.session.commit()
+
+        ds_meta.author_id = author.id
+        db.session.add(ds_meta)
         db.session.commit()
 
         # Crear dataset
@@ -104,3 +108,6 @@ def test_delete_comment(test_client):
         assert deleted is not None, "El comentario no se eliminó"
         assert Comments.query.get(comment_id) is None, "El comentario sigue existiendo"
         assert returned_dataset.id == dataset.id
+    
+# He utilizado parcialmente la inteligencia artificial (IA) como herramienta de apoyo durante el desarrollo y modificación de este archivo de código. 
+# La IA me ha ayudado a entender, optimizar y automatizar ciertas tareas, pero la implementación final y las decisiones clave han sido realizadas por mí.

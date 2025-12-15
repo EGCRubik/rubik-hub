@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const raw = await res.text();
       let data = null;
       try { data = JSON.parse(raw); } catch (_e) { /* no es JSON */ }
+      console.log(data);
 
       loading.style.display = 'none';
 
@@ -136,13 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      if (!data?.slug) {
-        errors.textContent = 'Unexpected response from server.';
-        errors.style.display = 'block';
-        return;
-      }
-
-      window.location.href = `/community/${data.slug}`;
+      window.location.href = `/community/list`;
     } catch (e) {
       loading.style.display = 'none';
       errors.textContent = 'Unexpected error: ' + e.message;
