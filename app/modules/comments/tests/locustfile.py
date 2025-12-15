@@ -1,6 +1,7 @@
 from locust import HttpUser, TaskSet, task
+
 from core.environment.host import get_host_for_locust_testing
-from core.locust.common import get_csrf_token, fake
+from core.locust.common import fake, get_csrf_token
 
 
 class CommentBehavior(TaskSet):
@@ -31,3 +32,6 @@ class CommentUser(HttpUser):
     min_wait = 5000
     max_wait = 9000
     host = get_host_for_locust_testing()
+
+# He utilizado parcialmente la inteligencia artificial (IA) como herramienta de apoyo durante el desarrollo y modificación de este archivo de código. 
+# La IA me ha ayudado a entender, optimizar y automatizar ciertas tareas, pero la implementación final y las decisiones clave han sido realizadas por mí.
