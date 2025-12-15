@@ -7,9 +7,9 @@
 | Mantecón Rodríguez, Alejandro        | 50    | 22      | 534  | 9   | 10     | Trending Datasets     | M      |
 | Moreno Ríos, Juan        | 60    | 82      | 2.781  | 20   | 13     | Seguidores en autores y comunidades     | M     |
 | Nuño García, Manuel        | 55    | 48      | 14.696  | 7   | 12     | Doble factor de autenticación, creación de comunidades y petición de agregación de datasets a comunidades    | H/ (2)L      |
-| Ruíz López, Juan Antonio        | 50    | 37      | 1.072  | 4   | 18     | Gestionar versionado de los datasets     | H      |
-| Ruíz Martín, Alejandro        | HH    | 28      | 756  | ZZ   | 11     | Conntabilizar el numero de descargas de un dataset     | L      |
-| **TOTAL**                  | tHH   | 279     | 21.132 | tZZ  | 73    | Descripción breve     | H (2)/M (2)/L (5) |
+| Ruíz López, Juan Antonio        | 50    | 37      | 1.072  | 6   | 18     | Gestionar versionado de los datasets     | H      |
+| Ruíz Martín, Alejandro        | 50    | 33      | 1.131  | 5   | 12     | Conntabilizar el numero de descargas de un dataset     | L      |
+| **TOTAL**                  | tHH   | 288     | 21.507  | 66  | 75    | Descripción breve     | H (2)/M (2)/L (5) |
 
 ---
 
