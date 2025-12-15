@@ -3,7 +3,7 @@
 
 | Miembro del equipo        | Horas | Commits | LoC | Test | Issues | Work Item            | Dificultad |
 |---------------------------|-------|---------|-----|------|--------|----------------------|------------|
-| Benítez Galván, Mario        | HH    | 66      | 1.293  | 19   | 10     | Creación de comentarios en Datasets     | L      |
+| Benítez Galván, Mario        | 60    | 66      | 1.293  | 19   | 10     | Creación de comentarios en Datasets     | L      |
 | Mantecón Rodríguez, Alejandro        | 50    | 22      | 534  | 9   | 10     | Trending Datasets     | M      |
 | Moreno Ríos, Juan        | 60    | 82      | 2.781  | 20   | 13     | Seguidores en autores y comunidades     | M     |
 | Nuño García, Manuel        | 55    | 48      | 14.696  | 7   | 12     | Doble factor de autenticación, creación de comunidades y petición de agregación de datasets a comunidades    | H/ (2)L      |
