@@ -335,6 +335,38 @@ Vagrant (VM gestionada con VirtualBox/Ansible): copiar `.env.vagrant.example` a 
 
 Se presentará un ejercicio con una propuesta concreta de cambio en la que a partir de un cambio que se requiera, se expliquen paso por paso (incluyendo comandos y uso de herramientas) lo que hay que hacer para realizar dicho cambio. Debe ser un ejercicio ilustrativo de todo el proceso de evolución y gestión de la configuración del proyecto.
 
+En este apartado se especificará el procedimiento exacto para realizar un cambio en este proyecto. Por ejemplo, añadir un cuadro de texto en la pestaña de upload datasets que ponga "Acuérdate de publicarlo en FakeNodo!" antes del botón de subir datasets. Para realizar este cambio en el proyecto RubikHub se deben realizar los siguientes pasos:
+
+**1. Crear la Issue**
+
+Lo primero de todos es crear una nueva Issue. Como título se pone una descripción general de lo fundamental que se va a tratar en la propia Issue. Luego, el campo de la descripción se divide en dos partes: *description*, en la cual se dice la función a realizar en la Issue, y *details*, en la que se explica a fondo lo que se va a realizar y qué se va a hacer. Posteriormente, se asigna al responsable de esa tarea. En el apartado de labels, se le asigna la prioridad (`high`,`medium `,`low`) y la dificultad de la tarea (`high`,`medium `,`low`,`mandatory`). La etiqueta labels se emplea para indicar el tipo de Issue que es, si es `bug`,`feature ` o `task`. En la parte de projects se selecciona el tablero de github que se está empleando en el proyecto para el control del flujo de las tareas. Por último, en el apartado de milestone se selecciona el entregable en el que estamos trabajando (p.e. 3 delivery). En caso de que este cambio fuera demasiado grande como para tratarse en una sola Issue, se crearían subIssues de esa Issue, añadiendoles título y descripción de la misma forma que mencionamos anteriormente para las Issues.
+
+**2. Crear la rama**
+
+Para continuar, crearíamos la rama llamada IssueX, siendo X el número de la Issue creada. Por ejemplo, si se crea la Issue #33, la rama en la que se trabajará esa Issue será la rama Issue33. Para crear la rama pulsamos en el apartado "branches" en la pantalla principal del repositorio y le damos al botón de "New branch", poniendo el nombre especificado para ello. También se puede crear desde el repositorio local ejecutando el comando `git checkout -b Issue33 origin/Issue33`.
+
+**3. Bajar los cambios de remoto a local**
+
+Una vez creada la Issue y la rama, nos vamos a nuestro repositorio local y, desde nuestra rama `trunk` ejecutamos el siguiente comando: `git fetch origin`. Este comando trae todos los cambios del repositorio remoto a tu local. Para poder incorporarlos a tu local, simplemente ejecutamos `git pull`, y ya tendríamos bajados esos cambios. En caso de no haber ninguna actualziación ni diferencia entre ambas ramas en local y remoto, saldrá este mensaje por consola: "Tu rama está actualizada con `origin/trunk`".
+
+**4. Realizar los cambios oportunos**
+
+Ya con los cambios en el repositorio local, ejecutamos el comando `git checkout Issue33` para cambiarnos de rama y poder trabajar en la modificación que se desea realizar. Al crear la rama, esta se crea copiando el contenido que había en trunk remoto, por lo que estaría actualizada con trunk. Sin embargo, en caso de que esté desactualizada, ejecutando el comando `git merge origin/trunk` se actualiza la rama con todos los cambios de trunk en remoto. Una vez ya se han bajado todos los cambios a la rama local, se empieza a trabajar en la Issue. En caso de que, en un futuro, se quieran hacer cambios ya que se ve mal algo, o se detecta un error antes no percibido, se haría el mismo procedimiento pero habría que hacerlo en la rama `fix`, una rama específica para realizar arreglos en el código. Después de realizar el cambio es **IMPORTANTÍSIMO** que se revise si ese cambio no ha provocado algún fallo en el proyecto, revisando las funcionalidades que podrían haber sido afectadas y, además, ejecutar los comandos para comprobar los tests correspondientes (`rosemary test`,`rosemary selenium`)
+NOTA: Antes de empezar a trabajar en la Issue, se debe de mover la tarea en el tablero de github de la columna "Todo" a la columna "In progress".
+
+**5. Hacer commit**
+
+Cuando se ha realizado el cambio propuesto, llega la hora de hacer commit. Para hacerlo, escribimos por consola el comando `git add .` para guardar los cambios, y posteriormente `git commit -m "tu mensaje de commit"`. En RubikHub, los commits tienen que seguir la plantilla de conventional commits, por lo que el mensaje debería de empezar por "feat" ya que es una funcionalidad nueva. En nuestro caso, podría ser por ejemplo `git commit -m "feat: added text box in upload dataset screen"`. Cuando se ejecute el comando, escribimos por consola `git push` para subir los cambios de nuestra rama local a remoto.
+
+**6. Hacer merge a trunk**
+
+Una vez ya se han subido los cambios a remoto, ejecutamos en nuestra terminal en local `git checkout trunk`, para irnos a nuestra rama principal. Una vez en `trunk`, realizamos un `git fetch origin` para comprobar si ha habido cambios en la rama remota (si hay hacemos `git pull`). Una vez comprobado, se ejecuta desde `trunk` local el comando `git merge origin/Issue33`, para introducir los cambios realizados en la rama concreta de esta Issue específica. En caso de haber conflictos, se resolverían manualmente comparando el contenido que había en local con el remoto, y posteriormente haciendo un commit de Merge para confirmar la fusión de ambos códigos. Después de esto, ejecutamos `git push` para subir los cambios al repositorio remoto.
+NOTA: Una vez mergeado a trunk y subido a remoto, se debe de mover la tarea en el tablero de github de la columna "In progress" a la columna "Done".
+
+**7. Eliminar la rama de trabajo**
+
+Ya por concluir, una vez realizado el cambio y mergeado cerrado la Issue en el tablero, se procede a eliminar la rama que se ha empleado para la realización de esa tarea específica (salvo la rama `fix`, esa no se elimina nunca). Para borrarlas nos vamos a la pestaña de "branches" mencionada anteriormente y, al lado de la rama, hay un botón de una papelera. Se pulsa el botón y se elimina la rama empleada. Otra forma de eliminar la rama (en remoto) es ejecutando el comando `git push origin --delete Issue33`. Para eliminar la rama del repositorio local, se puede ejecutar el comando `git branch -D Issue33`
+
 ---
 
 # Conclusiones y Trabajo Futuro
