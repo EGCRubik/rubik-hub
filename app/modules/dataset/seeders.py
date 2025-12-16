@@ -223,6 +223,8 @@ class DataSetSeeder(BaseSeeder):
                     version_doi = dataset.version_doi + ".1",
                     created_at=datetime.now(timezone.utc),
                 )
+
+                seeded_ds_meta_data[i].tags = ""
                 self.db.session.add(new_dataset)
                 self.db.session.flush()
 
