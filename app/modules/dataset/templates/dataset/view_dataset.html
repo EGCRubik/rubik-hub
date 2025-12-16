@@ -41,6 +41,10 @@
                         {% if latest and latest.id == dataset.version.id %}
                             <span title="Latest version" style="color: gold;">⭐</span>
                         {% endif %}
+                        {% if current_user.is_authenticated and current_user.id == dataset.user_id%}
+                            <i data-feather="user-check" style="width:36px; height:36px; color: #0662A6;"></i>
+                        {% endif %}
+
                     </b></h1>
                     <div>
                         <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
