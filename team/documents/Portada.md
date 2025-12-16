@@ -12,7 +12,7 @@ Mantecón Rodríguez, Alejandro	10
 Moreno Ríos, Juan	10
 Nuño García, Manuel	10
 Ruíz López, Juan Antonio	10
-Ruíz Martín, Alejandro
+Ruíz Martín, Alejandro      10
 
 Enlaces de interés:
 repositorio de código: https://github.com/EGCRubik/rubik-hub
