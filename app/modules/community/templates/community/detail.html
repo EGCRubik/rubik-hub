@@ -39,7 +39,11 @@
           <div class="col-md-9 col-12">
             {% for u in community.curators.all() %}
             <span class="badge bg-secondary" style="margin-bottom:4px">
+              {% if current_user.id == u.id %}
+              (you)
+              {% else %}
               {% if u.profile %}{{ u.profile.surname }}, {{ u.profile.name }}{% else %}User #{{ u.id }}{% endif %}
+              {% endif %}
             </span>
             {% endfor %}
           </div>
