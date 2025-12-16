@@ -242,7 +242,7 @@ class TabularDataset(BaseDataset):
             "publication_type": self.get_cleaned_publication_type(),
             "publication_doi": self.ds_meta_data.publication_doi,
             "dataset_doi": self.ds_meta_data.dataset_doi,
-            "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else [],
+            "tags": self.ds_meta_data.tags.split(",") if self.ds_meta_data.tags else ["None"],
             "url": f'/dataset/doi/{self.version_doi}' if self.version_doi else None,
             "download": f'{request.host_url.rstrip("/")}/dataset/download/{self.id}',
             # Use the dataset-level method to obtain the number of downloads (counts Download rows)
